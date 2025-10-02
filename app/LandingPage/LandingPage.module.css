@@ -850,7 +850,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 100px;
+    gap: 60px;
     z-index: 1;
     width: 100%;
     margin: 0 auto;
@@ -860,6 +860,49 @@
     position: relative;
     letter-spacing: -0.02em;
     display: inline-block;
+}
+.teamGrid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 40px;
+    justify-items: center;
+}
+.teamMember {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+.teamPhotoWrapper {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: radial-gradient(circle at 30% 30%, rgba(79, 156, 249, 0.25), rgba(1, 37, 42, 0.5));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+.teamPhoto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.teamName {
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    color: #01252a;
+}
+.teamRole {
+    max-width: 260px;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.01em;
+    color: #4f9cf9;
 }
 .sponsors {
     width: 100%;
@@ -991,88 +1034,73 @@
 .content3 {
     width: 100%;
     display: flex;
-    align-items: center;
+    align-items: stretch;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 32px;
-    text-align: left;
     font-size: 18px;
     color: #fff;
     margin: 0 auto;
 }
-.client {
-    flex: 1;
-    box-shadow: 10px 10px 50px rgba(0, 0, 0, 0.08);
-    border-radius: 10px;
-    background-color: #fff;
+.flipCard {
+    flex: 1 1 280px;
+    display: flex;
+    min-height: 360px;
+    perspective: 1200px;
+    border-radius: 12px;
+}
+.flipCard:focus,
+.flipCard:focus-visible {
+    outline: none;
+}
+.flipCard:focus-visible {
+    box-shadow: 0 0 0 3px rgba(79, 156, 249, 0.4);
+}
+.flipCardInner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease;
+    will-change: transform;
+}
+.flipCard:hover .flipCardInner,
+.flipCard:focus-visible .flipCardInner {
+    transform: rotateY(180deg);
+}
+.flipCardFront,
+.flipCardBack {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    padding: 60px 40px;
-    gap: 49px;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 40px;
+    border-radius: 12px;
+    backface-visibility: hidden;
+    box-shadow: 10px 10px 50px rgba(0, 0, 0, 0.08);
+}
+.flipCardFront {
+    background-color: #fff;
     color: #01252a;
 }
-.comment {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 35px;
+.flipCardBack {
+    background: linear-gradient(135deg, #4f9cf9, #01252a);
+    color: #fff;
+    transform: rotateY(180deg);
+    text-align: left;
 }
-.avater02Icon {
-    width: 70px;
-    position: relative;
-    border-radius: 50%;
-    height: 70px;
-    object-fit: cover;
+.flipCardImage {
+    max-width: 240px;
+    width: 100%;
+    height: auto;
 }
-.allBaseUi {
-    width: 350px;
-    position: relative;
+.flipCardText {
     letter-spacing: -0.02em;
     line-height: 30px;
-    display: inline-block;
-}
-.nameStar {
-    display: flex;
-    align-items: flex-start;
-    gap: 53px;
-}
-.name {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-}
-.nameSurname {
-    width: 137px;
-    position: relative;
-    letter-spacing: -0.02em;
-    display: inline-block;
-}
-.founderAcmeCompan {
-    width: 194px;
-    position: relative;
-    letter-spacing: -0.02em;
-    line-height: 30px;
-    display: inline-block;
-}
-.btnStar {
-    display: flex;
-    align-items: flex-start;
-    gap: 7px;
-}
-.btnStarChild {
-    width: 15px;
-    position: relative;
-    height: 15px;
-}
-.client2 {
-    flex: 1;
-    border-radius: 10px;
-    background-color: #4f9cf9;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 60px 40px;
-    gap: 49px;
 }
 .slider {
     display: flex;

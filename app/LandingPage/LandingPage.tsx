@@ -3,6 +3,45 @@ import Image from 'next/image';
 import styles from './LandingPage.module.css';
 
 const Px: NextPage = () => {
+  const teamMembers = [
+    {
+      name: 'Ava Chen',
+      role: 'Head of Provenance Research',
+      image: '/team/ava-chen.svg',
+      alt: 'Portrait of Ava Chen',
+    },
+    {
+      name: 'Liam Patel',
+      role: 'Machine Learning Lead',
+      image: '/team/liam-patel.svg',
+      alt: 'Portrait of Liam Patel',
+    },
+    {
+      name: 'Nina Ross',
+      role: 'Field Outreach Director',
+      image: '/team/nina-ross.svg',
+      alt: 'Portrait of Nina Ross',
+    },
+    {
+      name: 'Mateo Ruiz',
+      role: 'Cultural Heritage Analyst',
+      image: '/team/mateo-ruiz.svg',
+      alt: 'Portrait of Mateo Ruiz',
+    },
+    {
+      name: 'Sam Park',
+      role: 'Security & Compliance Officer',
+      image: '/team/sam-park.svg',
+      alt: 'Portrait of Sam Park',
+    },
+    {
+      name: 'Zoe Hendrix',
+      role: 'Partnerships Manager',
+      image: '/team/zoe-hendrix.svg',
+      alt: 'Portrait of Zoe Hendrix',
+    },
+  ];
+
   return (
     <div className={styles.landingPageV2Desktop19}>
       <div className={styles.header}>
@@ -62,57 +101,66 @@ const Px: NextPage = () => {
       </div>
       <div className={styles.testimonial}>
         <div className={styles.block9}>
-          <b className={styles.seeWhatOur}>See what our trusted users Say</b>
+          <b className={styles.seeWhatOur}>About</b>
           <div className={styles.content3}>
-            <div className={styles.client}>
-              <div className={styles.comment}>
-                <Image className={styles.avater02Icon} width={70} height={70} sizes="100vw" alt="" />
-                <div className={styles.allBaseUi}>
-                  “If you haven’t tried whitepace yet, you need to give it a shot for your next event. It’s so easy and
-                  intuitive to get a new event setup and if you need any help their customer service is seriously
-                  amazing.”
+            <div className={styles.flipCard} tabIndex={0} aria-label="Mission statement">
+              <div className={styles.flipCardInner}>
+                <div className={styles.flipCardFront}>
+                  <Image
+                    className={styles.flipCardImage}
+                    src="/about/artifact-card.svg"
+                    width={240}
+                    height={240}
+                    sizes="(max-width: 900px) 60vw, 240px"
+                    alt="Illustration of artifact scanning"
+                  />
                 </div>
-              </div>
-              <div className={styles.nameStar}>
-                <div className={styles.name}>
-                  <b className={styles.nameSurname}>Jessie Owner</b>
-                  <div className={styles.founderAcmeCompan}>Founder, XYZ Company</div>
+                <div className={styles.flipCardBack}>
+                  <p className={styles.flipCardText}>
+                    We bring together historians and technologists to trace stolen artifacts and return them to their
+                    rightful communities.
+                  </p>
                 </div>
-                <div className={styles.btnStar}></div>
               </div>
             </div>
-            <div className={styles.client2}>
-              <div className={styles.comment}>
-                <Image className={styles.avater02Icon} width={70} height={70} sizes="100vw" alt="" />
-                <div className={styles.allBaseUi}>
-                  “If you haven’t tried whitepace yet, you need to give it a shot for your next event. It’s so easy and
-                  intuitive to get a new event setup and if you need any help their customer service is seriously
-                  amazing.”
+            <div className={styles.flipCard} tabIndex={0} aria-label="Global provenance analysis">
+              <div className={styles.flipCardInner}>
+                <div className={styles.flipCardFront}>
+                  <Image
+                    className={styles.flipCardImage}
+                    src="/globe.svg"
+                    width={240}
+                    height={240}
+                    sizes="(max-width: 900px) 60vw, 240px"
+                    alt="Globe showing our global reach"
+                  />
                 </div>
-              </div>
-              <div className={styles.nameStar}>
-                <div className={styles.name}>
-                  <b className={styles.nameSurname}>Jessie Owner</b>
-                  <div className={styles.founderAcmeCompan}>Founder, XYZ Company</div>
+                <div className={styles.flipCardBack}>
+                  <p className={styles.flipCardText}>
+                    Our models analyse provenance records across continents, surfacing leads that help museums verify
+                    the the origin of their collections.
+                  </p>
                 </div>
-                <div className={styles.btnStar}></div>
               </div>
             </div>
-            <div className={styles.client2}>
-              <div className={styles.comment}>
-                <Image className={styles.avater02Icon} width={70} height={70} sizes="100vw" alt="" />
-                <div className={styles.allBaseUi}>
-                  “If you haven’t tried whitepace yet, you need to give it a shot for your next event. It’s so easy and
-                  intuitive to get a new event setup and if you need any help their customer service is seriously
-                  amazing.”
+            <div className={styles.flipCard} tabIndex={0} aria-label="Investigation workspace">
+              <div className={styles.flipCardInner}>
+                <div className={styles.flipCardFront}>
+                  <Image
+                    className={styles.flipCardImage}
+                    src="/window.svg"
+                    width={240}
+                    height={240}
+                    sizes="(max-width: 900px) 60vw, 240px"
+                    alt="Data dashboard interface"
+                  />
                 </div>
-              </div>
-              <div className={styles.nameStar}>
-                <div className={styles.name}>
-                  <b className={styles.nameSurname}>Jessie Owner</b>
-                  <div className={styles.founderAcmeCompan}>Founder, XYZ Company</div>
+                <div className={styles.flipCardBack}>
+                  <p className={styles.flipCardText}>
+                    Investigators rely on our dashboard to triage alerts, collaborate securely, and document successful
+                    artifact recoveries.
+                  </p>
                 </div>
-                <div className={styles.btnStar}></div>
               </div>
             </div>
           </div>
@@ -133,6 +181,24 @@ const Px: NextPage = () => {
       <div className={styles.ourSponsors}>
         <div className={styles.block7}>
           <b className={styles.ourSponsors2}>Our Team</b>
+          <div className={styles.teamGrid}>
+            {teamMembers.map((member) => (
+              <div key={member.name} className={styles.teamMember}>
+                <div className={styles.teamPhotoWrapper}>
+                  <Image
+                    className={styles.teamPhoto}
+                    src={member.image}
+                    width={160}
+                    height={160}
+                    sizes="(max-width: 900px) 40vw, 160px"
+                    alt={member.alt}
+                  />
+                </div>
+                <b className={styles.teamName}>{member.name}</b>
+                <p className={styles.teamRole}>{member.role}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <div className={styles.footer}>
