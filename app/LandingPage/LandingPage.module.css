@@ -148,7 +148,7 @@
     flex-shrink: 0;
 }
 .header {
-    position: sticky;
+    position: fixed;
     top: 0;
     z-index: 5;
     width: 100%;
@@ -175,11 +175,6 @@
     align-items: center;
     justify-content: center;
 }
-.logo2 {
-    width: 191px;
-    position: relative;
-    height: 34px;
-}
 .logoIcon {
     position: absolute;
     top: 2.5px;
@@ -189,8 +184,8 @@
 }
 .whitepace {
     position: absolute;
-    top: 0px;
-    left: 47px;
+    top: 30px;
+    left: 50px;
 }
 .menu {
     display: flex;
@@ -201,8 +196,10 @@
 .navMenu {
     width: 551.5px;
     display: flex;
-    align-items: flex-start;
+    align-items: flex-end;
     gap: 32px;
+    justify-content: flex-end;
+    padding-right: 32px;
 }
 .products {
     display: flex;
@@ -235,7 +232,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 40px;
+    padding: 16px 20px;
     box-sizing: border-box;
 }
 .btnFreeTrial2 {
@@ -245,7 +242,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 24px;
+    padding: 16px 20px;
     box-sizing: border-box;
     gap: 10px;
     color: #fff;
