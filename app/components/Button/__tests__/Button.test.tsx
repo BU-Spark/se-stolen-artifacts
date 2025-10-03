@@ -1,13 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Button } from '../Button';
-import styles from '../Button.module.css';
 
 describe('Button', () => {
   it('renders with default props', () => {
     render(<Button>Click me</Button>);
     const button = screen.getByRole('button', { name: /click me/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveClass(styles.button, styles.primary, styles.medium);
+    expect(button.className).toContain('MuiButton-root');
+    expect(button.className).toContain('MuiButton-contained');
   });
 
   it('handles click events', () => {
@@ -25,30 +25,30 @@ describe('Button', () => {
   });
 
   it('renders with different variants', () => {
-    const { rerender } = render(<Button variant="primary">Primary</Button>);
-    expect(screen.getByRole('button')).toHaveClass(styles.primary);
+    const { rerender } = render(<Button variant="contained">Contained</Button>);
+    expect(screen.getByRole('button').className).toContain('MuiButton-contained');
 
-    rerender(<Button variant="secondary">Secondary</Button>);
-    expect(screen.getByRole('button')).toHaveClass(styles.secondary);
+    rerender(<Button variant="outlined">Outlined</Button>);
+    expect(screen.getByRole('button').className).toContain('MuiButton-outlined');
 
-    rerender(<Button variant="outline">Outline</Button>);
-    expect(screen.getByRole('button')).toHaveClass(styles.outline);
+    rerender(<Button variant="text">Text</Button>);
+    expect(screen.getByRole('button').className).toContain('MuiButton-text');
   });
 
   it('renders with different sizes', () => {
     const { rerender } = render(<Button size="small">Small</Button>);
-    expect(screen.getByRole('button')).toHaveClass(styles.small);
+    expect(screen.getByRole('button').className).toContain('MuiButton-sizeSmall');
 
     rerender(<Button size="medium">Medium</Button>);
-    expect(screen.getByRole('button')).toHaveClass(styles.medium);
+    expect(screen.getByRole('button').className).toContain('MuiButton-sizeMedium');
 
     rerender(<Button size="large">Large</Button>);
-    expect(screen.getByRole('button')).toHaveClass(styles.large);
+    expect(screen.getByRole('button').className).toContain('MuiButton-sizeLarge');
   });
 
   it('applies custom className', () => {
     render(<Button className="custom-class">Click me</Button>);
     const button = screen.getByRole('button', { name: /click me/i });
-    expect(button).toHaveClass('custom-class');
+    expect(button.className).toContain('custom-class');
   });
 });

@@ -23,10 +23,9 @@ describe('FeatureCard', () => {
     expect(screen.getByText('Test Title')).toBeInTheDocument();
     expect(screen.getByText('Test Description')).toBeInTheDocument();
 
-    const detailsElement = screen.getByText('Test Details').closest('div');
-    expect(detailsElement).toHaveClass('featureDetails');
-    expect(detailsElement).not.toHaveClass('detailsVisible');
+    const detailsElement = screen.getByTestId('feature-details');
     expect(detailsElement).toHaveAttribute('aria-hidden', 'true');
+    expect(detailsElement).toHaveAttribute('data-expanded', 'false');
 
     const cardElement = screen.getByRole('button');
     expect(cardElement).toHaveAttribute('aria-expanded', 'false');
@@ -40,10 +39,9 @@ describe('FeatureCard', () => {
     expect(screen.getByText('Test Title')).toBeInTheDocument();
     expect(screen.getByText('Test Description')).toBeInTheDocument();
 
-    const detailsElement = screen.getByText('Test Details').closest('div');
-    expect(detailsElement).toHaveClass('featureDetails');
-    expect(detailsElement).toHaveClass('detailsVisible');
+    const detailsElement = screen.getByTestId('feature-details');
     expect(detailsElement).toHaveAttribute('aria-hidden', 'false');
+    expect(detailsElement).toHaveAttribute('data-expanded', 'true');
 
     const cardElement = screen.getByRole('button');
     expect(cardElement).toHaveAttribute('aria-expanded', 'true');

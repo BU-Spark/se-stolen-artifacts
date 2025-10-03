@@ -1,87 +1,83 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ThemeToggle } from './ThemeToggle'; // Assuming index.ts exports it correctly or direct import
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { ThemeToggle } from './ThemeToggle';
+import { MuiThemeProvider } from '../../theme-provider';
+
+const STORAGE_KEY = 'mui-color-mode';
+
+const mockMatchMedia = (matches: boolean) => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+      matches,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+};
+
+const renderWithProvider = () =>
+  render(
+    <MuiThemeProvider>
+      <ThemeToggle />
+    </MuiThemeProvider>
+  );
 
 describe('ThemeToggle', () => {
-  const mockMatchMedia = (matches: boolean) => {
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: jest.fn().mockImplementation((query) => ({
-        matches,
-        media: query,
-        onchange: null,
-        addListener: jest.fn(), // deprecated
-        removeListener: jest.fn(), // deprecated
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      })),
-    });
-  };
-
   beforeEach(() => {
-    // Clear class list before each test
-    document.documentElement.classList.remove('dark');
+    localStorage.removeItem(STORAGE_KEY);
+    delete document.documentElement.dataset.theme;
   });
 
-  test('renders the toggle button', () => {
-    mockMatchMedia(false); // Light mode by default
-    render(<ThemeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-    expect(button).toBeInTheDocument();
+  afterEach(() => {
+    cleanup();
   });
 
-  test('initializes with light mode if prefers-color-scheme is light', () => {
+  test('renders and defaults to light mode when system prefers light', () => {
     mockMatchMedia(false);
-    render(<ThemeToggle />);
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
-    // Check for sun icon (presence of sun-specific path or class)
-    // This depends on how icons are structured. For this example, we'll assume a class or unique element.
-    // If SVG paths are used directly, a more complex query might be needed or a data-testid on the icon.
-    expect(screen.getByRole('button', { name: /toggle theme/i }).querySelector('.sun')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /toggle theme/i }).querySelector('.moon')).not.toBeInTheDocument();
+    renderWithProvider();
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(screen.getByRole('button', { name: /switch to dark mode/i })).toBeInTheDocument();
   });
 
-  test('initializes with dark mode if prefers-color-scheme is dark', () => {
+  test('honours dark system preference on initial render', () => {
     mockMatchMedia(true);
-    render(<ThemeToggle />);
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(screen.getByRole('button', { name: /toggle theme/i }).querySelector('.moon')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /toggle theme/i }).querySelector('.sun')).not.toBeInTheDocument();
+    renderWithProvider();
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(screen.getByRole('button', { name: /switch to light mode/i })).toBeInTheDocument();
   });
 
-  test('toggles theme from light to dark on click', () => {
+  test('toggles between light and dark modes on click', () => {
     mockMatchMedia(false);
-    render(<ThemeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
-    expect(button.querySelector('.sun')).toBeInTheDocument();
+    renderWithProvider();
+    const button = screen.getByRole('button', { name: /switch to dark mode/i });
 
     fireEvent.click(button);
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(screen.getByRole('button', { name: /switch to light mode/i })).toBeInTheDocument();
 
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(button.querySelector('.moon')).toBeInTheDocument();
-    expect(button.querySelector('.sun')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /switch to light mode/i }));
+    expect(document.documentElement.dataset.theme).toBe('light');
   });
 
-  test('toggles theme from dark to light on click', () => {
-    mockMatchMedia(true);
-    render(<ThemeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(button.querySelector('.moon')).toBeInTheDocument();
-
-    fireEvent.click(button);
-
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
-    expect(button.querySelector('.sun')).toBeInTheDocument();
-    expect(button.querySelector('.moon')).not.toBeInTheDocument();
-  });
-
-  test('has correct aria-label', () => {
+  test('persists selection to localStorage and restores on next render', () => {
     mockMatchMedia(false);
-    render(<ThemeToggle />);
-    expect(screen.getByLabelText(/toggle theme/i)).toBeInTheDocument();
+    const { unmount } = renderWithProvider();
+    fireEvent.click(screen.getByRole('button', { name: /switch to dark mode/i }));
+    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '""')).toBe('dark');
+
+    unmount();
+
+    // Force light system preference but expect persisted dark mode
+    mockMatchMedia(false);
+    renderWithProvider();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(screen.getByRole('button', { name: /switch to light mode/i })).toBeInTheDocument();
   });
 });

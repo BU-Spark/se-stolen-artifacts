@@ -16,8 +16,9 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { ArrowForward, Insights, Security, TravelExplore } from '@mui/icons-material';
+import { ArrowForward, Insights, Search, Security, TravelExplore } from '@mui/icons-material';
 import { ThemeToggle } from '../components/ThemeToggle';
+import MuiLink from '@mui/material/Link';
 
 const LandingPage: NextPage = () => {
   const missionHighlights = [
@@ -123,16 +124,46 @@ const LandingPage: NextPage = () => {
       <Box component="main">
         <Container component="section" sx={{ py: { xs: 10, md: 16 } }}>
           <Grid container spacing={{ xs: 6, md: 10 }} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={7}>
               <Stack spacing={3}>
+                <Box
+                  sx={{
+                    alignSelf: 'flex-start',
+                    backgroundColor: 'primary.main',
+                    color: 'common.white',
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: 9999,
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Introduction
+                </Box>
                 <Typography variant="h5" color="text.primary">
-                  This database and search engine is an initiative of the Khmer Statuary Project. Please visit our
-                  website to read more about the design of this tool, the project&#39;s aims and objectives, and the
-                  problem of looting and how we hope to address it.
+                  This database and search engine is an initiative of the Khmer Statuary Project. Please visit{' '}
+                  <MuiLink
+                    href="https://www.google.com"
+                    target="_blank"
+                    rel="noopener"
+                    sx={{
+                      color: 'blue',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    our website
+                  </MuiLink>{' '}
+                  to read more about the design of this tool, the project&#39;s aims and objectives, and the problem of
+                  looting and how we hope to address it.
                 </Typography>
               </Stack>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={5}>
               <Box
                 sx={{
                   position: 'relative',
@@ -199,6 +230,11 @@ const LandingPage: NextPage = () => {
               </Grid>
             ))}
           </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 6, md: 8 } }}>
+            <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
+              Explore the DataBase
+            </Button>
+          </Box>
         </Container>
 
         <Container component="section" id="team" sx={{ py: { xs: 8, md: 12 } }}>
