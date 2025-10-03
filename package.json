@@ -14,6 +14,11 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@mui/icons-material": "^6.1.9",
+    "@mui/material": "^6.1.9",
+    "@mui/material-nextjs": "^6.1.9",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
     "next": "^15.3.2",

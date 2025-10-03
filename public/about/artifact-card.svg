@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="280" viewBox="0 0 420 280" role="img" aria-label="Recovered artifact catalog card">
+  <defs>
+    <linearGradient id="artifactGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F4C81" />
+      <stop offset="100%" stop-color="#4F9CF9" />
+    </linearGradient>
+    <linearGradient id="artifactAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFD166" />
+      <stop offset="100%" stop-color="#FF8C42" />
+    </linearGradient>
+    <clipPath id="photoClip">
+      <rect x="24" y="24" width="260" height="180" rx="16" ry="16" />
+    </clipPath>
+  </defs>
+  <rect width="420" height="280" rx="28" fill="#F6F8FB" />
+  <rect x="12" y="12" width="396" height="256" rx="22" fill="#FFFFFF" />
+  <g clip-path="url(#photoClip)">
+    <rect x="24" y="24" width="260" height="180" fill="url(#artifactGradient)" />
+    <path d="M24 164 L284 124 L284 204 L24 204 Z" fill="rgba(15, 76, 129, 0.55)" />
+    <circle cx="180" cy="100" r="58" fill="rgba(255, 209, 102, 0.25)" />
+    <path d="M120 140 C150 110 210 80 250 120" stroke="#FFE492" stroke-width="6" stroke-linecap="round" fill="none" />
+    <path d="M178 142 L196 86 L214 142 Z" fill="#FFD166" opacity="0.7" />
+  </g>
+  <rect x="306" y="24" width="90" height="28" rx="14" fill="url(#artifactAccent)" />
+  <text x="351" y="43" font-family="'Inter', 'Arial', sans-serif" font-size="14" font-weight="600" fill="#0F3057" text-anchor="middle">RA-417</text>
+  <text x="24" y="235" font-family="'Inter', 'Arial', sans-serif" font-size="16" font-weight="600" fill="#0F3057">Temple Guardian Relief</text>
+  <text x="24" y="258" font-family="'Inter', 'Arial', sans-serif" font-size="13" fill="#5A6376">Recovered 2024 · Angkor Wat · Sandstone · Ongoing repatriation</text>
+  <rect x="306" y="68" width="90" height="90" rx="16" fill="#EFF4FF" stroke="#D7E4FF" />
+  <text x="351" y="102" font-family="'Inter', 'Arial', sans-serif" font-size="12" font-weight="600" fill="#1F2A44" text-anchor="middle">Evidence</text>
+  <text x="351" y="122" font-family="'Inter', 'Arial', sans-serif" font-size="10" fill="#1F2A44" opacity="0.7" text-anchor="middle">Customs Log 1982</text>
+  <text x="351" y="140" font-family="'Inter', 'Arial', sans-serif" font-size="10" fill="#1F2A44" opacity="0.7" text-anchor="middle">Interpol Notice 1999</text>
+  <text x="351" y="158" font-family="'Inter', 'Arial', sans-serif" font-size="10" fill="#1F2A44" opacity="0.7" text-anchor="middle">Auction Ledger 2024</text>
+</svg>

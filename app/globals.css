@@ -1,90 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
-  /* Global Theme Variables (Light Mode is default) */
-  --page-bg: #f0f4f8;
-  --page-bg-gradient-start: #e6f4ff;
-  --page-bg-gradient-end: #89b2fa;
-  --text-color: #2c3e50;
-  --primary-accent: #0060c7;
-  --secondary-accent: #28a745;
-  --card-bg: #bdd5ff;
-  --card-border: #78a0c8;
-  --link-color: var(--primary-accent);
-  --code-bg: #e9ecef;
-}
-
-html {
   color-scheme: light;
 }
 
-html.dark {
+[data-theme='dark'] {
   color-scheme: dark;
-  /* Dark Mode Theme Overrides */
-  --page-bg: #1a202c;
-  --page-bg-gradient-start: #191425;
-  --page-bg-gradient-end: #0D1117;
-  --text-color: #e2e8f0;
-  --primary-accent: #a246f8;
-  --secondary-accent: #f595c6;
-  --card-bg: #191425;
-  --card-border: #2c3034;
-  --link-color: var(--primary-accent);
-  --code-bg: #2c3034;
-}
-
-body {
-  background-image: linear-gradient(to bottom, var(--page-bg-gradient-start), var(--page-bg-gradient-end));
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  color: var(--text-color);
-  font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-/* Apply dark mode variables to body when html.dark is present */
-html.dark body {
-  color: var(--text-color);
-}
-
-.main-content-container {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 0;
-  padding-right: 0;
-  flex-grow: 1; /* Ensure main content can grow */
-  display: flex; /* Added to allow children to flex if needed */
-  flex-direction: column; /* Added for default stacking */
-}
-
-@media (min-width: 640px) {
-  .main-content-container {
-    padding-left: 0;
-    padding-right: 0;
-  }
-}
-
-@media (min-width: 1024px) {
-  .main-content-container {
-    padding-left: 0;
-    padding-right: 0;
-  }
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
 a {
@@ -92,62 +17,84 @@ a {
   text-decoration: none;
 }
 
-/* ErrorBoundary Fallback UI Styling */
+body {
+  min-height: 100vh;
+  font-family: var(--font-outfit, 'Inter', 'Helvetica Neue', Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f4f7fb;
+  color: #0f172a;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+[data-theme='dark'] body {
+  background-color: #0b1119;
+  color: #f8fafc;
+}
+
+.main-content-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .error-boundary {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-grow: 1; /* Ensure it can take up space if it's the main content */
+  flex-grow: 1;
   padding: 2rem;
   text-align: center;
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  margin: 2rem; /* Add some margin if it's inside another container */
+  background-color: rgba(255, 255, 255, 0.85);
+  color: inherit;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  margin: 2rem;
 }
 
-html.dark .error-boundary {
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  border-color: var(--card-border);
+[data-theme='dark'] .error-boundary {
+  background-color: rgba(15, 23, 42, 0.85);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.4);
 }
 
 .error-boundary h2 {
   font-size: 1.75rem;
   margin-bottom: 1rem;
-  color: var(--secondary-accent);
+  color: #2563eb;
 }
 
-html.dark .error-boundary h2 {
-  color: var(--secondary-accent);
+[data-theme='dark'] .error-boundary h2 {
+  color: #60a5fa;
 }
 
 .error-boundary details {
   margin-top: 1rem;
   padding: 0.75rem;
-  background-color: var(--code-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 4px;
+  background-color: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 6px;
   max-width: 600px;
-  overflow-x: auto; /* For long error messages */
+  overflow-x: auto;
 }
 
-html.dark .error-boundary details {
-  background-color: var(--code-bg);
-  border-color: var(--card-border);
+[data-theme='dark'] .error-boundary details {
+  background-color: rgba(30, 41, 59, 0.75);
+  border-color: rgba(148, 163, 184, 0.4);
 }
 
 .error-boundary summary {
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
   margin-bottom: 0.5rem;
 }
 
 .error-boundary pre {
-  white-space: pre-wrap; /* Wrap long lines */
-  word-break: break-all; /* Break long words/strings */
+  white-space: pre-wrap;
+  word-break: break-word;
   font-size: 0.875rem;
   text-align: left;
 }

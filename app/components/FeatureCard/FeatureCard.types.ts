@@ -1,6 +1,6 @@
 export interface FeatureCardProps {
   id: string;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   description: string;
   details: React.ReactNode;

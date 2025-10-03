@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <defs>
+    <linearGradient id="avaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F9CF9" />
+      <stop offset="100%" stop-color="#043873" />
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="76" fill="url(#avaGradient)" />
+  <text
+    x="50%"
+    y="55%"
+    text-anchor="middle"
+    font-family="'Inter', 'Arial', sans-serif"
+    font-size="56"
+    font-weight="600"
+    fill="#FFFFFF"
+  >AC</text>
+</svg>

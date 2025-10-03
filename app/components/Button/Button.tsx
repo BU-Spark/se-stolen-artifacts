@@ -1,22 +1,11 @@
-import { ButtonProps } from './Button.types';
-import styles from './Button.module.css';
-import { clsx } from 'clsx';
+import { forwardRef } from 'react';
+import MuiButton from '@mui/material/Button';
+import type { ButtonProps } from './Button.types';
 
-export const Button = ({
-  children,
-  variant = 'primary',
-  size = 'medium',
-  disabled = false,
-  onClick,
-  className,
-}: ButtonProps) => {
-  return (
-    <button
-      className={clsx(styles.button, styles[variant], styles[size], className)}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-};
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ variant = 'contained', color = 'primary', ...props }, ref) => (
+    <MuiButton ref={ref} variant={variant} color={color} {...props} />
+  )
+);
+
+Button.displayName = 'Button';

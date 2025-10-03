@@ -1,80 +1,78 @@
-import React from 'react';
-import styles from '../FeatureCard.module.css'; // Import styles for the link
+import { Link, List, ListItem, Stack, Typography } from '@mui/material';
+
+type Tool = {
+  name: string;
+  description: string[];
+  url: string;
+};
+
+const tools: Tool[] = [
+  {
+    name: 'ESLint',
+    url: 'https://eslint.org',
+    description: [
+      'Identifies problematic patterns and enforces consistent code quality.',
+      'Extensible through plugins with instant editor feedback.',
+      'Ideal for maintaining large codebases and preventing regressions.',
+    ],
+  },
+  {
+    name: 'Prettier',
+    url: 'https://prettier.io',
+    description: [
+      'Automatically formats code for a uniform style across files.',
+      'Opinionated defaults minimise configuration while supporting many languages.',
+      'Eliminates style debates and saves time on reviews.',
+    ],
+  },
+  {
+    name: 'Husky',
+    url: 'https://typicode.github.io/husky',
+    description: [
+      'Manages Git hooks to run scripts before commits or pushes.',
+      'Automates linting, testing, and other quality gates.',
+      'Simplifies hook setup with a friendly DX.',
+    ],
+  },
+  {
+    name: 'Jest',
+    url: 'https://jestjs.io',
+    description: [
+      'Feature-rich testing framework supporting unit and integration workflows.',
+      'Includes assertions, a runner, mocking, and snapshot testing out of the box.',
+      'The de facto choice for JavaScript and React projects.',
+    ],
+  },
+  {
+    name: 'React Testing Library',
+    url: 'https://testing-library.com/docs/react-testing-library/intro',
+    description: [
+      'Focuses on testing components via user interactions and accessibility queries.',
+      'Encourages resilient, maintainable tests that mirror real usage.',
+      'Pairs effectively with Jest for comprehensive coverage.',
+    ],
+  },
+];
 
 export const DevToolsDetails = () => {
   return (
-    <>
-      {/* ESLint */}
-      <h4 className={styles.detailSubheading}>
-        <a href="https://eslint.org" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-          <strong>ESLint</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>Identifies & fixes code patterns, improving quality/consistency.</li>
-        <li className={styles.detailListItem}>Configurable, plugins, instant editor feedback.</li>
-        <li className={styles.detailListItem}>Maintains large codebases, enforces standards, reduces bugs.</li>
-      </ul>
-
-      {/* Prettier */}
-      <h4 className={styles.detailSubheading}>
-        <a href="https://prettier.io" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-          <strong>Prettier</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>Auto-formats code for consistent style.</li>
-        <li className={styles.detailListItem}>
-          Opinionated (minimal setup), multi-language, integrates with linters/Git.
-        </li>
-        <li className={styles.detailListItem}>Saves time, ends style debates, automates formatting.</li>
-      </ul>
-
-      {/* Husky */}
-      <h4 className={styles.detailSubheading}>
-        <a
-          href="https://typicode.github.io/husky"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.featureLink}
-        >
-          <strong>Husky</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>Manages Git hooks to run scripts (linters, tests) pre-commit/push.</li>
-        <li className={styles.detailListItem}>Simplifies hook setup, automates quality checks.</li>
-        <li className={styles.detailListItem}>Automates pre-commit/push quality gates.</li>
-      </ul>
-
-      {/* Jest */}
-      <h4 className={styles.detailSubheading}>
-        <a href="https://jestjs.io" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-          <strong>Jest</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>JavaScript testing framework for unit/integration tests.</li>
-        <li className={styles.detailListItem}>Fast, all-in-one (assertions, runner, mocking), snapshot testing.</li>
-        <li className={styles.detailListItem}>Widely used for JS/React testing; easy & comprehensive.</li>
-      </ul>
-
-      {/* React Testing Library */}
-      <h4 className={styles.detailSubheading}>
-        <a
-          href="https://testing-library.com/docs/react-testing-library/intro"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.featureLink}
-        >
-          <strong>React Testing Library</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>Tests React components via user interactions & accessibility.</li>
-        <li className={styles.detailListItem}>Encourages maintainable, user-centric tests.</li>
-        <li className={styles.detailListItem}>Popular for React component testing, promotes best practices.</li>
-      </ul>
-    </>
+    <Stack spacing={2} component="section">
+      {tools.map((tool) => (
+        <Stack key={tool.name} spacing={1}>
+          <Typography variant="subtitle2" component="h4">
+            <Link href={tool.url} target="_blank" rel="noopener noreferrer" underline="hover">
+              {tool.name}
+            </Link>
+          </Typography>
+          <List dense sx={{ listStyleType: 'disc', pl: 3 }}>
+            {tool.description.map((item) => (
+              <ListItem key={item} sx={{ display: 'list-item', pl: 0 }}>
+                <Typography variant="body2">{item}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Stack>
+      ))}
+    </Stack>
   );
 };

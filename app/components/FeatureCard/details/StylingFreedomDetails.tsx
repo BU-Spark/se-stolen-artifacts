@@ -1,81 +1,68 @@
-import React from 'react';
-import styles from '../FeatureCard.module.css'; // Import styles for the link
+import { Link, List, ListItem, Stack, Typography } from '@mui/material';
+
+const stylingLibraries = [
+  { name: 'Tailwind CSS', url: 'https://tailwindcss.com' },
+  { name: 'Emotion', url: 'https://emotion.sh' },
+  { name: 'Styled Components', url: 'https://styled-components.com' },
+];
+
+const componentLibraries = [
+  { name: 'Material UI', url: 'https://mui.com', note: "Google's component system" },
+  { name: 'Chakra UI', url: 'https://chakra-ui.com' },
+  { name: 'Mantine', url: 'https://mantine.dev' },
+  { name: 'Radix UI', url: 'https://radix-ui.com', note: 'Unstyled, accessible primitives' },
+  { name: 'Ant Design', url: 'https://ant.design/', note: "Alibaba's enterprise library" },
+  { name: 'shadcn/ui', url: 'https://ui.shadcn.com', note: 'Radix primitives + Tailwind styling' },
+];
 
 export const StylingFreedomDetails = () => {
   return (
-    <>
-      <p>
-        This template does not impose a specific styling library, giving you flexibility.{' '}
-        <a
+    <Stack spacing={2} component="section">
+      <Typography variant="body2">
+        The template intentionally remains styling-library agnostic so you can adopt the approach that best suits your
+        product. Historical CSS modules provide a minimal baseline, but you can layer in any design system.
+      </Typography>
+      <Typography variant="body2">
+        Explore the{' '}
+        <Link
           href="https://nextjs.org/docs/app/building-your-application/styling/css-modules"
           target="_blank"
           rel="noopener noreferrer"
-          className={styles.featureLink}
+          underline="hover"
         >
-          <strong>CSS Modules</strong>
-        </a>{' '}
-        are used for base components as a lightweight example.
-      </p>
-      <h4 className={styles.detailSubheading}>Popular Choices:</h4>
-      <ul>
-        <li className={styles.detailListItem}>
-          <a href="https://tailwindcss.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Tailwind CSS
-          </a>
-        </li>
-        <li className={styles.detailListItem}>
-          <a href="https://emotion.sh" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Emotion
-          </a>
-        </li>
-        <li className={styles.detailListItem}>
-          <a
-            href="https://styled-components.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.featureLink}
-          >
-            Styled Components
-          </a>
-        </li>
-      </ul>
-      <h4 className={styles.detailSubheading}>Component Libraries:</h4>
-      <ul>
-        <li className={styles.detailListItem}>
-          <a href="https://mui.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Material UI
-          </a>{' '}
-          (Google&apos;s own component library)
-        </li>
-        <li className={styles.detailListItem}>
-          <a href="https://chakra-ui.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Chakra UI
-          </a>
-        </li>
-        <li className={styles.detailListItem}>
-          <a href="https://mantine.dev" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Mantine
-          </a>
-        </li>
-        <li className={styles.detailListItem}>
-          <a href="https://radix-ui.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Radix UI
-          </a>{' '}
-          (Primitives)
-        </li>
-        <li className={styles.detailListItem}>
-          <a href="https://ant.design/" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            Ant Design
-          </a>{' '}
-          (Alibaba&apos;s affiliate component library)
-        </li>
-        <li className={styles.detailListItem}>
-          <a href="https://ui.shadcn.com" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-            shadcn/ui
-          </a>{' '}
-          (Built with Radix primitives + Tailwind)
-        </li>
-      </ul>
-    </>
+          CSS Modules guide
+        </Link>{' '}
+        to understand the default setup before swapping in your preferred tooling.
+      </Typography>
+
+      <Typography variant="subtitle2" component="h4">
+        Popular styling utilities
+      </Typography>
+      <List dense sx={{ listStyleType: 'disc', pl: 3 }}>
+        {stylingLibraries.map((library) => (
+          <ListItem key={library.name} sx={{ display: 'list-item', pl: 0 }}>
+            <Link href={library.url} target="_blank" rel="noopener noreferrer" underline="hover">
+              {library.name}
+            </Link>
+          </ListItem>
+        ))}
+      </List>
+
+      <Typography variant="subtitle2" component="h4">
+        Component libraries to evaluate
+      </Typography>
+      <List dense sx={{ listStyleType: 'disc', pl: 3 }}>
+        {componentLibraries.map((library) => (
+          <ListItem key={library.name} sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">
+              <Link href={library.url} target="_blank" rel="noopener noreferrer" underline="hover">
+                {library.name}
+              </Link>
+              {library.note ? ` (${library.note})` : ''}
+            </Typography>
+          </ListItem>
+        ))}
+      </List>
+    </Stack>
   );
 };

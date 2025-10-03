@@ -1,76 +1,84 @@
-import React from 'react';
-import styles from '../FeatureCard.module.css'; // Assuming styles are needed for links/lists
+import { Link, List, ListItem, Stack, Typography } from '@mui/material';
 
 export const ModernStackDetails = () => {
   return (
-    <>
-      <p className={styles.detailIntroParagraph}>
-        This template utilizes a cutting-edge stack for building high-performance, scalable, and maintainable web
-        applications.
-      </p>
+    <Stack spacing={2} component="section">
+      <Typography variant="body2">
+        This template embraces a modern stack to deliver high performance and developer productivity without sacrificing
+        maintainability.
+      </Typography>
 
-      {/* Next.js */}
-      <h4 className={styles.detailSubheading}>
-        <a href="https://nextjs.org" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-          <strong>Next.js (v15+)</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>React Framework: Server Components, App Router, API Route Handlers.</li>
-        <li className={styles.detailListItem}>
-          Optimized for speed: Images, fonts, scripts; excellent Core Web Vitals.
-        </li>
-        <li className={styles.detailListItem}>Industry standard for full-stack React: Great DX & performance.</li>
-      </ul>
+      <Stack spacing={1}>
+        <Typography variant="subtitle2" component="h4">
+          <Link href="https://nextjs.org" target="_blank" rel="noopener noreferrer" underline="hover">
+            Next.js 15+
+          </Link>
+        </Typography>
+        <List dense sx={{ listStyleType: 'disc', pl: 3 }}>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">
+              Full-stack React framework featuring Server Components, the App Router, and route handlers.
+            </Typography>
+          </ListItem>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">
+              Optimises images, fonts, and scripts for exceptional Core Web Vitals.
+            </Typography>
+          </ListItem>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">An industry-standard choice with a polished developer experience.</Typography>
+          </ListItem>
+        </List>
+      </Stack>
 
-      {/* React */}
-      <h4 className={styles.detailSubheading}>
-        <a href="https://react.dev" target="_blank" rel="noopener noreferrer" className={styles.featureLink}>
-          <strong>React (v19+)</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>
-          Latest features:{' '}
-          <a
-            href="https://react.dev/reference/rsc/server-functions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.featureLink}
-          >
-            <strong>Actions</strong>
-          </a>
-          ,{' '}
-          <a
-            href="https://react.dev/reference/react/useOptimistic"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.featureLink}
-          >
-            <strong>`useOptimistic`</strong>
-          </a>
-          , improved concurrency.
-        </li>
-        <li className={styles.detailListItem}>Component architecture: Promotes reusability & maintainability.</li>
-        <li className={styles.detailListItem}>Leading UI library: Evolving, vast ecosystem & community.</li>
-      </ul>
+      <Stack spacing={1}>
+        <Typography variant="subtitle2" component="h4">
+          <Link href="https://react.dev" target="_blank" rel="noopener noreferrer" underline="hover">
+            React 19
+          </Link>
+        </Typography>
+        <List dense sx={{ listStyleType: 'disc', pl: 3 }}>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">
+              Ships Action APIs,{' '}
+              <Link
+                href="https://react.dev/reference/react/useOptimistic"
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+              >
+                useOptimistic
+              </Link>
+              , and enhanced concurrency primitives.
+            </Typography>
+          </ListItem>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">Emphasises reusable components for clearer architecture.</Typography>
+          </ListItem>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">Backed by a vibrant ecosystem and community support.</Typography>
+          </ListItem>
+        </List>
+      </Stack>
 
-      {/* TypeScript */}
-      <h4 className={styles.detailSubheading}>
-        <a
-          href="https://www.typescriptlang.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.featureLink}
-        >
-          <strong>TypeScript</strong>
-        </a>
-      </h4>
-      <ul>
-        <li className={styles.detailListItem}>Typed JavaScript: Catches errors early, improves code quality.</li>
-        <li className={styles.detailListItem}>Improves readability & maintainability; superior tooling.</li>
-        <li className={styles.detailListItem}>Standard for larger JS projects: Enhances collaboration & robustness.</li>
-      </ul>
-    </>
+      <Stack spacing={1}>
+        <Typography variant="subtitle2" component="h4">
+          <Link href="https://www.typescriptlang.org" target="_blank" rel="noopener noreferrer" underline="hover">
+            TypeScript
+          </Link>
+        </Typography>
+        <List dense sx={{ listStyleType: 'disc', pl: 3 }}>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">Static typing surfaces bugs early and improves code readability.</Typography>
+          </ListItem>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">Enhances maintainability and IDE tooling across teams.</Typography>
+          </ListItem>
+          <ListItem sx={{ display: 'list-item', pl: 0 }}>
+            <Typography variant="body2">A best practice choice for scalable JavaScript applications.</Typography>
+          </ListItem>
+        </List>
+      </Stack>
+    </Stack>
   );
 };
