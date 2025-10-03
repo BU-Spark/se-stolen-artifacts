@@ -45,45 +45,6 @@ const LandingPage: NextPage = () => {
     },
   ];
 
-  const teamMembers = [
-    {
-      name: 'Ava Chen',
-      role: 'Head of Provenance Research',
-      image: '/team/ava-chen.svg',
-      alt: 'Portrait of Ava Chen',
-    },
-    {
-      name: 'Liam Patel',
-      role: 'Machine Learning Lead',
-      image: '/team/liam-patel.svg',
-      alt: 'Portrait of Liam Patel',
-    },
-    {
-      name: 'Nina Ross',
-      role: 'Field Outreach Director',
-      image: '/team/nina-ross.svg',
-      alt: 'Portrait of Nina Ross',
-    },
-    {
-      name: 'Mateo Ruiz',
-      role: 'Cultural Heritage Analyst',
-      image: '/team/mateo-ruiz.svg',
-      alt: 'Portrait of Mateo Ruiz',
-    },
-    {
-      name: 'Sam Park',
-      role: 'Security & Compliance Officer',
-      image: '/team/sam-park.svg',
-      alt: 'Portrait of Sam Park',
-    },
-    {
-      name: 'Zoe Hendrix',
-      role: 'Partnerships Manager',
-      image: '/team/zoe-hendrix.svg',
-      alt: 'Portrait of Zoe Hendrix',
-    },
-  ];
-
   return (
     <Box
       sx={{
@@ -161,6 +122,11 @@ const LandingPage: NextPage = () => {
                   to read more about the design of this tool, the project&#39;s aims and objectives, and the problem of
                   looting and how we hope to address it.
                 </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'left', mt: { xs: 6, md: 8 } }}>
+                  <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
+                    Explore the DataBase
+                  </Button>
+                </Box>
               </Stack>
             </Grid>
             <Grid item xs={12} md={5}>
@@ -226,52 +192,6 @@ const LandingPage: NextPage = () => {
                   >
                     <Image src={highlight.image} alt={highlight.title} fill style={{ objectFit: 'cover' }} />
                   </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 6, md: 8 } }}>
-            <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
-              Explore the DataBase
-            </Button>
-          </Box>
-        </Container>
-
-        <Container component="section" id="team" sx={{ py: { xs: 8, md: 12 } }}>
-          <Stack spacing={3} textAlign="center" maxWidth={720} mx="auto">
-            <Typography variant="h3">Specialists across provenance, policy, and product</Typography>
-            <Typography variant="body1" color="text.secondary">
-              Each case team combines historians, investigators, community advocates, and security experts to ensure
-              repatriations honour the cultures we serve.
-            </Typography>
-          </Stack>
-          <Grid container spacing={{ xs: 4, sm: 6, md: 8 }} sx={{ mt: { xs: 5, md: 8 } }}>
-            {teamMembers.map((member) => (
-              <Grid item xs={12} sm={6} md={4} key={member.name}>
-                <Card sx={{ textAlign: 'center', py: 4, px: 3, height: '100%' }}>
-                  <Box
-                    sx={{
-                      mx: 'auto',
-                      width: 120,
-                      height: 120,
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: (theme) => `4px solid ${theme.palette.primary.main}`,
-                      mb: 3,
-                    }}
-                  >
-                    <Image
-                      src={member.image}
-                      alt={member.alt}
-                      width={160}
-                      height={160}
-                      style={{ width: '100%', height: '100%' }}
-                    />
-                  </Box>
-                  <Typography variant="h6">{member.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {member.role}
-                  </Typography>
                 </Card>
               </Grid>
             ))}
