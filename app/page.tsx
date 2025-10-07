@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Button } from '@/components/Button';
-import { FeatureCard, FeatureCardProps } from '@/components/FeatureCard';
+import { ThemeToggle } from './components/ThemeToggle';
+import { Button } from './components/Button';
+import { FeatureCard, FeatureCardProps } from './components/FeatureCard';
 import {
   ModernStackDetails,
   StylingFreedomDetails,
   DevToolsDetails,
   ResponsiveDesignDetails,
-} from '@/components/FeatureCard/details';
+} from './components/FeatureCard/details';
 import styles from './page.module.css';
 
 type FeatureData = Omit<FeatureCardProps, 'onClick' | 'isExpanded'>;
