@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ClerkProvider } from '@clerk/nextjs';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -20,12 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable}`}>
-      <body>
-        <ErrorBoundary>
-          <div className="main-content-container">{children}</div>
-        </ErrorBoundary>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={`${outfit.variable}`}>
+        <body>
+          <ErrorBoundary>
+            <div className="main-content-container">{children}</div>
+          </ErrorBoundary>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
