@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 
 export default function SignOutPage() {
   useEffect(() => {
-    // Auto sign out as soon as user hits /sign-out
+    // Auto sign out as soon as user hits /signout
     const timer = setTimeout(() => {
       const btn = document.getElementById('auto-signout-btn');
       (btn as HTMLButtonElement)?.click();
