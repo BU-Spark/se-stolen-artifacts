@@ -16,6 +16,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -157,7 +159,7 @@ const normalizeLimbList = (raw) => {
 };
 
 export default function SearchPage() {
-  // const [query, setQuery] = useState(''); IGNORING FOR NOW
+  const [query] = useState('');
   const [basicValues, setBasicValues] = useState(getInitialBasicState);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [advancedSelections, setAdvancedSelections] = useState([]);
@@ -237,9 +239,23 @@ export default function SearchPage() {
 
   const handleAdvancedInputChange = (_event, value, reason) => {
     if (activeParamId && reason === 'input') {
-      setAdvancedInputValue(value);
+      const param = ADVANCED_PARAMS.find((p) => p.id === activeParamId);
+      let newValue = value;
+      if (param?.type === 'number') {
+        if (/^-?\d{0,}(\.\d{0,})?$/.test(value)) {
+          newValue = value;
+        } else {
+          // ignore rest
+          return;
+        }
+      }
+      setAdvancedInputValue(newValue);
       setAdvancedSelections((prev) =>
-        prev.map((selection) => (selection.id === activeParamId ? { ...selection, value } : selection))
+        prev.map((selection) =>
+          selection.id === activeParamId
+            ? { ...selection, value: param?.type === 'number' && newValue !== '' ? Number(newValue) : newValue }
+            : selection
+        )
       );
     } else if (reason === 'clear') {
       setAdvancedInputValue('');
@@ -299,28 +315,77 @@ export default function SearchPage() {
   };
 
   const handleSubmit = (event) => {
-    return event; // IGNORING FOR NOW
-    // event.preventDefault();
-    // const payload = {
-    //   query,
-    //   basics: basicValues,
-    //   advanced: advancedSelections.map((selection) => {
-    //     if (selection.id === 'limbsPresent') {
-    //       return { id: selection.id, value: normalizeLimbList(selection.value) };
-    //     }
+    event.preventDefault(); // prevents page reload
 
-    //     return {
-    //       id: selection.id,
-    //       value:
-    //         selection.type === 'binary'
-    //           ? Boolean(selection.value)
-    //           : typeof selection.value === 'string'
-    //             ? selection.value
-    //             : '',
-    //     };
-    //   }),
-    // };
-    // console.log('Search payload', payload);
+    const hasBasic = Object.entries(basicValues).some(([key, value]) => {
+      const field = BASIC_FIELDS.find((f) => f.id === key);
+      if (!field) return false;
+      if (field.type === 'checkbox') return Boolean(value);
+      return String(value).trim() !== '';
+    });
+
+    if (!hasBasic) {
+      alert('Must fill out at least one parameter before searching!');
+      return;
+    }
+
+    const payload = {
+      query,
+      basics: basicValues,
+      advanced: advancedSelections.map((selection) => {
+        if (selection.id === 'limbsPresent') {
+          return { id: selection.id, value: normalizeLimbList(selection.value) };
+        }
+
+        return {
+          id: selection.id,
+          value:
+            selection.type === 'binary'
+              ? Boolean(selection.value)
+              : typeof selection.value === 'string'
+                ? selection.value
+                : '',
+        };
+      }),
+    };
+    console.log('Search payload', payload);
+  };
+
+  const CustomTag = ({ selection, onDelete, onChipClick }) => {
+    const label =
+      selection.id === 'limbsPresent'
+        ? `${selection.label}: ${selection.value ? String(selection.value) || '—' : '—'}`
+        : selection.type === 'binary'
+          ? `${selection.label}: ${selection.value ? 'Yes' : 'No'}`
+          : `${selection.label}: ${selection.value ? selection.value : '—'}`;
+
+    const chip = (
+      <Chip
+        label={label}
+        color={selection.value ? 'primary' : 'default'}
+        onClick={onChipClick}
+        onDelete={onDelete}
+        sx={{
+          cursor: 'pointer',
+          maxWidth: '100%',
+          borderRadius: 2,
+          '&:hover': {
+            backgroundColor: (theme) =>
+              selection.value ? alpha(theme.palette.primary.main, 0.2) : theme.palette.grey[400],
+          },
+        }}
+      />
+    );
+
+    if (selection.type !== 'binary') {
+      return chip;
+    }
+
+    return (
+      <Tooltip title={`Click to toggle ${selection.value ? 'No' : 'Yes'}`} placement="top" arrow>
+        {chip}
+      </Tooltip>
+    );
   };
 
   return (
@@ -328,7 +393,7 @@ export default function SearchPage() {
       <Paper component="form" elevation={3} onSubmit={handleSubmit} sx={{ p: { xs: 3, md: 4 } }}>
         <Stack spacing={4}>
           <Grid container alignItems="center" justifyContent="space-between">
-            <Grid item xs>
+            <Grid size={4}>
               <Typography component="h1" variant="h4" fontWeight={600} gutterBottom>
                 Artifact Search
               </Typography>
@@ -336,7 +401,7 @@ export default function SearchPage() {
                 Look up stolen artifacts by name, collection, or tailor your search with advanced filters.
               </Typography>
             </Grid>
-            <Grid item>
+            <Grid>
               <Button type="submit" variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>
                 Search
               </Button>
@@ -350,10 +415,10 @@ export default function SearchPage() {
               Main Parameters
             </Typography>
             <Grid container spacing={2} alignItems="start">
-              <Grid item size={{ xs: 12, md: 9 }}>
+              <Grid size={{ xs: 12, md: 9 }}>
                 <Grid container spacing={2}>
                   {BASIC_FIELDS.filter((f) => f.type !== 'checkbox').map((field) => (
-                    <Grid item key={field.id} size={{ xs: 12, sm: 6 }}>
+                    <Grid key={field.id} size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label={field.label}
@@ -366,7 +431,7 @@ export default function SearchPage() {
                 </Grid>
               </Grid>
 
-              <Grid item size={{ xs: 12, md: 3 }} container alignItems="flex-start">
+              <Grid size={{ xs: 12, md: 3 }} container alignItems="flex-start">
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -411,7 +476,10 @@ export default function SearchPage() {
                   disableCloseOnSelect
                   filterSelectedOptions
                   disablePortal
-                  ListboxProps={{ style: { maxHeight: 200, overflowY: 'auto' } }}
+                  slotProps={{
+                    listbox: { style: { maxHeight: 200, overflowY: 'auto' } },
+                  }}
+                  renderValue={() => null}
                   options={activeParam ? [] : availableAdvancedOptions}
                   getOptionLabel={(option) => option.label}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -419,38 +487,10 @@ export default function SearchPage() {
                   inputValue={advancedInputValue}
                   onChange={handleAdvancedChange}
                   onInputChange={handleAdvancedInputChange}
-                  renderTags={(selected, getTagProps) =>
-                    selected.map((selection, index) => {
-                      const tagProps = getTagProps({ index });
-                      let label;
-                      if (selection.id === 'limbsPresent') {
-                        const v = selection.value ? String(selection.value) : '';
-                        label = `${selection.label}: ${v || '—'}`;
-                      } else if (selection.type === 'binary') {
-                        label = `${selection.label}: ${selection.value ? 'Yes' : 'No'}`;
-                      } else {
-                        label = `${selection.label}: ${selection.value ? selection.value : '—'}`;
-                      }
-
-                      return (
-                        <Chip
-                          {...tagProps}
-                          color={selection.type === 'binary' ? 'primary' : 'secondary'}
-                          key={selection.id}
-                          label={label}
-                          onClick={() => handleChipClick(selection)}
-                          onDelete={(event) => {
-                            tagProps.onDelete?.(event);
-                            handleRemoveAdvanced(selection.id);
-                          }}
-                          sx={{ cursor: 'pointer', maxWidth: '100%' }}
-                        />
-                      );
-                    })
-                  }
                   renderInput={(params) => (
                     <TextField
                       {...params}
+                      type={activeParam?.type === 'number' ? 'number' : 'text'}
                       label={activeParam ? `Enter ${activeParam.label.toLowerCase()}` : 'Add advanced parameter'}
                       placeholder={
                         activeParam ? (activeParam.placeholder ?? 'Enter a value') : 'Start typing to search filters'
@@ -463,6 +503,18 @@ export default function SearchPage() {
                     />
                   )}
                 />
+                {advancedSelections.length > 0 && (
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {advancedSelections.map((selection) => (
+                      <CustomTag
+                        key={selection.id}
+                        selection={selection}
+                        onDelete={() => handleRemoveAdvanced(selection.id)}
+                        onChipClick={() => handleChipClick(selection)}
+                      />
+                    ))}
+                  </Stack>
+                )}
               </Stack>
             </Collapse>
           </Stack>
