@@ -1,15 +1,16 @@
 :root {
   /* Global Theme Variables (Light Mode is default) */
-  --page-bg: #f0f4f8;
-  --page-bg-gradient-start: #e6f4ff;
-  --page-bg-gradient-end: #89b2fa;
-  --text-color: #2c3e50;
-  --primary-accent: #0060c7;
-  --secondary-accent: #28a745;
-  --card-bg: #bdd5ff;
-  --card-border: #78a0c8;
+  --page-bg: #726953;
+  --page-bg-gradient-start: #726953;
+  --page-bg-gradient-end: #82A6B1;
+  --text-color: #5B3000;
+  --secondary-text-color: #76877D;
+  --primary-accent: #5B3000;
+  --secondary-accent: #66462C;
+  --card-bg: #82A6B11f;
+  --card-border: #76877D;
   --link-color: var(--primary-accent);
-  --code-bg: #e9ecef;
+  --code-bg: #82A6B140;
 }
 
 html {
