@@ -1,20 +1,16 @@
 // app/signout/page.tsx
 'use client';
 
-import { SignOutButton } from '@clerk/nextjs';
+import { useClerk } from '@clerk/nextjs';
 import { useEffect } from 'react';
 
+// Only "/signout" to sign out for now
 export default function SignOutPage() {
-  useEffect(() => {
-    const btn = document.getElementById('auto-signout-btn') as HTMLButtonElement | null;
-    btn?.click();
-  }, []);
+  const { signOut } = useClerk();
 
-  return (
-    <SignOutButton redirectUrl="/">
-      <button id="auto-signout-btn" style={{ display: 'none' }}>
-        Sign Out
-      </button>
-    </SignOutButton>
-  );
+  useEffect(() => {
+    signOut({ redirectUrl: '/' });
+  }, [signOut]);
+
+  return null;
 }
