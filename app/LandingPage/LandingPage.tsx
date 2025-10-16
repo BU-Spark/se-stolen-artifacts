@@ -1,50 +1,14 @@
 'use client';
 
 import type { NextPage } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import {
-  AppBar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Container,
-  Grid,
-  Stack,
-  Toolbar,
-  Typography,
-} from '@mui/material';
-import { ArrowForward, Insights, Search, Security, TravelExplore } from '@mui/icons-material';
+import { AppBar, Box, Button, Stack, Toolbar, Typography } from '@mui/material';
+import { ArrowForward, Search } from '@mui/icons-material';
 import { ThemeToggle } from '../components/ThemeToggle';
 import MuiLink from '@mui/material/Link';
+import { alpha } from '@mui/material/styles';
 
 const LandingPage: NextPage = () => {
-  const missionHighlights = [
-    {
-      icon: <Insights fontSize="large" color="primary" />,
-      title: 'Data + Heritage',
-      description:
-        'We pair provenance researchers with machine learning engineers to surface missing links in artifact histories.',
-      image: '/about/artifact-card.svg',
-    },
-    {
-      icon: <TravelExplore fontSize="large" color="primary" />,
-      title: 'Global Network',
-      description:
-        'Partnerships with cultural ministries and museums on six continents let us investigate leads quickly.',
-      image: '/globe.svg',
-    },
-    {
-      icon: <Security fontSize="large" color="primary" />,
-      title: 'Secure Collaboration',
-      description:
-        'A shared evidence vault enables investigators to coordinate discreet recoveries and return ceremonies.',
-      image: '/window.svg',
-    },
-  ];
-
   return (
     <Box
       sx={{
@@ -61,14 +25,6 @@ const LandingPage: NextPage = () => {
             Machine Learning for Stolen Artifacts
           </Typography>
           <Stack direction="row" spacing={{ xs: 1.5, md: 3 }} alignItems="center">
-            <Stack direction="row" spacing={{ xs: 1.5, md: 2 }} sx={{ display: { xs: 'none', md: 'flex' } }}>
-              <Button color="inherit" size="medium" component={Link} href="#about">
-                About
-              </Button>
-              <Button color="inherit" size="medium" component={Link} href="#team">
-                Team
-              </Button>
-            </Stack>
             <Stack direction="row" spacing={1}>
               <Button variant="text" component={Link} href="/login">
                 Log in
@@ -82,180 +38,98 @@ const LandingPage: NextPage = () => {
         </Toolbar>
       </AppBar>
 
-      <Box component="main">
-        <Container component="section" sx={{ py: { xs: 10, md: 16 } }}>
-          <Grid container spacing={{ xs: 6, md: 10 }} alignItems="center">
-            <Grid item xs={12} md={7}>
-              <Stack spacing={3}>
-                <Box
-                  sx={{
-                    alignSelf: 'flex-start',
-                    backgroundColor: 'primary.main',
-                    color: 'common.white',
-                    px: 2,
-                    py: 0.5,
-                    borderRadius: 9999,
-                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Introduction
-                </Box>
-                <Typography variant="h5" color="text.primary">
-                  This database and search engine is an initiative of the Khmer Statuary Project. Please visit{' '}
-                  <MuiLink
-                    href="https://www.google.com"
-                    target="_blank"
-                    rel="noopener"
-                    sx={{
-                      color: 'blue',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
-                  >
-                    our website
-                  </MuiLink>{' '}
-                  to read more about the design of this tool, the project&#39;s aims and objectives, and the problem of
-                  looting and how we hope to address it.
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'left', mt: { xs: 6, md: 8 } }}>
-                  <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
-                    Explore the DataBase
-                  </Button>
-                </Box>
-              </Stack>
-            </Grid>
-            <Grid item xs={12} md={5}>
-              <Box
+      <Box
+        component="main"
+        sx={{
+          position: 'relative',
+          minHeight: { xs: 'calc(100vh - 72px)', md: 'calc(100vh - 88px)' },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: { xs: 2, md: 4 },
+          py: { xs: 12, md: 16 },
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            display: 'flex',
+            '& > span': {
+              flex: 1,
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: (theme) => (theme.palette.mode === 'light' ? 'saturate(0.9)' : 'brightness(0.85)'),
+              opacity: (theme) => (theme.palette.mode === 'light' ? 0.6 : 0.5),
+            },
+          }}
+        >
+          <Box component="span" sx={{ backgroundImage: "url('/about/artifact-card.svg')" }} />
+          <Box component="span" sx={{ backgroundImage: "url('/window.svg')" }} />
+        </Box>
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            width: '100%',
+            maxWidth: 540,
+            borderRadius: 5,
+            px: { xs: 3, md: 6 },
+            py: { xs: 4, md: 6 },
+            boxShadow: (theme) =>
+              theme.palette.mode === 'light' ? '0 30px 80px rgba(15,23,42,0.25)' : '0 32px 90px rgba(0,0,0,0.55)',
+            backgroundColor: (theme) =>
+              alpha(
+                theme.palette.mode === 'light' ? theme.palette.background.paper : theme.palette.background.default,
+                theme.palette.mode === 'light' ? 0.92 : 0.85
+              ),
+            backdropFilter: 'blur(24px)',
+          }}
+        >
+          <Stack spacing={3} alignItems="center" textAlign="center">
+            <Box
+              sx={{
+                backgroundColor: 'primary.main',
+                color: 'common.white',
+                px: 2.5,
+                py: 0.75,
+                borderRadius: 9999,
+                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: 0.8,
+              }}
+            >
+              Introduction
+            </Box>
+            <Typography variant="h5" color="text.primary">
+              This database and search engine is an initiative of the Khmer Statuary Project. Please visit{' '}
+              <MuiLink
+                href="https://www.google.com"
+                target="_blank"
+                rel="noopener"
                 sx={{
-                  position: 'relative',
-                  width: '100%',
-                  aspectRatio: '4 / 3',
-                  borderRadius: 6,
-                  overflow: 'hidden',
-                  boxShadow: (theme) =>
-                    theme.palette.mode === 'light'
-                      ? '0 32px 64px rgba(15,23,42,0.15)'
-                      : '0 32px 64px rgba(10,14,25,0.45)',
-                  backgroundColor: 'background.paper',
+                  color: 'primary.main',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
                 }}
               >
-                <Image src="/window.svg" alt="Investigation workspace" fill priority style={{ objectFit: 'cover' }} />
-              </Box>
-            </Grid>
-          </Grid>
-        </Container>
-
-        <Container component="section" id="about" sx={{ py: { xs: 8, md: 12 } }}>
-          <Stack spacing={3} textAlign="center" maxWidth={760} mx="auto">
-            <Typography variant="h3">A Glance of the DataBase</Typography>
+                our website
+              </MuiLink>{' '}
+              to read more about the design of this tool, the project&#39;s aims and objectives, and the problem of
+              looting and how we hope to address it.
+            </Typography>
+            <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
+              Explore the DataBase
+            </Button>
           </Stack>
-          <Grid container spacing={{ xs: 4, md: 6 }} sx={{ mt: { xs: 6, md: 8 } }}>
-            {missionHighlights.map((highlight) => (
-              <Grid item xs={12} md={4} key={highlight.title}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <CardHeader
-                    avatar={
-                      <Box
-                        sx={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: 3,
-                          display: 'grid',
-                          placeItems: 'center',
-                          backgroundColor: (theme) => theme.palette.action.selected,
-                        }}
-                      >
-                        {highlight.icon}
-                      </Box>
-                    }
-                    title={highlight.title}
-                    titleTypographyProps={{ variant: 'h6' }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {highlight.description}
-                    </Typography>
-                  </CardContent>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      width: '100%',
-                      pb: '65%',
-                      borderRadius: '0 0 16px 16px',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Image src={highlight.image} alt={highlight.title} fill style={{ objectFit: 'cover' }} />
-                  </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
-
-      <Box component="footer" sx={{ py: 6, borderTop: (theme) => `1px solid ${theme.palette.divider}` }}>
-        <Container>
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={5}>
-              <Typography variant="h6" gutterBottom>
-                Machine Learning for Stolen Artifacts
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Purpose-built tooling for tracing cultural heritage, orchestrating secure returns, and documenting
-                celebratory reunifications.
-              </Typography>
-            </Grid>
-            <Grid item xs={6} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }} gutterBottom>
-                Product
-              </Typography>
-              <Stack spacing={1.25}>
-                <Button color="inherit" component={Link} href="#about" sx={{ justifyContent: 'flex-start', px: 0 }}>
-                  Overview
-                </Button>
-                <Button color="inherit" component={Link} href="/signup" sx={{ justifyContent: 'flex-start', px: 0 }}>
-                  Pricing
-                </Button>
-                <Button color="inherit" component={Link} href="/login" sx={{ justifyContent: 'flex-start', px: 0 }}>
-                  Case studies
-                </Button>
-              </Stack>
-            </Grid>
-            <Grid item xs={6} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }} gutterBottom>
-                Resources
-              </Typography>
-              <Stack spacing={1.25}>
-                <Button color="inherit" component={Link} href="/" sx={{ justifyContent: 'flex-start', px: 0 }}>
-                  Blog
-                </Button>
-                <Button color="inherit" component={Link} href="/" sx={{ justifyContent: 'flex-start', px: 0 }}>
-                  Guides
-                </Button>
-                <Button color="inherit" component={Link} href="/" sx={{ justifyContent: 'flex-start', px: 0 }}>
-                  Help center
-                </Button>
-              </Stack>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }} gutterBottom>
-                Stay in touch
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Join our monthly briefing on restitution cases and research breakthroughs.
-              </Typography>
-            </Grid>
-          </Grid>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 4 }}>
-            © {new Date().getFullYear()} Machine Learning for Stolen Artifacts. All rights reserved.
-          </Typography>
-        </Container>
+        </Box>
       </Box>
     </Box>
   );
