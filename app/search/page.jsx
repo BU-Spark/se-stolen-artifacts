@@ -1,162 +1,34 @@
 'use client';
 
+// hooks
 import { useMemo, useRef, useState } from 'react';
+
+// components
 import {
   Autocomplete,
   Button,
   Checkbox,
-  Chip,
   Collapse,
   Container,
   Divider,
   FormControlLabel,
   Grid,
   Paper,
+  Slider,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import Tooltip from '@mui/material/Tooltip';
-import { alpha } from '@mui/material/styles';
-
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-const BASIC_FIELDS = [
-  {
-    id: 'artifactTitle',
-    label: 'Title of Object',
-    type: 'text',
-    placeholder: 'e.g. Head of Buddha',
-  },
-  {
-    id: 'dealerName',
-    label: 'Dealer',
-    type: 'text',
-    placeholder: 'e.g. John Dwyer Oriental Art',
-  },
-  {
-    id: 'subject',
-    label: 'Subject',
-    type: 'text',
-    placeholder: 'e.g. Vishnu',
-  },
-  {
-    id: 'photographLocation',
-    label: 'Photograph Location',
-    type: 'text',
-    placeholder: 'e.g. New York',
-  },
-  {
-    id: 'repreciated',
-    label: 'Repreciated',
-    type: 'checkbox',
-  },
-];
+// constants
+import { BASIC_FIELDS, ADVANCED_PARAMS } from '@/app/search/constants';
 
-const ADVANCED_PARAMS = [
-  {
-    id: 'imageSource',
-    label: 'Image Source',
-    type: 'text',
-    helperText: 'Origin of the artifact image.',
-    placeholder: 'e.g. Getty Museum',
-  },
-  {
-    id: 'material',
-    label: 'Material',
-    type: 'text',
-    helperText: 'Primary material composing the artifact.',
-    placeholder: 'e.g. Sandstone',
-  },
-  {
-    id: 'firstAppearanceYear',
-    label: 'Year of First Known Appearance',
-    type: 'number',
-    helperText: 'Year the artifact was first documented.',
-    placeholder: 'e.g. 1923',
-  },
-  {
-    id: 'firstAppearanceYearOutsideCambodia',
-    label: 'Year of First Known Appearance Outside Cambodia',
-    type: 'number',
-    helperText: 'Year the artifact was first documented.',
-    placeholder: 'e.g. 1923',
-  },
-  {
-    id: 'basePresent',
-    label: 'Base Present',
-    type: 'binary',
-    helperText: 'Toggle to filter by artifacts that have a base present.',
-  },
-  {
-    id: 'hasInscription',
-    label: 'Inscription',
-    type: 'binary',
-    helperText: 'Toggle to filter by artifacts with inscriptions.',
-  },
-  {
-    id: 'hasMultipleHeads',
-    label: 'Multiple Heads',
-    type: 'binary',
-    helperText: 'Toggle to filter by artifacts with multiple heads.',
-  },
-  {
-    id: 'fragmentary',
-    label: 'Fragmentary',
-    type: 'binary',
-    helperText: 'Toggle to filter by artifacts that are fragmentary.',
-  },
-  {
-    id: 'armNumber',
-    label: 'Number of Arms',
-    type: 'number',
-    helperText: 'Provide the numeric arm identifier.',
-    placeholder: 'e.g. 4, 8, 10...',
-  },
-  {
-    id: 'limbsPresent',
-    label: 'Limbs Present',
-    type: 'text',
-    helperText: 'Comma-separated list of limbs present.',
-    placeholder: 'e.g. head, torso, hip-knee',
-  },
-  {
-    id: 'partsFragmented',
-    label: 'Parts Fragmented',
-    type: 'text',
-    helperText: 'Comma-separated list of fragmented parts.',
-    placeholder: 'e.g. neck, shoulder, upper leg',
-  },
-];
+// utils
+import { getInitialBasicState, normalizeLimbList } from '@/app/search/utils';
 
-const getInitialBasicState = () =>
-  BASIC_FIELDS.reduce((acc, field) => {
-    acc[field.id] = field.type === 'checkbox' ? false : '';
-    return acc;
-  }, {});
-
-const normalizeLimbList = (raw) => {
-  if (!raw) return [];
-  const parts = String(raw)
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  const seen = new Set();
-  const out = [];
-  for (let p of parts) {
-    const normalized = p
-      .toLowerCase()
-      .split(/[\s-]+/)
-      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
-      .join(' ');
-    if (!seen.has(normalized)) {
-      seen.add(normalized);
-      out.push(normalized);
-    }
-  }
-  return out;
-};
+// custom components
+import CustomTag from '@/app/search/components/CustomTag';
 
 export default function SearchPage() {
   const [query] = useState('');
@@ -176,6 +48,11 @@ export default function SearchPage() {
     () => ADVANCED_PARAMS.filter((param) => !advancedSelections.some((selection) => selection.id === param.id)),
     [advancedSelections]
   );
+
+  const subjectField = BASIC_FIELDS.find((field) => field.id === 'subject');
+  const supportingTextFields = BASIC_FIELDS.filter((field) => field.type === 'text' && field.id !== 'subject');
+  const sliderFields = BASIC_FIELDS.filter((field) => field.type === 'slider');
+  const checkboxField = BASIC_FIELDS.find((field) => field.type === 'checkbox');
 
   const toggleAdvanced = () => {
     setIsAdvancedOpen((prev) => !prev);
@@ -321,7 +198,11 @@ export default function SearchPage() {
       const field = BASIC_FIELDS.find((f) => f.id === key);
       if (!field) return false;
       if (field.type === 'checkbox') return Boolean(value);
-      return String(value).trim() !== '';
+      if (field.type === 'slider') {
+        const sliderValue = Array.isArray(value) ? value : field.defaultValue;
+        return sliderValue[0] !== field.min || sliderValue[1] !== field.max;
+      }
+      return String(value ?? '').trim() !== '';
     });
 
     if (!hasBasic) {
@@ -349,43 +230,6 @@ export default function SearchPage() {
       }),
     };
     console.log('Search payload', payload);
-  };
-
-  const CustomTag = ({ selection, onDelete, onChipClick }) => {
-    const label =
-      selection.id === 'limbsPresent'
-        ? `${selection.label}: ${selection.value ? String(selection.value) || '—' : '—'}`
-        : selection.type === 'binary'
-          ? `${selection.label}: ${selection.value ? 'Yes' : 'No'}`
-          : `${selection.label}: ${selection.value ? selection.value : '—'}`;
-
-    const chip = (
-      <Chip
-        label={label}
-        color={selection.value ? 'primary' : 'default'}
-        onClick={onChipClick}
-        onDelete={onDelete}
-        sx={{
-          cursor: 'pointer',
-          maxWidth: '100%',
-          borderRadius: 2,
-          '&:hover': {
-            backgroundColor: (theme) =>
-              selection.value ? alpha(theme.palette.primary.main, 0.2) : theme.palette.grey[400],
-          },
-        }}
-      />
-    );
-
-    if (selection.type !== 'binary') {
-      return chip;
-    }
-
-    return (
-      <Tooltip title={`Click to toggle ${selection.value ? 'No' : 'Yes'}`} placement="top" arrow>
-        {chip}
-      </Tooltip>
-    );
   };
 
   return (
@@ -416,31 +260,99 @@ export default function SearchPage() {
             </Typography>
             <Grid container spacing={2} alignItems="start">
               <Grid size={{ xs: 12, md: 9 }}>
-                <Grid container spacing={2}>
-                  {BASIC_FIELDS.filter((f) => f.type !== 'checkbox').map((field) => (
-                    <Grid key={field.id} size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label={field.label}
-                        placeholder={field.placeholder}
-                        value={basicValues[field.id]}
-                        onChange={(event) => handleBasicChange(field.id, event.target.value)}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 3 }} container alignItems="flex-start">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={Boolean(basicValues['repreciated'])}
-                      onChange={(event) => handleBasicChange('repreciated', event.target.checked)}
+                <Stack spacing={3}>
+                  {subjectField ? (
+                    <TextField
+                      fullWidth
+                      label={subjectField.label}
+                      placeholder={subjectField.placeholder}
+                      value={basicValues[subjectField.id]}
+                      onChange={(event) => handleBasicChange(subjectField.id, event.target.value)}
                     />
-                  }
-                  label={BASIC_FIELDS.find((f) => f.id === 'repreciated')?.label}
-                />
+                  ) : null}
+
+                  {supportingTextFields.length > 0 ? (
+                    <Grid container spacing={2}>
+                      {supportingTextFields.map((field) => (
+                        <Grid key={field.id} size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            label={field.label}
+                            placeholder={field.placeholder}
+                            value={basicValues[field.id]}
+                            onChange={(event) => handleBasicChange(field.id, event.target.value)}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : null}
+
+                  {sliderFields.length > 0 ? (
+                    <Stack spacing={3}>
+                      {sliderFields.map((field) => {
+                        const sliderValue = Array.isArray(basicValues[field.id])
+                          ? basicValues[field.id]
+                          : [...field.defaultValue];
+                        const [rangeStart, rangeEnd] = sliderValue;
+
+                        return (
+                          <Stack key={field.id} spacing={1.5} sx={{ px: { xs: 0, sm: 1 } }}>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between">
+                              <Typography variant="subtitle2" fontWeight={600} color="text.primary">
+                                {field.label}
+                              </Typography>
+                            </Stack>
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              spacing={2}
+                              sx={{ width: { xs: '100%', md: '75%' } }}
+                            >
+                              <Slider
+                                color="secondary"
+                                min={field.min}
+                                max={field.max}
+                                step={1}
+                                marks={[
+                                  { value: field.min, label: String(field.min) },
+                                  { value: field.max, label: String(field.max) },
+                                ]}
+                                value={sliderValue}
+                                valueLabelDisplay="auto"
+                                sx={{ flexGrow: 1 }}
+                                onChange={(_event, newValue) => {
+                                  if (Array.isArray(newValue) && newValue.length === 2) {
+                                    handleBasicChange(field.id, [...newValue]);
+                                  }
+                                }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ minWidth: 100, textAlign: 'right' }}
+                              >
+                                {`${rangeStart} - ${rangeEnd}`}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                        );
+                      })}
+                    </Stack>
+                  ) : null}
+
+                  {checkboxField ? (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={Boolean(basicValues[checkboxField.id])}
+                          onChange={(event) => handleBasicChange(checkboxField.id, event.target.checked)}
+                        />
+                      }
+                      label={checkboxField.label}
+                      sx={{ alignSelf: 'flex-start', mt: 1 }}
+                    />
+                  ) : null}
+                </Stack>
               </Grid>
             </Grid>
           </Stack>
