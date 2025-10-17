@@ -14,13 +14,15 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@emotion/react": "^11.13.5",
-    "@emotion/styled": "^11.13.5",
-    "@mui/icons-material": "^6.1.9",
-    "@mui/material": "^6.1.9",
     "@mui/material-nextjs": "^6.1.9",
+    "@clerk/nextjs": "^6.33.3",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
+    "mui": "^0.0.1",
     "next": "^15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
