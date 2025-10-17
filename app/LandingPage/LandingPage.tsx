@@ -22,7 +22,7 @@ const LandingPage: NextPage = () => {
       <AppBar position="sticky" color="transparent" sx={{ backdropFilter: 'blur(12px)' }}>
         <Toolbar sx={{ justifyContent: 'space-between', gap: 2, minHeight: { xs: 72, md: 88 } }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Machine Learning for Stolen Artifacts
+            Khmer Statuary Project
           </Typography>
           <Stack direction="row" spacing={{ xs: 1.5, md: 3 }} alignItems="center">
             <Stack direction="row" spacing={1}>
@@ -67,8 +67,7 @@ const LandingPage: NextPage = () => {
             },
           }}
         >
-          <Box component="span" sx={{ backgroundImage: "url('/about/artifact-card.svg')" }} />
-          <Box component="span" sx={{ backgroundImage: "url('/window.svg')" }} />
+          <Box component="span" sx={{ backgroundImage: "url('temple.jpg')" }} />
         </Box>
         <Box
           sx={{
@@ -84,7 +83,7 @@ const LandingPage: NextPage = () => {
             backgroundColor: (theme) =>
               alpha(
                 theme.palette.mode === 'light' ? theme.palette.background.paper : theme.palette.background.default,
-                theme.palette.mode === 'light' ? 0.92 : 0.85
+                theme.palette.mode === 'light' ? 0.4 : 0.3
               ),
             backdropFilter: 'blur(24px)',
           }}
@@ -105,10 +104,10 @@ const LandingPage: NextPage = () => {
             >
               Introduction
             </Box>
-            <Typography variant="h5" color="text.primary">
+            <Typography variant="h6" color="text.primary">
               This database and search engine is an initiative of the Khmer Statuary Project. Please visit{' '}
               <MuiLink
-                href="https://www.google.com"
+                href="statuaryproject.org"
                 target="_blank"
                 rel="noopener"
                 sx={{
@@ -120,7 +119,7 @@ const LandingPage: NextPage = () => {
                   },
                 }}
               >
-                our website
+                our website(statuaryproject.org)
               </MuiLink>{' '}
               to read more about the design of this tool, the project&#39;s aims and objectives, and the problem of
               looting and how we hope to address it.
@@ -130,6 +129,25 @@ const LandingPage: NextPage = () => {
             </Button>
           </Stack>
         </Box>
+      </Box>
+      <Box
+        component="footer"
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          py: 4,
+          px: { xs: 2, md: 4 },
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light'
+              ? alpha(theme.palette.grey[50], 0.9)
+              : alpha(theme.palette.background.paper, 0.4),
+          borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Contact Us: <MuiLink href="mailto:statuaryproject@gmail.com">statuaryproject@gmail.com</MuiLink>
+        </Typography>
       </Box>
     </Box>
   );
