@@ -92,7 +92,7 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundImage: `linear-gradient(45deg, ${lighten(primaryBlue, 0.4)} 0%, ${mist} 100%)`,
+          backgroundImage: `linear-gradient(45deg, ${secondaryBlue} 0%, ${lighten(secondaryRed, 0.6)} 100%)`,
           backgroundAttachment: 'fixed',
           backgroundRepeat: 'no-repeat',
           color: secondary,
@@ -109,22 +109,14 @@ const theme = createTheme({
           paddingInline: '1.5rem',
         },
         containedPrimary: {
-          backgroundImage: `linear-gradient(135deg, ${primaryBlue}, ${secondaryRed})`,
+          backgroundImage: `linear-gradient(135deg, ${primaryBlue}, ${primaryRed})`,
           color: '#fff',
         },
         containedSecondary: {
           backgroundImage: `linear-gradient(135deg, ${primaryRed}, ${darken(primaryRed, 0.18)})`,
           color: '#fff',
         },
-        outlinedPrimary: {
-          borderColor: secondary,
-          color: secondary,
-          '&:hover': {
-            borderColor: darken(secondary, 0.12),
-            backgroundColor: lighten(secondary, 0.88),
-          },
-        },
-        outlinedSecondary: {
+        outlined: {
           borderColor: secondary,
           color: secondary,
           '&:hover': {
@@ -174,40 +166,13 @@ const theme = createTheme({
             backgroundColor: lighten(primaryLight, 0.9),
           },
         },
-        filledPrimary: {
-          backgroundColor: primaryLight,
-          color: '#fff',
-          '&.MuiChip-clickable:hover, &:hover': {
-            backgroundColor: darken(primaryLight, 0.08),
-          },
-        },
-        outlinedPrimary: {
-          borderColor: primaryLight,
-          color: primaryLight,
-          '&.MuiChip-clickable:hover, &:hover': {
-            backgroundColor: lighten(primaryLight, 0.9),
-          },
-        },
         root: {
           fontWeight: 600,
         },
       },
     },
     MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 14,
-            '&:hover fieldset': {
-              borderColor: inputHover,
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: focusOutline,
-              boxShadow: `0 0 0 4px ${inputFocusGlow}`,
-            },
-          },
-        },
-      },
+      styleOverrides: {},
     },
     MuiOutlinedInput: {
       styleOverrides: {
@@ -273,4 +238,4 @@ export const themeTokens = {
   secondaryBlue,
   primaryGray,
   secondaryGray,
-};
+} as const;
