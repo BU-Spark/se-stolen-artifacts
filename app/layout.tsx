@@ -3,7 +3,7 @@ import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ClerkProvider } from '@clerk/nextjs';
-import AppThemeProvider from './providers';
+import { AppThemeProvider } from './providers';
 
 const outfit = Outfit({
   subsets: ['latin'],
