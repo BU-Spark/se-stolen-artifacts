@@ -1,5 +1,6 @@
 'use client';
 
+import { themeTokens } from '@/app/theme';
 import { useMemo, useRef, useState } from 'react';
 import {
   Autocomplete,
@@ -402,7 +403,17 @@ export default function SearchPage() {
               </Typography>
             </Grid>
             <Grid>
-              <Button type="submit" variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  bgcolor: themeTokens.primary,
+                  '&:hover': { bgcolor: themeTokens.primaryLight },
+                }}
+              >
                 Search
               </Button>
             </Grid>
