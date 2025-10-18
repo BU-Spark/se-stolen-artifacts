@@ -3,6 +3,7 @@
 import Tooltip from '@mui/material/Tooltip';
 import Chip from '@mui/material/Chip';
 import { alpha } from '@mui/material/styles';
+import { themeTokens } from '@/app/theme';
 
 type Selection = {
   id: string;
@@ -25,6 +26,8 @@ export default function CustomTag({ selection, onDelete, onChipClick }: CustomTa
         ? `${selection.label}: ${selection.value ? 'Yes' : 'No'}`
         : `${selection.label}: ${selection.value ? selection.value : '—'}`;
 
+  const isFilled = selection.type === 'binary' || Boolean(selection.value);
+
   const chip = (
     <Chip
       label={label}
@@ -35,9 +38,12 @@ export default function CustomTag({ selection, onDelete, onChipClick }: CustomTa
         cursor: 'pointer',
         maxWidth: '100%',
         borderRadius: 2,
-        '&:hover': (theme) => ({
-          backgroundColor: selection.value ? alpha(theme.palette.primary.main, 0.2) : theme.palette.grey[400],
-        }),
+        backgroundColor: isFilled ? themeTokens.secondaryBlue : undefined,
+        color: '#fff',
+        borderColor: isFilled ? undefined : themeTokens.secondaryBlue,
+        '&:hover': {
+          backgroundColor: isFilled ? alpha(themeTokens.secondaryBlue, 0.8) : alpha(themeTokens.secondaryBlue, 0.1),
+        },
       }}
     />
   );

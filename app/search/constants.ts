@@ -114,7 +114,7 @@ export const ADVANCED_PARAMS = [
     id: 'partsFragmented',
     label: 'Parts Fragmented',
     type: 'text',
-    helperText: 'Comma-separated list of fragmented parts. Describes exactly where the artifact has been fragmented.',
+    helperText: 'Comma-separated list of fragmented parts. Describes exactly where the artifact has fragmented.',
     placeholder: 'e.g. neck, shoulder, upper leg',
   },
 ];
