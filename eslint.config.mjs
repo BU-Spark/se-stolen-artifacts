@@ -21,6 +21,11 @@ const config = [
     // Global ignores
     ignores: ['.next/*', 'node_modules/', 'coverage/', 'dist/', 'out/'],
   },
+
+  {
+    "ignorePatterns": ["next-env.d.ts", ".next", "node_modules"]
+  },
+
   {
     // General file settings
     files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
