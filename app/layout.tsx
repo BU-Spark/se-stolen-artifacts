@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { MuiThemeProvider } from './theme-provider';
 import { ClerkProvider } from '@clerk/nextjs';
-import { AppThemeProvider } from './providers';
+import { Providers } from './providers';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -25,18 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable}`}>
       <body>
-        <MuiThemeProvider>
-          <ErrorBoundary>
+        <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+          <Providers>
             <div className="main-content-container">{children}</div>
-          </ErrorBoundary>
-        </MuiThemeProvider>
-        <AppThemeProvider>
-          <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-            <ErrorBoundary>
-              <div className="main-content-container">{children}</div>
-            </ErrorBoundary>
-          </ClerkProvider>
-        </AppThemeProvider>
+          </Providers>
+        </ClerkProvider>
       </body>
     </html>
   );

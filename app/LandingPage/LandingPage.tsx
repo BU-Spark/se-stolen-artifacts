@@ -26,7 +26,7 @@ const LandingPage: NextPage = () => {
           </Typography>
           <Stack direction="row" spacing={{ xs: 1.5, md: 3 }} alignItems="center">
             <Stack direction="row" spacing={1}>
-              <Button variant="text" component={Link} href="/login">
+              <Button variant="text" component={Link} href="/signin">
                 Log in
               </Button>
               <Button variant="contained" endIcon={<ArrowForward />} component={Link} href="/signup">
@@ -74,10 +74,10 @@ const LandingPage: NextPage = () => {
             position: 'relative',
             zIndex: 1,
             width: '100%',
-            maxWidth: 540,
+            maxWidth: 560,
             borderRadius: 5,
-            px: { xs: 3, md: 6 },
-            py: { xs: 4, md: 6 },
+            px: { xs: 4, md: 7 },
+            py: { xs: 5, md: 7 },
             boxShadow: (theme) =>
               theme.palette.mode === 'light' ? '0 30px 80px rgba(15,23,42,0.25)' : '0 32px 90px rgba(0,0,0,0.55)',
             backgroundColor: (theme) =>

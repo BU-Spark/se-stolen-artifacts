@@ -1,5 +1,5 @@
 import { createTheme, darken, lighten } from '@mui/material/styles';
-import { PaletteMode, ThemeOptions} from '@mui/material';
+import { PaletteMode, ThemeOptions } from '@mui/material';
 
 const primaryRed = '#E00025';
 const secondaryRed = '#E37D8E';
@@ -275,7 +275,7 @@ const baseThemeOptions: ThemeOptions = {
     MuiCard: {
       styleOverrides: {
         root: ({ theme }) => ({
-          borderRadius: theme.shape.borderRadius * 1.2,
+          borderRadius: Number(theme.shape.borderRadius) * 1.2,
           border: `1px solid ${theme.palette.divider}`,
         }),
       },
