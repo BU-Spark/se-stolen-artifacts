@@ -109,7 +109,7 @@ const theme = createTheme({
           paddingInline: '1.5rem',
         },
         containedPrimary: {
-          backgroundImage: `linear-gradient(135deg, ${primaryBlue}, ${primaryRed})`,
+          backgroundImage: `linear-gradient(135deg, ${darken(primaryRed, 0.3)}, ${primaryRed})`,
           color: '#fff',
         },
         containedSecondary: {
@@ -156,14 +156,14 @@ const theme = createTheme({
           backgroundColor: primaryLight,
           color: '#fff',
           '&.MuiChip-clickable:hover, &:hover': {
-            backgroundColor: darken(primaryLight, 0.08),
+            backgroundColor: darken(primaryLight, 0.2),
           },
         },
         outlined: {
           borderColor: primaryLight,
           color: primaryLight,
           '&.MuiChip-clickable:hover, &:hover': {
-            backgroundColor: lighten(primaryLight, 0.9),
+            backgroundColor: lighten(primaryLight, 0.05),
           },
         },
         root: {
@@ -172,14 +172,24 @@ const theme = createTheme({
       },
     },
     MuiTextField: {
-      styleOverrides: {},
+      styleOverrides: {
+        root: {
+          borderWidth: 2,
+        },
+      },
     },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
           borderRadius: 14,
+          backgroundColor: lighten(secondary, 0.93),
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderWidth: 1.5,
+            borderColor: darken(secondary, 0.1),
+          },
           '&:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: inputHover,
+            borderWidth: 2,
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: focusOutline,

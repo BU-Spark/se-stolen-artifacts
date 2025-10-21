@@ -306,7 +306,7 @@ export default function SearchPage() {
                               direction="row"
                               alignItems="center"
                               spacing={2}
-                              sx={{ width: { xs: '100%', md: '75%' } }}
+                              sx={{ width: { xs: '100%', md: '75%', ml: 10 } }}
                             >
                               <Slider
                                 color="secondary"
