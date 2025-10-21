@@ -18,12 +18,8 @@ const compat = new FlatCompat({
 
 const config = [
   {
-    // Global ignores
-    ignores: ['.next/*', 'node_modules/', 'coverage/', 'dist/', 'out/'],
-  },
-
-  {
-    "ignorePatterns": ["next-env.d.ts", ".next", "node_modules"]
+    // Global ignores - just add next-env.d.ts here
+    ignores: ['next-env.d.ts', '.next/*', 'node_modules/', 'coverage/', 'dist/', 'out/'],
   },
 
   {
