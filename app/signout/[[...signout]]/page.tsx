@@ -4,7 +4,6 @@
 import { useClerk } from '@clerk/nextjs';
 import { useEffect } from 'react';
 
-// Only "/signout" to sign out for now
 export default function SignOutPage() {
   const { signOut } = useClerk();
 

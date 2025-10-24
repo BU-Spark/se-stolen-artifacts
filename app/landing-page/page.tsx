@@ -6,8 +6,12 @@ import { AppBar, Box, Button, Stack, Toolbar, Typography } from '@mui/material';
 import { ArrowForward, Search } from '@mui/icons-material';
 import MuiLink from '@mui/material/Link';
 import { alpha } from '@mui/material/styles';
+import { useUser, useClerk } from '@clerk/nextjs';
 
 const LandingPage: NextPage = () => {
+  const { isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
+
   return (
     <Box
       sx={{
@@ -62,12 +66,25 @@ const LandingPage: NextPage = () => {
             Khmer Statuary Project
           </Typography>
           <Stack direction="row" spacing={{ xs: 1.5, md: 3 }} alignItems="center">
-            <Button variant="text" component={Link} href="/signin">
-              Log in
-            </Button>
-            <Button variant="contained" endIcon={<ArrowForward />} component={Link} href="/signup">
-              Sign up
-            </Button>
+            {!isSignedIn ? (
+              <>
+                <Button variant="text" component={Link} href="/signin">
+                  Log in
+                </Button>
+                <Button variant="contained" endIcon={<ArrowForward />} component={Link} href="/signup">
+                  Sign up
+                </Button>
+              </>
+            ) : (
+              <>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  Hello, {user?.firstName}
+                </Typography>
+                <Button variant="contained" onClick={() => signOut()}>
+                  Sign out
+                </Button>
+              </>
+            )}
           </Stack>
         </Toolbar>
       </AppBar>
