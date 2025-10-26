@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Box, Button, Card, CardContent, LinearProgress, Stack, Typography, Alert, Chip } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  LinearProgress,
+  Stack,
+  Typography,
+  Alert,
+  Chip,
+  CircularProgress,
+} from '@mui/material';
 import { CloudUpload, Clear, CheckCircle } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 
@@ -35,6 +46,8 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,19 +124,33 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const handleFileSelect = useCallback(
     async (file: File) => {
       setError(null);
+      setImageLoadError(false);
       setUploadComplete(false);
       setProgress(0);
+      setIsLoadingPreview(true);
 
       const validationError = validateFile(file);
       if (validationError) {
         setError(validationError);
+        setIsLoadingPreview(false);
         return;
       }
 
       setSelectedFile(file);
-      const previewData = await generatePreview(file);
-      console.log('Preview data:', previewData);
-      setPreview(previewData);
+      try {
+        // Add minimum delay to show loading state
+        const [previewData] = await Promise.all([
+          generatePreview(file),
+          new Promise((resolve) => setTimeout(resolve, 1500)), // 1500ms minimum loading time
+        ]);
+        console.log('Preview data:', previewData);
+        setPreview(previewData);
+      } catch (err) {
+        console.error('Error generating preview:', err);
+        setError('Failed to generate preview. Please try another file.');
+      } finally {
+        setIsLoadingPreview(false);
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -203,6 +230,8 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     setIsUploading(false);
     setUploadComplete(false);
     setError(null);
+    setImageLoadError(false);
+    setIsLoadingPreview(false);
     if (preview?.previewUrl) {
       URL.revokeObjectURL(preview.previewUrl);
     }
@@ -253,7 +282,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           )}
 
           {/* Drop Zone */}
-          {!selectedFile && (
+          {!selectedFile && !isLoadingPreview && (
             <Box
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
@@ -267,19 +296,19 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 textAlign: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
-                backgroundColor: isDragging ? (theme) => alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                backgroundColor: isDragging ? (theme) => alpha(theme.palette.grey[500], 0.15) : 'transparent',
                 '&:hover': {
                   borderColor: 'primary.main',
-                  backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.02),
+                  backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.08),
                 },
               }}
               onClick={() => fileInputRef.current?.click()}
             >
               <Stack spacing={2} alignItems="center">
-                <CloudUpload sx={{ fontSize: 56, color: 'text.secondary' }} />
+                <CloudUpload sx={{ fontSize: 56, color: isDragging ? 'primary.main' : 'text.secondary' }} />
                 <Box>
                   <Typography variant="body1" fontWeight={600} gutterBottom>
-                    Drop your file here or click to browse
+                    {isDragging ? 'Drop your file here' : 'Drop your file here or click to browse'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Accepted formats: JPG, PNG, WEBP, CSV, JSON (max 10MB)
@@ -293,6 +322,31 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 onChange={handleFileInputChange}
                 style={{ display: 'none' }}
               />
+            </Box>
+          )}
+
+          {/* Loading State */}
+          {isLoadingPreview && (
+            <Box
+              sx={{
+                border: '2px dashed',
+                borderColor: 'divider',
+                borderRadius: 3,
+                p: 6,
+                textAlign: 'center',
+              }}
+            >
+              <Stack spacing={2} alignItems="center">
+                <CircularProgress size={56} />
+                <Box>
+                  <Typography variant="body1" fontWeight={600} gutterBottom>
+                    Processing file...
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Generating preview
+                  </Typography>
+                </Box>
+              </Stack>
             </Box>
           )}
 
@@ -310,18 +364,16 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 </Typography>
               </Stack>
 
-              {/* Progress Bar */}
-              {(isUploading || uploadComplete) && (
-                <Box>
-                  <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: 'right' }}>
-                    {progress}%
-                  </Typography>
-                </Box>
+              {/* Image Load Error */}
+              {preview.kind === 'image' && imageLoadError && (
+                <Alert severity="error">
+                  Unable to load image preview. The image file may be corrupted or in an unsupported format. Please try
+                  another image.
+                </Alert>
               )}
 
-              {/* Preview Content */}
-              {preview.kind === 'image' && preview.previewUrl && (
+              {/* Preview Content - ABOVE progress bar */}
+              {preview.kind === 'image' && preview.previewUrl && !imageLoadError && (
                 <Box
                   sx={{
                     borderRadius: 2,
@@ -339,10 +391,12 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                     alt="Artifact preview"
                     onError={(e) => {
                       console.error('Image failed to load:', preview.previewUrl);
+                      setImageLoadError(true);
                       e.currentTarget.style.display = 'none';
                     }}
                     onLoad={(e) => {
                       console.log('Image loaded successfully:', preview.previewUrl);
+                      setImageLoadError(false);
                       e.currentTarget.style.display = 'block';
                     }}
                     style={{
@@ -384,8 +438,18 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 </Box>
               )}
 
+              {/* Progress Bar - BELOW image preview */}
+              {(isUploading || uploadComplete) && (
+                <Box>
+                  <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: 'right' }}>
+                    {progress}%
+                  </Typography>
+                </Box>
+              )}
+
               {/* Action Buttons */}
-              {!isUploading && !uploadComplete && (
+              {!isUploading && !uploadComplete && !imageLoadError && (
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button variant="text" onClick={handleClear}>
                     Cancel
@@ -397,6 +461,15 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                     disabled={!selectedFile}
                   >
                     Upload
+                  </Button>
+                </Stack>
+              )}
+
+              {/* Submit Button - After upload completes */}
+              {uploadComplete && (
+                <Stack direction="row" spacing={2} justifyContent="flex-end">
+                  <Button variant="contained" size="large">
+                    Submit
                   </Button>
                 </Stack>
               )}
