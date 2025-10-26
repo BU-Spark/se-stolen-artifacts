@@ -5,10 +5,14 @@ import { usePathname } from 'next/navigation';
 import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { useUser, useClerk } from '@clerk/nextjs';
 
 export default function MainNavbar() {
   const pathname = usePathname();
-  // Determine which buttons to show based on the current path
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
+
+  // Determine which buttons to show based on the current path and auth state
   let rightContent = null;
   if (pathname === '/search') {
     rightContent = (
@@ -17,16 +21,27 @@ export default function MainNavbar() {
       </Button>
     );
   } else if (pathname === '/' || pathname === '/landing-page') {
-    rightContent = (
-      <Stack direction="row" spacing={2}>
-        <Button variant="text" component={Link} href="/signin">
-          Log in
-        </Button>
-        <Button variant="contained" endIcon={<ArrowForwardIcon />} component={Link} href="/signup">
-          Sign up
-        </Button>
-      </Stack>
-    );
+    if (isLoaded && isSignedIn) {
+      rightContent = (
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Typography variant="body1">Welcome, {user?.firstName || 'User'}</Typography>
+          <Button variant="outlined" onClick={() => signOut({ redirectUrl: '/' })}>
+            Log out
+          </Button>
+        </Stack>
+      );
+    } else {
+      rightContent = (
+        <Stack direction="row" spacing={2}>
+          <Button variant="text" component={Link} href="/signin">
+            Log in
+          </Button>
+          <Button variant="contained" endIcon={<ArrowForwardIcon />} component={Link} href="/signup">
+            Sign up
+          </Button>
+        </Stack>
+      );
+    }
   }
 
   return (
