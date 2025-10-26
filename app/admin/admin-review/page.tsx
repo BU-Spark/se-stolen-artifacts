@@ -33,7 +33,6 @@ type PendingImagesResponse = {
 
 export default function AdminReviewPage() {
   const { isLoaded, isSignedIn } = useUser();
-  // const { isLoaded, isSignedIn, user } = useUser();
   const [images, setImages] = useState<PendingImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +147,7 @@ export default function AdminReviewPage() {
                     <Card sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                       <CardMedia
                         component="img"
-                        image={image_url || '/placeholder-image.png'}
+                        image={image_url || '/image-404-placeholder.avif'}
                         alt={title || `Pending image ${internal_reference_number}`}
                         sx={{ height: 280, objectFit: 'cover' }}
                         loading="lazy"

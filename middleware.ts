@@ -2,7 +2,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/admin(.*)']);
 
 // Only these routes are public - everything else requires authentication
 const isPublicRoute = createRouteMatcher([
