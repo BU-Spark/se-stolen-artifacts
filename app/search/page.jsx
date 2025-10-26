@@ -29,6 +29,7 @@ import { getInitialBasicState, normalizeLimbList } from '@/app/search/utils';
 
 // custom components
 import CustomTag from '@/app/search/components/CustomTag';
+import ArtifactsUpload from '@/app/search/components/ArtifactsUpload';
 import SearchNavbar from '@/app/components/SearchNavbar';
 
 export default function SearchPage() {
@@ -38,6 +39,7 @@ export default function SearchPage() {
   const [advancedSelections, setAdvancedSelections] = useState([]);
   const [activeParamId, setActiveParamId] = useState(null);
   const [advancedInputValue, setAdvancedInputValue] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const autocompleteInputRef = useRef(null);
 
   const activeParam = useMemo(
@@ -234,16 +236,9 @@ export default function SearchPage() {
   };
 
   return (
-    <>
-      <SearchNavbar />
-      <Container
-        component="main"
-        maxWidth="lg"
-        sx={{
-          py: 6,
-          pt: { xs: '80px', md: '96px' }, // add top padding for navbar
-        }}
-      >
+    <Container component="main" maxWidth="lg" sx={{ py: 6 }}>
+      <ArtifactsUpload onUploadComplete={() => setShowSearch(true)} />
+      {showSearch && (
         <Paper component="form" elevation={3} onSubmit={handleSubmit} sx={{ p: { xs: 3, md: 4 } }}>
           <Stack spacing={4}>
             <Grid container alignItems="center" justifyContent="space-between">
@@ -442,7 +437,7 @@ export default function SearchPage() {
             </Stack>
           </Stack>
         </Paper>
-      </Container>
-    </>
+      )}
+    </Container>
   );
 }
