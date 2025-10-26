@@ -1,9 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+const storageBucket = 'spark';
+
+function normalizeStoragePath(path: string) {
+  const bucketPrefix = `${storageBucket}/`;
+  if (!path) return path;
+  const trimmed = path.replace(/^\//, '');
+  return trimmed.startsWith(bucketPrefix) ? trimmed.slice(bucketPrefix.length) : trimmed;
+}
 
 export async function handleGetPendingImages() {
   try {
+    const { data: bucketData, error: bucketError } = await supabase.storage.getBucket(storageBucket);
+
+    if (bucketError || !bucketData) {
+      return {
+        images: [],
+        error: `Supabase storage bucket "${storageBucket}" not found. Confirm the bucket exists and this service key can access it.`,
+      };
+    }
+
     const { data: approvals, error: approvalError } = await supabase
       .from('approval')
       .select('image_id')
@@ -20,8 +37,64 @@ export async function handleGetPendingImages() {
 
     if (imageError) return { images: [], error: imageError.message };
 
-    return { images };
+    const enhancedImages = await Promise.all(
+      (images ?? []).map(async (image) => {
+        let resolvedUrl = image?.image_url ?? null;
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Attempting to resolve image URL for', image);
+        }
+
+        if (!image?.image_gcs) {
+          return resolvedUrl
+            ? {
+                ...image,
+                image_url: resolvedUrl,
+              }
+            : image;
+        }
+
+        const storagePath = normalizeStoragePath(image.image_gcs);
+        const storageClient = supabase.storage.from(storageBucket);
+        const { data: signedUrlData, error: signedUrlError } = await storageClient.createSignedUrl(
+          storagePath,
+          60 * 60
+        );
+
+        if (signedUrlError || !signedUrlData?.signedUrl) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Signed URL error', { error: signedUrlError, storagePath });
+          }
+
+          if (!resolvedUrl) {
+            const { data: publicUrlData } = storageClient.getPublicUrl(storagePath);
+            if (publicUrlData?.publicUrl) {
+              resolvedUrl = publicUrlData.publicUrl;
+            }
+          }
+
+          return resolvedUrl
+            ? {
+                ...image,
+                image_url: resolvedUrl,
+              }
+            : image;
+        }
+
+        return {
+          ...image,
+          image_url: signedUrlData.signedUrl,
+        };
+      })
+    );
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Enhanced images', enhancedImages);
+    }
+
+    return { images: enhancedImages };
   } catch (error: unknown) {
-    return { images: [], error: error.message };
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred.';
+    return { images: [], error: message };
   }
 }

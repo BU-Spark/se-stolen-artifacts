@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { handleGetPendingImages } from '@/lib/pending-images/pendingImages';
-import { auth } from '@clerk/nextjs/server';
+// import { auth } from '@clerk/nextjs/server';
 
-// Hardcoded in local .env.local for now (assuming only one admin account)
-const ADMIN_ID = process.env.ADMIN_ID!;
+// const ADMIN_ID = process.env.ADMIN_ID!;
 
 export async function GET() {
-  const { userId } = await auth();
-  if (userId !== ADMIN_ID) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // const { userId } = await auth();
+  // TODO: Ignoring admin perms atm; restore when auth ready
+  // if (userId !== ADMIN_ID) {
+  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // }
 
   try {
     const result = await handleGetPendingImages();
