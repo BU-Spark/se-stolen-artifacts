@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 const storageBucket = 'spark';
 
+/**
+ * Normalize a storage object path by removing a leading slash and stripping the configured storage bucket prefix if present.
+ *
+ * @param path - The input storage path, which may include a leading slash or the storage bucket prefix
+ * @returns The normalized path with any leading slash removed and the storage bucket prefix removed when present
+ */
 function normalizeStoragePath(path: string) {
   const bucketPrefix = `${storageBucket}/`;
   if (!path) return path;
@@ -10,6 +16,13 @@ function normalizeStoragePath(path: string) {
   return trimmed.startsWith(bucketPrefix) ? trimmed.slice(bucketPrefix.length) : trimmed;
 }
 
+/**
+ * Fetches images awaiting approval and enriches each with an accessible URL when available.
+ *
+ * Queries pending approvals, loads the corresponding image records, and for each image attempts to resolve a usable `image_url` by preferring a signed storage URL, falling back to a public storage URL, or preserving the existing `image_url` if present. If the storage bucket is unavailable or an error occurs, returns an empty images array with an error message.
+ *
+ * @returns An object containing `images`, an array of image records (each may have `image_url` updated to a signed or public URL), and optionally `error` with a descriptive message when the operation fails.
+ */
 export async function handleGetPendingImages() {
   try {
     const { data: bucketData, error: bucketError } = await supabase.storage.getBucket(storageBucket);

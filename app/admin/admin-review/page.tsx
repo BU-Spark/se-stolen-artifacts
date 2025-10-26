@@ -31,6 +31,13 @@ type PendingImagesResponse = {
   error?: string;
 };
 
+/**
+ * Renders the admin "Pending Image Review" page that lets administrators review, approve or deny, and download pending image submissions.
+ *
+ * The component displays loading, empty, and error states, fetches and shows the list of pending images, and tracks per-image download progress to prevent duplicate downloads.
+ *
+ * @returns The JSX element for the admin pending image review page
+ */
 export default function AdminReviewPage() {
   const { isLoaded, isSignedIn } = useUser();
   // const { isLoaded, isSignedIn, user } = useUser();

@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { handleGetPendingImages } from '@/lib/pending-images/pendingImages';
 // import { auth } from '@clerk/nextjs/server';
 
-// const ADMIN_ID = process.env.ADMIN_ID!;
+/**
+ * Handle GET requests to retrieve pending images.
+ *
+ * @returns A NextResponse containing JSON: on success, status 200 with `{ images: Image[] }`; on error, status 500 with `{ error: string }`.
+ */
 
 export async function GET() {
   // const { userId } = await auth();

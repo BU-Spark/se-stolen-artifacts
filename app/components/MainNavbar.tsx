@@ -7,6 +7,13 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useUser, useClerk } from '@clerk/nextjs';
 
+/**
+ * Render the application's top navigation bar with actions that adapt to the current route and authentication state.
+ *
+ * Shows a "Back to Home" button when the pathname is "/search"; on "/" or "/landing-page" shows either a welcome message and "Log out" button when the user is signed in, or "Log in" and "Sign up" actions when not signed in.
+ *
+ * @returns A React element containing a fixed AppBar with the site title and route-/auth-dependent actions on the right.
+ */
 export default function MainNavbar() {
   const pathname = usePathname();
   const { isLoaded, isSignedIn, user } = useUser();
