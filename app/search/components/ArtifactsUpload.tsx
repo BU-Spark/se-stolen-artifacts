@@ -13,6 +13,10 @@ type LocalPreview = {
   textPreview?: string;
 };
 
+type ArtifactsUploadProps = {
+  onUploadComplete?: () => void;
+};
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp', '.csv', '.json'];
 const ACCEPTED_MIME_TYPES = [
@@ -24,7 +28,7 @@ const ACCEPTED_MIME_TYPES = [
   'application/csv',
 ];
 
-export default function ArtifactsUpload() {
+export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<LocalPreview | null>(null);
   const [progress, setProgress] = useState<number>(0);
@@ -67,6 +71,7 @@ export default function ArtifactsUpload() {
 
   const generatePreview = async (file: File): Promise<LocalPreview> => {
     const kind = getFileKind(file);
+    console.log('File type:', file.type, 'Kind:', kind);
     const basePreview: LocalPreview = {
       kind,
       name: file.name,
@@ -75,6 +80,7 @@ export default function ArtifactsUpload() {
 
     if (kind === 'image') {
       const previewUrl = URL.createObjectURL(file);
+      console.log('Generated preview URL:', previewUrl);
       return { ...basePreview, previewUrl };
     }
 
@@ -116,6 +122,7 @@ export default function ArtifactsUpload() {
 
       setSelectedFile(file);
       const previewData = await generatePreview(file);
+      console.log('Preview data:', previewData);
       setPreview(previewData);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,6 +185,8 @@ export default function ArtifactsUpload() {
             setTimeout(() => {
               setIsUploading(false);
               setUploadComplete(true);
+              // Trigger the callback to show search form
+              onUploadComplete?.();
             }, 300);
           }, 500);
           return 85;
@@ -319,18 +328,29 @@ export default function ArtifactsUpload() {
                     overflow: 'hidden',
                     border: '1px solid',
                     borderColor: 'divider',
-                    maxWidth: 400,
-                    mx: 'auto',
+                    maxWidth: 600,
+                    width: '100%',
+                    backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.05),
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={preview.previewUrl}
-                    alt="Preview"
+                    alt="Artifact preview"
+                    onError={(e) => {
+                      console.error('Image failed to load:', preview.previewUrl);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    onLoad={(e) => {
+                      console.log('Image loaded successfully:', preview.previewUrl);
+                      e.currentTarget.style.display = 'block';
+                    }}
                     style={{
                       width: '100%',
                       height: 'auto',
                       display: 'block',
+                      maxHeight: '500px',
+                      objectFit: 'contain',
                     }}
                   />
                 </Box>
