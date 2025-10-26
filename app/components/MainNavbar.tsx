@@ -21,7 +21,10 @@ export default function MainNavbar() {
       </Button>
     );
   } else if (pathname === '/' || pathname === '/landing-page') {
-    if (isLoaded && isSignedIn) {
+    // Don't render auth buttons until Clerk has finished loading
+    if (!isLoaded) {
+      rightContent = null;
+    } else if (isSignedIn) {
       rightContent = (
         <Stack direction="row" spacing={2} alignItems="center">
           <Typography variant="body1">Welcome, {user?.firstName || 'User'}</Typography>
