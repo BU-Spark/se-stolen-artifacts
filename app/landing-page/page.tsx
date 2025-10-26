@@ -154,7 +154,7 @@ const LandingPage: NextPage = () => {
               looting and how we hope to address it.
             </Typography>
             <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
-              Explore the DataBase
+              Explore the Database
             </Button>
           </Stack>
         </Box>
