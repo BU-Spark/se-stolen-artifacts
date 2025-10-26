@@ -30,6 +30,7 @@ import { getInitialBasicState, normalizeLimbList } from '@/app/search/utils';
 // custom components
 import CustomTag from '@/app/search/components/CustomTag';
 import ArtifactsUpload from '@/app/search/components/ArtifactsUpload';
+import SearchNavbar from '@/app/components/SearchNavbar';
 
 export default function SearchPage() {
   const [query] = useState('');
