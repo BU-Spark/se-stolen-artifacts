@@ -2,8 +2,8 @@
 
 import type { NextPage } from 'next';
 import Link from 'next/link';
-import { AppBar, Box, Button, Stack, Toolbar, Typography } from '@mui/material';
-import { ArrowForward, Search } from '@mui/icons-material';
+import { Box, Button, Stack, Typography } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import MuiLink from '@mui/material/Link';
 import { alpha } from '@mui/material/styles';
 
@@ -44,33 +44,6 @@ const LandingPage: NextPage = () => {
       >
         <Box component="span" sx={{ backgroundImage: "url('/temple.jpg')" }} />
       </Box>
-      <AppBar
-        position="sticky"
-        color="transparent"
-        sx={{ backdropFilter: 'blur(12px)', zIndex: (theme) => theme.zIndex.appBar + 1 }}
-      >
-        <Toolbar
-          sx={{
-            justifyContent: 'space-between',
-            gap: 2,
-            minHeight: { xs: 72, md: 88 },
-            px: { xs: 2, md: 4 },
-            width: '100%',
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Khmer Statuary Project
-          </Typography>
-          <Stack direction="row" spacing={{ xs: 1.5, md: 3 }} alignItems="center">
-            <Button variant="text" component={Link} href="/signin">
-              Log in
-            </Button>
-            <Button variant="contained" endIcon={<ArrowForward />} component={Link} href="/signup">
-              Sign up
-            </Button>
-          </Stack>
-        </Toolbar>
-      </AppBar>
 
       <Box
         component="main"
