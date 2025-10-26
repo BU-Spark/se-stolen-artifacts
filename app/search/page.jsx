@@ -29,6 +29,7 @@ import { getInitialBasicState, normalizeLimbList } from '@/app/search/utils';
 
 // custom components
 import CustomTag from '@/app/search/components/CustomTag';
+import ArtifactsUpload from '@/app/search/components/ArtifactsUpload';
 
 export default function SearchPage() {
   const [query] = useState('');
@@ -234,6 +235,7 @@ export default function SearchPage() {
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: 6 }}>
+      <ArtifactsUpload />
       <Paper component="form" elevation={3} onSubmit={handleSubmit} sx={{ p: { xs: 3, md: 4 } }}>
         <Stack spacing={4}>
           <Grid container alignItems="center" justifyContent="space-between">
