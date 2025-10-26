@@ -2,9 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+const maxSize = 5 * 1024 * 1024; // 5MB
 
 export async function handleUploadImage({ file }: { file: File }) {
   if (!file) throw new Error('No file uploaded');
+
+  if (file.size > maxSize) {
+    throw new Error('File too large. Maximum size is 5MB.');
+  }
 
   const newImageId = crypto.randomUUID();
   const fileExtension = file.name.split('.').pop();
