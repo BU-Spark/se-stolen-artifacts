@@ -194,33 +194,60 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     [handleFileSelect]
   );
 
-  const simulateUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
     setProgress(0);
     setError(null);
 
-    // Simulate progress: 0 → 85%
-    const interval = setInterval(() => {
+    // Simulate progress: 0% → 85% while uploading
+    const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 85) {
-          clearInterval(interval);
-          // Pause at 85% then complete
-          setTimeout(() => {
-            setProgress(100);
-            setTimeout(() => {
-              setIsUploading(false);
-              setUploadComplete(true);
-              // Trigger the callback to show search form
-              onUploadComplete?.();
-            }, 300);
-          }, 500);
+          clearInterval(progressInterval);
           return 85;
         }
         return prev + 5;
       });
-    }, 100);
+    }, 150);
+
+    try {
+      // Create FormData to send the file
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      // Call the upload API
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      // Clear interval and jump to 100%
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      // Brief delay before marking as complete for smooth animation
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadComplete(true);
+        onUploadComplete?.();
+      }, 300);
+
+      console.log('Upload successful:', result);
+    } catch (err) {
+      console.error('Upload error:', err);
+      clearInterval(progressInterval);
+      setError(err instanceof Error ? err.message : 'Upload failed');
+      setIsUploading(false);
+      setProgress(0);
+    }
   };
 
   const handleClear = () => {
@@ -277,7 +304,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           {/* Success Alert */}
           {uploadComplete && !error && (
             <Alert severity="success" icon={<CheckCircle />}>
-              File ready to submit! ({selectedFile?.name})
+              Image submitted for admin review! ({selectedFile?.name})
             </Alert>
           )}
 
@@ -457,7 +484,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                   <Button
                     variant="contained"
                     startIcon={<CloudUpload />}
-                    onClick={simulateUpload}
+                    onClick={handleUpload}
                     disabled={!selectedFile}
                   >
                     Upload
@@ -465,11 +492,19 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 </Stack>
               )}
 
-              {/* Submit Button - After upload completes */}
+              {/* Success Message and Upload Another Button */}
               {uploadComplete && (
-                <Stack direction="row" spacing={2} justifyContent="flex-end">
-                  <Button variant="contained" size="large">
-                    Submit
+                <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+                  <Typography
+                    variant="body2"
+                    color="success.main"
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
+                    <CheckCircle fontSize="small" />
+                    Image uploaded successfully and sent for review
+                  </Typography>
+                  <Button variant="outlined" onClick={handleClear}>
+                    Upload Another
                   </Button>
                 </Stack>
               )}
