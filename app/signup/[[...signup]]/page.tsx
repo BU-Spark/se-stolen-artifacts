@@ -379,6 +379,10 @@ export default function SignUpPage() {
                 }}
               />
 
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                Your email will only be used for account verification.
+              </Typography>
+
               <Button
                 fullWidth
                 type="submit"
