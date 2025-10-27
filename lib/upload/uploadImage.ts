@@ -46,7 +46,8 @@ export async function handleUploadImage({ file }: { file: File }) {
       url: publicUrl,
     };
   } catch (error: unknown) {
-    console.error('Upload failed: ', error.message);
-    return { error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Upload failed: ', errorMessage);
+    return { error: errorMessage };
   }
 }

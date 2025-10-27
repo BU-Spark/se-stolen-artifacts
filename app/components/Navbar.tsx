@@ -14,14 +14,17 @@ export default function MainNavbar() {
 
   // Determine which buttons to show based on the current path and auth state
   let rightContent = null;
-  if (pathname === '/search') {
+  if (pathname === '/search' || pathname.startsWith('/admin')) {
     rightContent = (
       <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
         Back to Home
       </Button>
     );
   } else if (pathname === '/' || pathname === '/landing-page') {
-    if (isLoaded && isSignedIn) {
+    // Don't render auth buttons until Clerk has finished loading
+    if (!isLoaded) {
+      rightContent = null;
+    } else if (isSignedIn) {
       rightContent = (
         <Stack direction="row" spacing={2} alignItems="center">
           <Typography variant="body1">Welcome, {user?.firstName || 'User'}</Typography>
