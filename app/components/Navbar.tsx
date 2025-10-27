@@ -7,7 +7,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useUser, useClerk } from '@clerk/nextjs';
 
-export default function MainNavbar() {
+export default function Navbar() {
   const pathname = usePathname();
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
@@ -15,7 +15,12 @@ export default function MainNavbar() {
   // Determine which buttons to show based on the current path and auth state
   let rightContent = null;
   let isAdmin = false;
-  if (pathname === '/search' || pathname === '/admin/admin-review') {
+  if (
+    pathname === '/search' ||
+    pathname === '/admin/admin-review' ||
+    pathname === '/signin' ||
+    pathname === '/signup'
+  ) {
     rightContent = (
       <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
         Back to Home
