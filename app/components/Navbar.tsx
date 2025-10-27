@@ -14,13 +14,17 @@ export default function MainNavbar() {
 
   // Determine which buttons to show based on the current path and auth state
   let rightContent = null;
-  if (pathname === '/search' || pathname.startsWith('/admin')) {
+  let isAdmin = false;
+  if (pathname === '/search' || pathname === '/admin/admin-review') {
     rightContent = (
       <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
         Back to Home
       </Button>
     );
   } else if (pathname === '/' || pathname === '/landing-page') {
+    if (isLoaded && isSignedIn) {
+      isAdmin = user?.publicMetadata?.role === 'admin';
+    }
     // Don't render auth buttons until Clerk has finished loading
     if (!isLoaded) {
       rightContent = null;
@@ -28,6 +32,11 @@ export default function MainNavbar() {
       rightContent = (
         <Stack direction="row" spacing={2} alignItems="center">
           <Typography variant="body1">Welcome, {user?.firstName || 'User'}</Typography>
+          {isAdmin && (
+            <Button variant="contained" color="primary" component={Link} href="/admin/admin-review">
+              Pending Images
+            </Button>
+          )}
           <Button variant="outlined" onClick={() => signOut({ redirectUrl: '/' })}>
             Log out
           </Button>
