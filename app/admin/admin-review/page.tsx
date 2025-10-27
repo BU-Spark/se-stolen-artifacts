@@ -17,7 +17,6 @@ import DownloadIcon from '@mui/icons-material/Download';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useUser } from '@clerk/nextjs';
-import MainNavbar from '@/app/components/MainNavbar';
 
 type PendingImage = {
   internal_reference_number: string;
@@ -98,7 +97,6 @@ export default function AdminReviewPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <MainNavbar />
       <Box
         component="main"
         sx={{

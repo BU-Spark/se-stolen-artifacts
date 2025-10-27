@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
-import MainNavbar from './components/MainNavbar';
+import Navbar from './components/Navbar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ClerkProvider } from '@clerk/nextjs';
 import { AppThemeProvider } from './providers';
@@ -28,7 +28,7 @@ export default function RootLayout({
         <AppThemeProvider>
           <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
             <ErrorBoundary>
-              <MainNavbar />
+              <Navbar />
               <div className="main-content-container" style={{ paddingTop: 56 }}>
                 {children}
               </div>
