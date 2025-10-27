@@ -403,12 +403,17 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
               {preview.kind === 'image' && preview.previewUrl && !imageLoadError && (
                 <Box
                   sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                     borderRadius: 2,
                     overflow: 'hidden',
                     border: '1px solid',
                     borderColor: 'divider',
                     maxWidth: 600,
                     width: '100%',
+                    height: 400, // Set a fixed height for centering
+                    margin: '0 auto', // Center the container horizontally
                     backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.05),
                   }}
                 >
@@ -428,10 +433,8 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                     }}
                     style={{
                       width: '100%',
-                      height: 'auto',
-                      display: 'block',
-                      maxHeight: '500px',
-                      objectFit: 'contain',
+                      height: '100%',
+                      objectFit: 'cover',
                     }}
                   />
                 </Box>

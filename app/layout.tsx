@@ -12,9 +12,12 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Spark! Next.js Template',
-  description: 'Spark! Next.js Template',
+  title: 'Khmer Statuary Project',
+  description: 'Cambodian Artifact Database & Search Engine',
   keywords: ['Next.js', 'React', 'TypeScript', 'Template'],
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
