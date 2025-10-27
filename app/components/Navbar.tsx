@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
@@ -85,14 +86,21 @@ export default function MainNavbar() {
           padding: 0,
         }}
       >
-        <Typography
-          variant="h6"
-          component={Link}
+        <Link
           href="/"
-          sx={{ fontWeight: 700, textDecoration: 'none', color: 'inherit' }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
         >
-          Khmer Statuary Project
-        </Typography>
+          <Image src="/logo.jpeg" alt="Khmer Statuary Project logo" width={32} height={32} priority />
+          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+            Khmer Statuary Project
+          </Typography>
+        </Link>
         {rightContent}
       </Toolbar>
     </AppBar>
