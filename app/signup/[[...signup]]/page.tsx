@@ -32,8 +32,8 @@ export default function SignUpPage() {
 
     try {
       await signUp.create({
-        firstName,
-        lastName,
+        ...(firstName && { firstName }),
+        ...(lastName && { lastName }),
         emailAddress: email,
         password,
       });
@@ -281,10 +281,20 @@ export default function SignUpPage() {
               <Stack direction="row" spacing={1.5}>
                 <TextField
                   fullWidth
-                  label="First Name"
+                  label={
+                    <>
+                      First name
+                      <Box
+                        component="span"
+                        className="optional-text"
+                        sx={{ ml: 'auto', pl: 4, color: 'text.secondary' }}
+                      >
+                        Optional
+                      </Box>
+                    </>
+                  }
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  required
                   disabled={loading}
                   autoComplete="given-name"
                   autoFocus
@@ -293,20 +303,42 @@ export default function SignUpPage() {
                     '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
                       boxShadow: 'none',
                     },
+                    '& .MuiInputLabel-root:not(.MuiInputLabel-shrink) .optional-text': {
+                      fontSize: '0.65rem',
+                    },
+                    '& .MuiInputLabel-root.MuiInputLabel-shrink .optional-text': {
+                      fontSize: '0.75rem',
+                    },
                   }}
                 />
                 <TextField
                   fullWidth
-                  label="Last Name"
+                  label={
+                    <>
+                      Last name
+                      <Box
+                        component="span"
+                        className="optional-text"
+                        sx={{ ml: 'auto', pl: 4, color: 'text.secondary' }}
+                      >
+                        Optional
+                      </Box>
+                    </>
+                  }
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  required
                   disabled={loading}
                   autoComplete="family-name"
                   size="small"
                   sx={{
                     '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
                       boxShadow: 'none',
+                    },
+                    '& .MuiInputLabel-root:not(.MuiInputLabel-shrink) .optional-text': {
+                      fontSize: '0.65rem',
+                    },
+                    '& .MuiInputLabel-root.MuiInputLabel-shrink .optional-text': {
+                      fontSize: '0.75rem',
                     },
                   }}
                 />
