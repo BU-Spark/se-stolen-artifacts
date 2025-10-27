@@ -14,7 +14,7 @@ export default function MainNavbar() {
 
   // Determine which buttons to show based on the current path and auth state
   let rightContent = null;
-  if (pathname === '/search') {
+  if (pathname === '/search' || pathname === '/admin/admin-review') {
     rightContent = (
       <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
         Back to Home
@@ -22,9 +22,15 @@ export default function MainNavbar() {
     );
   } else if (pathname === '/' || pathname === '/landing-page') {
     if (isLoaded && isSignedIn) {
+      const isAdmin = user?.publicMetadata?.role === 'admin';
       rightContent = (
         <Stack direction="row" spacing={2} alignItems="center">
           <Typography variant="body1">Welcome, {user?.firstName || 'User'}</Typography>
+          {isAdmin && (
+            <Button variant="contained" color="primary" component={Link} href="/admin/admin-review">
+              Pending Images
+            </Button>
+          )}
           <Button variant="outlined" onClick={() => signOut({ redirectUrl: '/' })}>
             Log out
           </Button>
