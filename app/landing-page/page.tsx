@@ -21,97 +21,109 @@ const LandingPage: NextPage = () => {
         marginLeft: '-50vw',
         marginRight: '-50vw',
         overflowX: 'hidden',
-        backgroundImage: 'linear-gradient(180deg, rgba(79,156,249,0.12) 0%, rgba(15,23,42,0.12) 100%)',
+        backgroundColor: (theme) => theme.palette.background.default,
       }}
     >
-      <Box
-        aria-hidden
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 0,
-          display: 'flex',
-          '& > span': {
-            flex: 1,
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'saturate(0.9)',
-            opacity: 0.55,
-          },
-        }}
-      >
-        <Box component="span" sx={{ backgroundImage: "url('/temple.jpg')" }} />
-      </Box>
       <Box
         component="main"
         sx={{
           position: 'relative',
           zIndex: 1,
           flex: 1,
+          width: '100%',
           minHeight: { xs: 'calc(100vh - 72px)', md: 'calc(100vh - 88px)' },
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          px: { xs: 2, md: 4 },
-          py: { xs: 12, md: 16 },
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'stretch' },
         }}
       >
         <Box
           sx={{
+            flex: { xs: '0 0 auto', md: '1 1 50%' },
+            width: { xs: '100%', md: '50%' },
             position: 'relative',
-            zIndex: 1,
-            width: '100%',
-            maxWidth: 560,
-            borderRadius: 5,
-            px: { xs: 4, md: 7 },
-            py: { xs: 5, md: 7 },
-            boxShadow: '0 32px 90px rgba(15,23,42,0.35)',
-            backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.4),
-            backdropFilter: 'blur(24px)',
+            minHeight: { xs: 240, md: '100%' },
+            overflow: 'hidden',
           }}
         >
-          <Stack spacing={3} alignItems="center" textAlign="center">
-            <Box
-              sx={{
-                backgroundColor: 'primary.main',
-                color: 'common.white',
-                px: 2.5,
-                py: 0.75,
-                borderRadius: 9999,
-                fontSize: { xs: '0.75rem', md: '0.875rem' },
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: 0.8,
-              }}
-            >
-              Introduction
-            </Box>
-            <Typography variant="h6" color="text.primary">
-              This database and search engine is an initiative of the Khmer Statuary Project. Please visit{' '}
-              <MuiLink
-                href="https://statuaryproject.org"
-                target="_blank"
-                rel="noopener"
+          <Box
+            component="img"
+            src="/logo.jpeg"
+            alt="Khmer Statuary Project Logo"
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </Box>
+        <Box
+          sx={{
+            flex: { xs: '0 0 auto', md: '1 1 50%' },
+            width: { xs: '100%', md: '50%' },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            px: { xs: 3, md: 6 },
+            py: { xs: 6, md: 8 },
+          }}
+        >
+          <Box
+            sx={{
+              position: 'relative',
+              zIndex: 1,
+              width: '100%',
+              maxWidth: 560,
+              borderRadius: 5,
+              px: { xs: 4, md: 7 },
+              py: { xs: 5, md: 7 },
+              boxShadow: '0 32px 90px rgba(15,23,42,0.35)',
+              backgroundColor: 'background.paper',
+            }}
+          >
+            <Stack spacing={3} alignItems={{ xs: 'center', md: 'flex-start' }} textAlign={{ xs: 'center', md: 'left' }}>
+              <Box
                 sx={{
-                  color: 'primary.main',
+                  backgroundColor: 'primary.main',
+                  color: 'common.white',
+                  px: 2.5,
+                  py: 0.75,
+                  borderRadius: 9999,
+                  fontSize: { xs: '0.75rem', md: '0.875rem' },
                   fontWeight: 600,
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.8,
                 }}
               >
-                our website (statuaryproject.org)
-              </MuiLink>{' '}
-              to read more about the design of this tool, the project&apos;s aims and objectives, and the problem of
-              looting and how we hope to address it.
-            </Typography>
-            <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
-              Explore the Database
-            </Button>
-          </Stack>
+                Introduction
+              </Box>
+              <Typography variant="h6" color="text.primary">
+                This database and search engine is an initiative of the Khmer Statuary Project. Please visit{' '}
+                <MuiLink
+                  href="https://statuaryproject.org"
+                  target="_blank"
+                  rel="noopener"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  our website (statuaryproject.org)
+                </MuiLink>{' '}
+                to read more about the design of this tool, the project&apos;s aims and objectives, and the problem of
+                looting and how we hope to address it.
+              </Typography>
+              <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
+                Explore the Database
+              </Button>
+            </Stack>
+          </Box>
         </Box>
       </Box>
       <Box
