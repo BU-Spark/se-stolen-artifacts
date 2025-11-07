@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import type { ProcessMetadataRequest, ProcessMetadataResponse, ArtifactSearchMetadata } from '@/app/types';
 import { callLLM } from '@/lib/llm/callMetadataLLM';
 import { parseLLMResponse } from '@/lib/llm/parseLLMResponse';
@@ -9,10 +9,10 @@ import { createDefaultArtifactSearchMetadata } from '@/lib/llm/defaultArtifactMe
 export async function POST(request: NextRequest) {
   try {
     // COMMENT THIS OUT IF YOU WANT TO TEST THE ENDPOINT DIRECTLY
-    // const { userId } = await auth();
-    // if (!userId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = (await request.json()) as ProcessMetadataRequest;
     const { imageId, longDescription, shortDescription } = body;
