@@ -77,9 +77,9 @@ const ATTRIBUTE_LABELS = {
   fragmentary: 'Fragmentary',
 } as const;
 
-const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+export const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 
-const coalesceString = (...values: unknown[]): string | undefined => {
+export const coalesceString = (...values: unknown[]): string | undefined => {
   for (const value of values) {
     if (typeof value === 'string') {
       const trimmed = value.trim();
@@ -91,7 +91,7 @@ const coalesceString = (...values: unknown[]): string | undefined => {
   return undefined;
 };
 
-const coalesceBoolean = (...values: unknown[]): boolean | undefined => {
+export const coalesceBoolean = (...values: unknown[]): boolean | undefined => {
   for (const value of values) {
     if (typeof value === 'boolean') {
       return value;
@@ -100,7 +100,7 @@ const coalesceBoolean = (...values: unknown[]): boolean | undefined => {
   return undefined;
 };
 
-const coalesceNumber = (...values: unknown[]): number | undefined => {
+export const coalesceNumber = (...values: unknown[]): number | undefined => {
   for (const value of values) {
     if (isFiniteNumber(value)) {
       return value;
@@ -109,7 +109,7 @@ const coalesceNumber = (...values: unknown[]): number | undefined => {
   return undefined;
 };
 
-const normalizeRange = (range: YearRange): NormalizedYearRange => {
+export const normalizeRange = (range: YearRange): NormalizedYearRange => {
   let start = isFiniteNumber(range.start) ? range.start : undefined;
   let end = isFiniteNumber(range.end) ? range.end : undefined;
   if (start !== undefined && end !== undefined && start > end) {
@@ -118,7 +118,7 @@ const normalizeRange = (range: YearRange): NormalizedYearRange => {
   return { start, end };
 };
 
-const extractYearRange = (...inputs: unknown[]): NormalizedYearRange | undefined => {
+export const extractYearRange = (...inputs: unknown[]): NormalizedYearRange | undefined => {
   for (const input of inputs) {
     if (!input) continue;
     if (Array.isArray(input) && input.length >= 2) {
@@ -140,7 +140,7 @@ const extractYearRange = (...inputs: unknown[]): NormalizedYearRange | undefined
   return undefined;
 };
 
-const collectStringArray = (value: unknown): string[] => {
+export const collectStringArray = (value: unknown): string[] => {
   const items: string[] = [];
 
   if (Array.isArray(value)) {
@@ -163,7 +163,7 @@ const collectStringArray = (value: unknown): string[] => {
   return Array.from(new Set(items));
 };
 
-const buildAttributeCondition = (
+export const buildAttributeCondition = (
   attributeLabel: string,
   shouldExist: boolean,
   addCondition: (template: string, ...params: QueryValue[]) => void
