@@ -223,9 +223,11 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     }, 150);
 
     try {
-      // Create FormData to send the file
+      // Create FormData to send the file and descriptions
       const formData = new FormData();
       formData.append('file', selectedFile);
+      formData.append('shortDescription', shortDescription.trim());
+      formData.append('longDescription', longDescription.trim());
 
       // Call the upload API
       const response = await fetch('/api/upload', {
@@ -237,6 +239,33 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
 
       if (!response.ok) {
         throw new Error(result.error || 'Upload failed');
+      }
+
+      // If we have an image ID, send the long description to the LLM processing endpoint
+      if (result.id && longDescription.trim()) {
+        try {
+          const llmResponse = await fetch('/api/process-metadata', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageId: result.id,
+              longDescription: longDescription.trim(),
+              shortDescription: shortDescription.trim(),
+            }),
+          });
+
+          const llmResult = await llmResponse.json();
+
+          if (!llmResponse.ok) {
+            console.error('LLM processing failed:', llmResult.error);
+          } else {
+            console.log('LLM processing successful:', llmResult);
+          }
+        } catch (llmErr) {
+          console.error('Error processing metadata with LLM:', llmErr);
+        }
       }
 
       // Clear interval and jump to 100%

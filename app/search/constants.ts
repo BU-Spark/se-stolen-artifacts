@@ -15,7 +15,7 @@ export const BASIC_FIELDS = [
     placeholder: 'e.g. John Dwyer Oriental Art',
   },
   {
-    id: 'suspectedCurrentColation',
+    id: 'suspectedCurrentLocation',
     label: 'Suspected Current Location',
     type: 'text',
     placehlder: 'e.g. Getty Museum',
