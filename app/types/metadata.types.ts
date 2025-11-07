@@ -101,6 +101,10 @@ export interface ArtifactSearchMetadata {
   // ============================================
   /** Raw LLM response for debugging/audit purposes */
   rawLlmResponse?: string;
+  // Request information
+  // Short is required for UI
+  shortDescription: string;
+  longDescription?: string;
 }
 
 /**

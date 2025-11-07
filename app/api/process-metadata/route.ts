@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
     // Parse LLM response into structured metadata
     const metadata: ArtifactSearchMetadata = parseLLMResponse(llmResponse);
 
+    // Add the user-provided descriptions to the metadata
+    metadata.shortDescription = shortDescription;
+    metadata.longDescription = longDescription;
+
     // Insert into database
     await insertArtifactMetadata(imageId, metadata);
 
