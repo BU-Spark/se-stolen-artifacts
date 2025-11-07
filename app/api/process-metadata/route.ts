@@ -4,6 +4,7 @@ import type { ProcessMetadataRequest, ProcessMetadataResponse, ArtifactSearchMet
 import { callLLM } from '@/lib/llm/callMetadataLLM';
 import { parseLLMResponse } from '@/lib/llm/parseLLMResponse';
 import { insertArtifactMetadata } from '@/lib/llm/insertArtifactMetadata';
+import { createDefaultArtifactSearchMetadata } from '@/lib/llm/defaultArtifactMetadata';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,19 +24,36 @@ export async function POST(request: NextRequest) {
 
     console.log(`Processing metadata for image ${imageId}...`);
 
-    const llmResponse = await callLLM({
-      longDescription,
-      shortDescription,
-    });
+    // Try calling the LLM up to 2 times; on failure fallback to defaults
+    let metadata: ArtifactSearchMetadata | null = null;
+    let lastError: unknown = null;
 
-    // Parse LLM response into structured metadata
-    const metadata: ArtifactSearchMetadata = parseLLMResponse(llmResponse);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const llmResponse = await callLLM({
+          longDescription,
+          shortDescription,
+        });
 
-    // Add the user-provided descriptions to the metadata
-    metadata.shortDescription = shortDescription;
-    metadata.longDescription = longDescription;
+        const parsed = parseLLMResponse(llmResponse);
+        metadata = parsed;
+        break; // success
+      } catch (err) {
+        lastError = err;
+        console.warn(`LLM attempt ${attempt} failed`, err);
+      }
+    }
 
-    // Insert into database
+    if (!metadata) {
+      console.error('LLM failed twice, using fallback defaults.', lastError);
+      metadata = createDefaultArtifactSearchMetadata(shortDescription, longDescription);
+    } else {
+      // Carry through user-provided descriptions on success as well
+      metadata.shortDescription = shortDescription;
+      metadata.longDescription = longDescription;
+    }
+
+    // Insert into database (works for both success and fallback)
     await insertArtifactMetadata(imageId, metadata);
 
     const response: ProcessMetadataResponse = {
