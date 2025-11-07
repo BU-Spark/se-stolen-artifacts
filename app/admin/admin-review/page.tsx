@@ -1,29 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import {
-  Box,
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardMedia,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import { Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
 import { useUser } from '@clerk/nextjs';
-
-type PendingImage = {
-  internal_reference_number: string;
-  image_url?: string | null;
-  title?: string | null;
-  description?: string | null;
-};
+import PendingImageCard, { PendingImage } from './components/PendingImageCard';
 
 type PendingImagesResponse = {
   images: PendingImage[];
@@ -90,9 +70,71 @@ export default function AdminReviewPage() {
     }
   }, []);
 
-  const handleDecisionClick = useCallback((imageId: string, decision: 'approve' | 'deny') => {
-    // TODO: Integrate with approve/deny endpoints when available.
-    console.log(`Admin decision for ${imageId}: ${decision}`);
+  const handleApprove = useCallback(async (imageId: string, folderId: string) => {
+    // TODO: Integrate with approve endpoint
+    console.log(`Approving ${imageId} and moving to folder ${folderId}`);
+
+    try {
+      // TODO: Add API call here
+      // await fetch('/api/admin/approve', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ imageId, folderId }),
+      // });
+
+      // Remove from local state after successful approval
+      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+    } catch (error) {
+      console.error('Failed to approve image:', error);
+      setError('Failed to approve image');
+    }
+  }, []);
+
+  const handleAddToNew = useCallback(async (imageId: string) => {
+    // TODO: Integrate with create new folder endpoint
+    console.log(`Creating new folder and adding ${imageId}`);
+
+    try {
+      // TODO: Add API call here
+      // await fetch('/api/admin/add-to-new', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ imageId }),
+      // });
+
+      // Remove from local state after successful addition
+      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+    } catch (error) {
+      console.error('Failed to add image to new folder:', error);
+      setError('Failed to add image to new folder');
+    }
+  }, []);
+
+  const handleDeny = useCallback(async (imageId: string) => {
+    // TODO: Integrate with deny endpoint
+    console.log(`Denying ${imageId}`);
+
+    try {
+      // TODO: Add API call here
+      // await fetch('/api/admin/deny', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ imageId }),
+      // });
+
+      // Remove from local state after successful denial
+      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+    } catch (error) {
+      console.error('Failed to deny image:', error);
+      setError('Failed to deny image');
+    }
+  }, []);
+
+  const handleMetadataUpdate = useCallback((imageId: string, metadata: PendingImage['metadata']) => {
+    // TODO: API call to update metadata
+    console.log('Updating metadata for', imageId, metadata);
+    // Optimistically update local state
+    setImages((prev) => prev.map((img) => (img.internal_reference_number === imageId ? { ...img, metadata } : img)));
   }, []);
 
   return (
@@ -136,66 +178,21 @@ export default function AdminReviewPage() {
                 display: 'grid',
                 gap: 3,
                 gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                alignItems: 'start',
               }}
             >
-              {images.map((image) => {
-                const { internal_reference_number, image_url, title, description } = image;
-                return (
-                  <Box key={internal_reference_number} sx={{ display: 'flex' }}>
-                    <Card sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                      <CardMedia
-                        component="img"
-                        image={image_url || '/image-404-placeholder.avif'}
-                        alt={title || `Pending image ${internal_reference_number}`}
-                        sx={{ height: 280, objectFit: 'cover' }}
-                        loading="lazy"
-                      />
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        <Stack spacing={1}>
-                          <Typography variant="h6" color="text.primary">
-                            {title || `Image ${internal_reference_number}`}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Reference ID: {internal_reference_number}
-                          </Typography>
-                          {description ? (
-                            <Typography variant="body2" color="text.secondary">
-                              {description}
-                            </Typography>
-                          ) : null}
-                        </Stack>
-                      </CardContent>
-                      <CardActions sx={{ px: 3, pb: 3 }}>
-                        <Button
-                          variant="contained"
-                          color="success"
-                          startIcon={<CheckCircleIcon />}
-                          onClick={() => handleDecisionClick(internal_reference_number, 'approve')}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="error"
-                          startIcon={<CancelIcon />}
-                          onClick={() => handleDecisionClick(internal_reference_number, 'deny')}
-                        >
-                          Deny
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="secondary"
-                          startIcon={<DownloadIcon />}
-                          onClick={() => handleDownload(internal_reference_number)}
-                          disabled={downloadInFlight === internal_reference_number}
-                        >
-                          {downloadInFlight === internal_reference_number ? 'Downloading...' : 'Download'}
-                        </Button>
-                      </CardActions>
-                    </Card>
-                  </Box>
-                );
-              })}
+              {images.map((image) => (
+                <PendingImageCard
+                  key={image.internal_reference_number}
+                  image={image}
+                  downloadInFlight={downloadInFlight === image.internal_reference_number}
+                  onDownload={handleDownload}
+                  onApprove={handleApprove}
+                  onAddToNew={handleAddToNew}
+                  onDeny={handleDeny}
+                  onMetadataUpdate={handleMetadataUpdate}
+                />
+              ))}
             </Box>
           )}
         </Container>
