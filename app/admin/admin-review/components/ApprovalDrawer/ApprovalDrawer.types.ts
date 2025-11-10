@@ -1,3 +1,5 @@
+import { PendingImageMetadata } from '../PendingImageCard/PendingImageCard.types';
+
 export type Folder = {
   id: string;
   name: string;
@@ -16,9 +18,11 @@ export type ApprovalDrawerProps = {
   imageId: string;
   imageUrl: string | null;
   imageTitle: string;
+  metadata?: PendingImageMetadata;
   onClose: () => void;
-  onApprove: (imageId: string, folderId: string) => void;
-  onAddToNew: (imageId: string) => void;
+  onSaveMetadata: (imageId: string, metadata: PendingImageMetadata) => void;
+  onApprove: (imageId: string, folderId: string, metadata: PendingImageMetadata) => void;
+  onAddToNew: (imageId: string, metadata: PendingImageMetadata) => void;
 };
 
 export type DrawerView = 'folder-list' | 'folder-contents';

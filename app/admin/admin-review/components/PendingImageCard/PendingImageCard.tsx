@@ -7,30 +7,28 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import EditIcon from '@mui/icons-material/Edit';
 import { PendingImage, MetadataViewMode } from './PendingImageCard.types';
 import MetadataSection from './MetadataSection';
-import MetadataEditor from './MetadataEditor';
 import ApprovalDrawer from '../ApprovalDrawer';
 
 type PendingImageCardProps = {
   image: PendingImage;
   downloadInFlight: boolean;
   onDownload: (imageId: string) => void;
-  onApprove: (imageId: string, folderId: string) => void;
-  onAddToNew: (imageId: string) => void;
+  onSaveMetadata: (imageId: string, metadata: PendingImage['metadata']) => void;
+  onApprove: (imageId: string, folderId: string, metadata: PendingImage['metadata']) => void;
+  onAddToNew: (imageId: string, metadata: PendingImage['metadata']) => void;
   onDeny: (imageId: string) => void;
-  onMetadataUpdate: (imageId: string, metadata: PendingImage['metadata']) => void;
 };
 
 export default function PendingImageCard({
   image,
   downloadInFlight,
   onDownload,
+  onSaveMetadata,
   onApprove,
   onAddToNew,
   onDeny,
-  onMetadataUpdate,
 }: PendingImageCardProps) {
   const [viewMode, setViewMode] = useState<MetadataViewMode>('collapsed');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -41,24 +39,6 @@ export default function PendingImageCard({
     setViewMode((prev) => (prev === 'collapsed' ? 'viewing' : 'collapsed'));
   };
 
-  const handleEditClick = () => {
-    setViewMode('editing');
-  };
-
-  const handleSaveMetadata = (updatedMetadata: PendingImage['metadata']) => {
-    onMetadataUpdate(internal_reference_number, updatedMetadata);
-    setViewMode('viewing');
-
-    // Scroll card into view smoothly after saving
-    setTimeout(() => {
-      cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-  };
-
-  const handleCancelEdit = () => {
-    setViewMode('viewing');
-  };
-
   const handleApproveClick = () => {
     setDrawerOpen(true);
   };
@@ -67,13 +47,17 @@ export default function PendingImageCard({
     setDrawerOpen(false);
   };
 
-  const handleApprove = (imageId: string, folderId: string) => {
-    onApprove(imageId, folderId);
+  const handleSaveMetadata = (imageId: string, metadata: PendingImage['metadata']) => {
+    onSaveMetadata(imageId, metadata);
+  };
+
+  const handleApprove = (imageId: string, folderId: string, metadata: PendingImage['metadata']) => {
+    onApprove(imageId, folderId, metadata);
     setDrawerOpen(false);
   };
 
-  const handleAddToNew = (imageId: string) => {
-    onAddToNew(imageId);
+  const handleAddToNew = (imageId: string, metadata: PendingImage['metadata']) => {
+    onAddToNew(imageId, metadata);
     setDrawerOpen(false);
   };
 
@@ -117,23 +101,7 @@ export default function PendingImageCard({
 
             <Collapse in={viewMode !== 'collapsed'} timeout="auto">
               <Box sx={{ mt: 2 }}>
-                {viewMode === 'viewing' && (
-                  <>
-                    <MetadataSection metadata={metadata} />
-                    <Button
-                      onClick={handleEditClick}
-                      startIcon={<EditIcon />}
-                      variant="outlined"
-                      size="small"
-                      sx={{ mt: 2 }}
-                    >
-                      Edit Metadata
-                    </Button>
-                  </>
-                )}
-                {viewMode === 'editing' && (
-                  <MetadataEditor metadata={metadata} onSave={handleSaveMetadata} onCancel={handleCancelEdit} />
-                )}
+                <MetadataSection metadata={metadata} />
               </Box>
             </Collapse>
           </Box>
@@ -169,7 +137,9 @@ export default function PendingImageCard({
         imageId={internal_reference_number}
         imageUrl={image_url ?? null}
         imageTitle={title || `Image ${internal_reference_number}`}
+        metadata={metadata}
         onClose={handleDrawerClose}
+        onSaveMetadata={handleSaveMetadata}
         onApprove={handleApprove}
         onAddToNew={handleAddToNew}
       />

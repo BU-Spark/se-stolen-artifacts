@@ -54,7 +54,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
               fullWidth
             />
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   label="Year of First Appearance"
                   type="number"
@@ -64,7 +64,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   label="Year Outside Cambodia"
                   type="number"
@@ -114,7 +114,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
             🗿 Physical Characteristics
           </Typography>
           <Grid container spacing={1}>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -126,7 +126,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Repatriated"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -138,7 +138,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Multiple Heads"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -150,7 +150,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Four Arms"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -162,7 +162,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Eight Arms"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -174,7 +174,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Ten Arms"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -186,7 +186,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Over Ten Arms"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -198,7 +198,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Fragmentary"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -221,7 +221,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
             👤 Body Parts Present
           </Typography>
           <Grid container spacing={1}>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -233,7 +233,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Head"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -245,7 +245,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Torso"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -257,7 +257,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Shoulder-Elbow"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -269,7 +269,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Elbow-Wrist"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -281,7 +281,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Hand"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -293,7 +293,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Hip-Knee"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -305,7 +305,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Knee-Ankle"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -317,7 +317,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Foot"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -340,7 +340,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
             ⚠️ Fragmentation Points
           </Typography>
           <Grid container spacing={1}>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -352,7 +352,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="At Neck"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -364,7 +364,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="At Shoulder"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -376,7 +376,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="At Elbow"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -388,7 +388,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="At Wrist"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -400,7 +400,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="Upper Leg"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -412,7 +412,7 @@ export default function MetadataEditor({ metadata, onSave, onCancel }: MetadataE
                 label="At Knee"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormControlLabel
                 control={
                   <Checkbox

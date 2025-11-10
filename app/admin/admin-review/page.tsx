@@ -70,16 +70,36 @@ export default function AdminReviewPage() {
     }
   }, []);
 
-  const handleApprove = useCallback(async (imageId: string, folderId: string) => {
+  const handleSaveMetadata = useCallback(async (imageId: string, metadata: PendingImage['metadata']) => {
+    // TODO: API call to update metadata
+    console.log('Saving metadata for', imageId, metadata);
+
+    try {
+      // TODO: Add API call here
+      // await fetch('/api/admin/update-metadata', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ imageId, metadata }),
+      // });
+
+      // Update local state with new metadata
+      setImages((prev) => prev.map((img) => (img.internal_reference_number === imageId ? { ...img, metadata } : img)));
+    } catch (error) {
+      console.error('Failed to save metadata:', error);
+      setError('Failed to save metadata');
+    }
+  }, []);
+
+  const handleApprove = useCallback(async (imageId: string, folderId: string, metadata: PendingImage['metadata']) => {
     // TODO: Integrate with approve endpoint
-    console.log(`Approving ${imageId} and moving to folder ${folderId}`);
+    console.log(`Approving ${imageId} and moving to folder ${folderId}`, metadata);
 
     try {
       // TODO: Add API call here
       // await fetch('/api/admin/approve', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ imageId, folderId }),
+      //   body: JSON.stringify({ imageId, folderId, metadata }),
       // });
 
       // Remove from local state after successful approval
@@ -90,16 +110,16 @@ export default function AdminReviewPage() {
     }
   }, []);
 
-  const handleAddToNew = useCallback(async (imageId: string) => {
+  const handleAddToNew = useCallback(async (imageId: string, metadata: PendingImage['metadata']) => {
     // TODO: Integrate with create new folder endpoint
-    console.log(`Creating new folder and adding ${imageId}`);
+    console.log(`Creating new folder and adding ${imageId}`, metadata);
 
     try {
       // TODO: Add API call here
       // await fetch('/api/admin/add-to-new', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ imageId }),
+      //   body: JSON.stringify({ imageId, metadata }),
       // });
 
       // Remove from local state after successful addition
@@ -128,13 +148,6 @@ export default function AdminReviewPage() {
       console.error('Failed to deny image:', error);
       setError('Failed to deny image');
     }
-  }, []);
-
-  const handleMetadataUpdate = useCallback((imageId: string, metadata: PendingImage['metadata']) => {
-    // TODO: API call to update metadata
-    console.log('Updating metadata for', imageId, metadata);
-    // Optimistically update local state
-    setImages((prev) => prev.map((img) => (img.internal_reference_number === imageId ? { ...img, metadata } : img)));
   }, []);
 
   return (
@@ -187,10 +200,10 @@ export default function AdminReviewPage() {
                   image={image}
                   downloadInFlight={downloadInFlight === image.internal_reference_number}
                   onDownload={handleDownload}
+                  onSaveMetadata={handleSaveMetadata}
                   onApprove={handleApprove}
                   onAddToNew={handleAddToNew}
                   onDeny={handleDeny}
-                  onMetadataUpdate={handleMetadataUpdate}
                 />
               ))}
             </Box>

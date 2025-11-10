@@ -1,15 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Drawer, Box, Typography, Button, IconButton, Stack, Card, ImageList, ImageListItem } from '@mui/material';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Drawer,
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Stack,
+  Card,
+  ImageList,
+  ImageListItem,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Divider,
+  Collapse,
+  Chip,
+  Grid,
+} from '@mui/material';
 import Image from 'next/image';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FolderIcon from '@mui/icons-material/Folder';
-import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import SaveIcon from '@mui/icons-material/Save';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import CheckIcon from '@mui/icons-material/Check';
 import { ApprovalDrawerProps, Folder, FolderImage, DrawerView } from './ApprovalDrawer.types';
+import { PendingImageMetadata } from '../PendingImageCard/PendingImageCard.types';
 
 // TODO: Fetch these from your database or configuration
 const AVAILABLE_FOLDERS: Folder[] = [
@@ -29,19 +50,47 @@ const MOCK_FOLDER_IMAGES: Record<string, FolderImage[]> = {
   ],
 };
 
-export default function ApprovalDrawer({ open, imageId, onClose, onApprove, onAddToNew }: ApprovalDrawerProps) {
+export default function ApprovalDrawer({
+  open,
+  imageId,
+  metadata,
+  onClose,
+  onSaveMetadata,
+  onApprove,
+  onAddToNew,
+}: ApprovalDrawerProps) {
   const [view, setView] = useState<DrawerView>('folder-list');
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [folderImages, setFolderImages] = useState<FolderImage[]>([]);
+  const [formData, setFormData] = useState<PendingImageMetadata>(metadata || {});
+  const [metadataExpanded, setMetadataExpanded] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const drawerContentRef = useRef<HTMLDivElement>(null);
+  const prevOpenRef = useRef(open);
 
-  // Reset to folder list when drawer opens
+  // Reset when drawer opens (only when transitioning from closed to open)
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
+      // Drawer just opened - reset state
       setView('folder-list');
       setSelectedFolder(null);
       setFolderImages([]);
+      setFormData(metadata || {});
+      setMetadataExpanded(true);
+      setHasUnsavedChanges(false);
     }
-  }, [open]);
+    prevOpenRef.current = open;
+  }, [open, metadata]);
+
+  // Sync formData when metadata prop changes (after save)
+  useEffect(() => {
+    if (open && metadata) {
+      // Only update if we don't have unsaved changes to avoid overwriting user input
+      if (!hasUnsavedChanges) {
+        setFormData(metadata);
+      }
+    }
+  }, [metadata, open, hasUnsavedChanges]);
 
   const handleFolderClick = (folder: Folder) => {
     setSelectedFolder(folder);
@@ -55,16 +104,103 @@ export default function ApprovalDrawer({ open, imageId, onClose, onApprove, onAd
     setSelectedFolder(null);
   };
 
+  const handleTextChange = (field: keyof PendingImageMetadata) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [field]: field.includes('year') ? (value ? parseInt(value, 10) : undefined) : value,
+      };
+      setHasUnsavedChanges(true);
+      return updated;
+    });
+  };
+
+  const handleCheckboxChange = (field: keyof PendingImageMetadata) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: e.target.checked };
+      setHasUnsavedChanges(true);
+      return updated;
+    });
+  };
+
+  const handleSaveMetadata = () => {
+    onSaveMetadata(imageId, formData);
+    setHasUnsavedChanges(false);
+    setMetadataExpanded(false); // Collapse after saving
+
+    // Scroll to top of drawer content
+    setTimeout(() => {
+      drawerContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
   const handleAddToFolder = () => {
     if (selectedFolder) {
-      onApprove(imageId, selectedFolder.id);
+      onApprove(imageId, selectedFolder.id, formData);
       onClose();
     }
   };
 
   const handleAddToNew = () => {
-    onAddToNew(imageId);
+    onAddToNew(imageId, formData);
     onClose();
+  };
+
+  // Helper to get fragmentation points that are true
+  const getFragmentationPoints = () => {
+    const points: string[] = [];
+    if (formData.fragmented_at_neck) points.push('At Neck');
+    if (formData.fragment_at_shoulder) points.push('At Shoulder');
+    if (formData.fragmented_at_elbow) points.push('At Elbow');
+    if (formData.fragmented_at_wrist) points.push('At Wrist');
+    if (formData.fragmented_upper_leg) points.push('Upper Leg');
+    if (formData.fragmented_at_knee) points.push('At Knee');
+    if (formData.fragmented_at_ankle) points.push('At Ankle');
+    return points;
+  };
+
+  // Helper to get body parts that are present
+  const getBodyPartsPresent = () => {
+    const parts: string[] = [];
+    if (formData.head_present) parts.push('Head');
+    if (formData.torso_present) parts.push('Torso');
+    if (formData.shoulder_elbow_present) parts.push('Shoulder-Elbow');
+    if (formData.elbow_wrist_present) parts.push('Elbow-Wrist');
+    if (formData.hand_present) parts.push('Hand');
+    if (formData.hip_knee_present) parts.push('Hip-Knee');
+    if (formData.knee_ankle_present) parts.push('Knee-Ankle');
+    if (formData.foot_present) parts.push('Foot');
+    if (formData.base_present) parts.push('Base');
+    return parts;
+  };
+
+  // Helper to get physical characteristics that are true
+  const getPhysicalCharacteristics = () => {
+    const characteristics: string[] = [];
+    if (formData.repatriated) characteristics.push('Repatriated');
+    if (formData.multiple_heads) characteristics.push('Multiple Heads');
+    if (formData.four_arms) characteristics.push('Four Arms');
+    if (formData.eight_arms) characteristics.push('Eight Arms');
+    if (formData.ten_arms) characteristics.push('Ten Arms');
+    if (formData.over_ten_arms) characteristics.push('Over Ten Arms');
+    if (formData.fragmentary) characteristics.push('Fragmentary');
+    if (formData.fragments_from_multiple_statues) characteristics.push('Multiple Statue Fragments');
+    return characteristics;
+  };
+
+  // Check if basic info has any data
+  const hasBasicInfo = () => {
+    return !!(
+      formData.title_of_object ||
+      formData.suspected_current_location ||
+      formData.year_first_appearance ||
+      formData.year_first_appearance_outside_cambodia ||
+      formData.image_source ||
+      formData.photograph_location ||
+      formData.dealer_gallery_collector_name ||
+      formData.material_subject
+    );
   };
 
   return (
@@ -74,12 +210,12 @@ export default function ApprovalDrawer({ open, imageId, onClose, onApprove, onAd
       onClose={onClose}
       sx={{
         '& .MuiDrawer-paper': {
-          width: { xs: '100%', sm: 520 },
+          width: { xs: '100%', sm: 600 },
           p: 0,
         },
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box component="form" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Header */}
         <Box
           sx={{
@@ -98,7 +234,7 @@ export default function ApprovalDrawer({ open, imageId, onClose, onApprove, onAd
               </IconButton>
             )}
             <Typography variant="h6" fontWeight={600}>
-              {view === 'folder-list' ? 'Select a folder' : selectedFolder?.name}
+              Review & Approve Submission
             </Typography>
           </Box>
           <IconButton onClick={onClose} size="small">
@@ -106,121 +242,718 @@ export default function ApprovalDrawer({ open, imageId, onClose, onApprove, onAd
           </IconButton>
         </Box>
 
-        {/* Content */}
-        <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
-          {view === 'folder-list' ? (
-            /* Folder List View */
-            <Stack spacing={2}>
-              {AVAILABLE_FOLDERS.map((folder) => (
-                <Card
-                  key={folder.id}
-                  variant="outlined"
-                  sx={{
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    borderColor: selectedFolder?.id === folder.id ? 'primary.main' : 'divider',
-                    borderWidth: selectedFolder?.id === folder.id ? 2 : 1,
-                    '&:hover': {
-                      borderColor: 'primary.light',
-                      bgcolor: 'action.hover',
-                    },
-                  }}
-                  onClick={() => handleFolderClick(folder)}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 3, gap: 2 }}>
-                    {/* Folder Icon with Image Preview */}
-                    <Box
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: 1,
-                        bgcolor: 'grey.100',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <ImageIcon sx={{ fontSize: 40, color: 'grey.400' }} />
-                    </Box>
+        {/* Content - Scrollable */}
+        <Box ref={drawerContentRef} sx={{ flexGrow: 1, overflow: 'auto', p: 3 }}>
+          <Stack spacing={4}>
+            {/* Metadata Editing Section */}
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  mb: 2,
+                  cursor: 'pointer',
+                }}
+                onClick={() => setMetadataExpanded(!metadataExpanded)}
+              >
+                <Typography variant="h6" fontWeight={600}>
+                  📦 Edit Metadata
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {hasUnsavedChanges && (
+                    <Typography variant="caption" color="warning.main" sx={{ fontStyle: 'italic' }}>
+                      Unsaved changes
+                    </Typography>
+                  )}
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMetadataExpanded(!metadataExpanded);
+                    }}
+                  >
+                    {metadataExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  </IconButton>
+                </Box>
+              </Box>
 
-                    {/* Folder Info */}
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <FolderIcon sx={{ color: 'text.secondary' }} />
-                        <Typography variant="h6" fontWeight={500}>
-                          {folder.name}
-                        </Typography>
-                      </Box>
-                      {folder.imageCount !== undefined && (
-                        <Typography variant="body2" color="text.secondary">
-                          {folder.imageCount} {folder.imageCount === 1 ? 'image' : 'images'}
+              {/* Collapsed Summary View */}
+              {!metadataExpanded && (
+                <Box sx={{ mt: 1 }}>
+                  <Stack spacing={2.5}>
+                    {/* Basic Information Summary - Always show header, show content if exists */}
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                        📦 Basic Information
+                      </Typography>
+                      {hasBasicInfo() ? (
+                        <Stack spacing={0.5} sx={{ mt: 1 }}>
+                          {formData.title_of_object && (
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Title:</strong> {formData.title_of_object}
+                            </Typography>
+                          )}
+                          {formData.material_subject && (
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Material:</strong> {formData.material_subject}
+                            </Typography>
+                          )}
+                          {(formData.year_first_appearance || formData.year_first_appearance_outside_cambodia) && (
+                            <Typography variant="body2" color="text.secondary">
+                              {formData.year_first_appearance && (
+                                <>
+                                  <strong>Year:</strong> {formData.year_first_appearance}
+                                </>
+                              )}
+                              {formData.year_first_appearance &&
+                                formData.year_first_appearance_outside_cambodia &&
+                                ' • '}
+                              {formData.year_first_appearance_outside_cambodia && (
+                                <>Outside Cambodia: {formData.year_first_appearance_outside_cambodia}</>
+                              )}
+                            </Typography>
+                          )}
+                          {formData.suspected_current_location && (
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Location:</strong> {formData.suspected_current_location}
+                            </Typography>
+                          )}
+                          {formData.image_source && (
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Source:</strong> {formData.image_source}
+                            </Typography>
+                          )}
+                        </Stack>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 1 }}>
+                          No information entered
                         </Typography>
                       )}
                     </Box>
 
-                    {/* Checkmark if selected */}
-                    {selectedFolder?.id === folder.id && (
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '50%',
-                          bgcolor: 'primary.main',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                        }}
-                      >
-                        ✓
+                    {/* Physical Characteristics Summary */}
+                    {getPhysicalCharacteristics().length > 0 && (
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                          🗿 Physical Characteristics
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                          {getPhysicalCharacteristics().map((char) => (
+                            <Chip
+                              key={char}
+                              label={char}
+                              icon={<CheckIcon sx={{ fontSize: 16 }} />}
+                              size="small"
+                              sx={{
+                                borderColor: 'primary.main',
+                                bgcolor: 'rgba(25, 118, 210, 0.08)',
+                                color: 'primary.dark',
+                                fontWeight: 500,
+                                '& .MuiChip-icon': {
+                                  color: 'primary.main',
+                                },
+                              }}
+                              variant="outlined"
+                            />
+                          ))}
+                        </Box>
                       </Box>
                     )}
-                  </Box>
-                </Card>
-              ))}
-            </Stack>
-          ) : (
-            /* Folder Contents View */
-            <Box>
-              {folderImages.length === 0 ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    py: 8,
-                    gap: 2,
-                  }}
-                >
-                  <FolderIcon sx={{ fontSize: 64, color: 'grey.300' }} />
-                  <Typography variant="body1" color="text.secondary">
-                    This folder is empty
-                  </Typography>
+
+                    {/* Body Parts Present Summary */}
+                    {getBodyPartsPresent().length > 0 && (
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                          👤 Body Parts Present
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                          {getBodyPartsPresent().map((part) => (
+                            <Chip
+                              key={part}
+                              label={part}
+                              icon={<CheckIcon sx={{ fontSize: 16 }} />}
+                              size="small"
+                              sx={{
+                                borderColor: 'success.main',
+                                bgcolor: 'rgba(46, 125, 50, 0.08)',
+                                color: 'success.dark',
+                                fontWeight: 500,
+                                '& .MuiChip-icon': {
+                                  color: 'success.main',
+                                },
+                              }}
+                              variant="outlined"
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Fragmentation Points Summary */}
+                    {getFragmentationPoints().length > 0 && (
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                          ⚠️ Fragmentation Points
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                          {getFragmentationPoints().map((point) => (
+                            <Chip
+                              key={point}
+                              label={point}
+                              icon={<CheckIcon sx={{ fontSize: 16 }} />}
+                              size="small"
+                              sx={{
+                                borderColor: 'error.main',
+                                borderWidth: 1,
+                                borderStyle: 'solid',
+                                bgcolor: 'rgba(211, 47, 47, 0.08)',
+                                color: 'error.dark',
+                                fontWeight: 500,
+                                '& .MuiChip-icon': {
+                                  color: 'error.main',
+                                },
+                              }}
+                              variant="outlined"
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                  </Stack>
                 </Box>
-              ) : (
-                <ImageList cols={2} gap={16}>
-                  {folderImages.map((image) => (
-                    <ImageListItem key={image.id}>
-                      <Image
-                        src={image.url}
-                        alt={image.title}
-                        width={250}
-                        height={250}
-                        style={{
-                          borderRadius: 8,
-                          objectFit: 'cover',
-                          width: '100%',
-                          height: 'auto',
-                        }}
+              )}
+
+              <Collapse in={metadataExpanded} timeout="auto">
+                <Box>
+                  {/* Basic Information */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      Basic Information
+                    </Typography>
+                    <Stack spacing={2} sx={{ mt: 2 }}>
+                      <TextField
+                        label="Title of Object"
+                        value={formData.title_of_object || ''}
+                        onChange={handleTextChange('title_of_object')}
+                        size="small"
+                        fullWidth
                       />
-                    </ImageListItem>
+                      <TextField
+                        label="Suspected Current Location"
+                        value={formData.suspected_current_location || ''}
+                        onChange={handleTextChange('suspected_current_location')}
+                        size="small"
+                        fullWidth
+                      />
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 6 }}>
+                          <TextField
+                            label="Year of First Appearance"
+                            type="number"
+                            value={formData.year_first_appearance || ''}
+                            onChange={handleTextChange('year_first_appearance')}
+                            size="small"
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <TextField
+                            label="Year Outside Cambodia"
+                            type="number"
+                            value={formData.year_first_appearance_outside_cambodia || ''}
+                            onChange={handleTextChange('year_first_appearance_outside_cambodia')}
+                            size="small"
+                            fullWidth
+                          />
+                        </Grid>
+                      </Grid>
+                      <TextField
+                        label="Image Source"
+                        value={formData.image_source || ''}
+                        onChange={handleTextChange('image_source')}
+                        size="small"
+                        fullWidth
+                      />
+                      <TextField
+                        label="Photograph Location"
+                        value={formData.photograph_location || ''}
+                        onChange={handleTextChange('photograph_location')}
+                        size="small"
+                        fullWidth
+                      />
+                      <TextField
+                        label="Dealer/Gallery/Collector's Name"
+                        value={formData.dealer_gallery_collector_name || ''}
+                        onChange={handleTextChange('dealer_gallery_collector_name')}
+                        size="small"
+                        fullWidth
+                      />
+                      <TextField
+                        label="Material Subject"
+                        value={formData.material_subject || ''}
+                        onChange={handleTextChange('material_subject')}
+                        size="small"
+                        fullWidth
+                      />
+                    </Stack>
+                  </Box>
+
+                  <Divider sx={{ my: 3 }} />
+
+                  {/* Physical Characteristics */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      🗿 Physical Characteristics
+                    </Typography>
+                    <Grid container spacing={1} sx={{ mt: 1 }}>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.repatriated || false}
+                              onChange={handleCheckboxChange('repatriated')}
+                              size="small"
+                            />
+                          }
+                          label="Repatriated"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.multiple_heads || false}
+                              onChange={handleCheckboxChange('multiple_heads')}
+                              size="small"
+                            />
+                          }
+                          label="Multiple Heads"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.four_arms || false}
+                              onChange={handleCheckboxChange('four_arms')}
+                              size="small"
+                            />
+                          }
+                          label="Four Arms"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.eight_arms || false}
+                              onChange={handleCheckboxChange('eight_arms')}
+                              size="small"
+                            />
+                          }
+                          label="Eight Arms"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.ten_arms || false}
+                              onChange={handleCheckboxChange('ten_arms')}
+                              size="small"
+                            />
+                          }
+                          label="Ten Arms"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.over_ten_arms || false}
+                              onChange={handleCheckboxChange('over_ten_arms')}
+                              size="small"
+                            />
+                          }
+                          label="Over Ten Arms"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragmentary || false}
+                              onChange={handleCheckboxChange('fragmentary')}
+                              size="small"
+                            />
+                          }
+                          label="Fragmentary"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragments_from_multiple_statues || false}
+                              onChange={handleCheckboxChange('fragments_from_multiple_statues')}
+                              size="small"
+                            />
+                          }
+                          label="Multiple Statue Fragments"
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  <Divider sx={{ my: 3 }} />
+
+                  {/* Body Parts Present */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      👤 Body Parts Present
+                    </Typography>
+                    <Grid container spacing={1} sx={{ mt: 1 }}>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.head_present || false}
+                              onChange={handleCheckboxChange('head_present')}
+                              size="small"
+                            />
+                          }
+                          label="Head"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.torso_present || false}
+                              onChange={handleCheckboxChange('torso_present')}
+                              size="small"
+                            />
+                          }
+                          label="Torso"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.shoulder_elbow_present || false}
+                              onChange={handleCheckboxChange('shoulder_elbow_present')}
+                              size="small"
+                            />
+                          }
+                          label="Shoulder-Elbow"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.elbow_wrist_present || false}
+                              onChange={handleCheckboxChange('elbow_wrist_present')}
+                              size="small"
+                            />
+                          }
+                          label="Elbow-Wrist"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.hand_present || false}
+                              onChange={handleCheckboxChange('hand_present')}
+                              size="small"
+                            />
+                          }
+                          label="Hand"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.hip_knee_present || false}
+                              onChange={handleCheckboxChange('hip_knee_present')}
+                              size="small"
+                            />
+                          }
+                          label="Hip-Knee"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.knee_ankle_present || false}
+                              onChange={handleCheckboxChange('knee_ankle_present')}
+                              size="small"
+                            />
+                          }
+                          label="Knee-Ankle"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.foot_present || false}
+                              onChange={handleCheckboxChange('foot_present')}
+                              size="small"
+                            />
+                          }
+                          label="Foot"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.base_present || false}
+                              onChange={handleCheckboxChange('base_present')}
+                              size="small"
+                            />
+                          }
+                          label="Base"
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  <Divider sx={{ my: 3 }} />
+
+                  {/* Fragmentation Points */}
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      ⚠️ Fragmentation Points
+                    </Typography>
+                    <Grid container spacing={1} sx={{ mt: 1 }}>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragmented_at_neck || false}
+                              onChange={handleCheckboxChange('fragmented_at_neck')}
+                              size="small"
+                            />
+                          }
+                          label="At Neck"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragment_at_shoulder || false}
+                              onChange={handleCheckboxChange('fragment_at_shoulder')}
+                              size="small"
+                            />
+                          }
+                          label="At Shoulder"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragmented_at_elbow || false}
+                              onChange={handleCheckboxChange('fragmented_at_elbow')}
+                              size="small"
+                            />
+                          }
+                          label="At Elbow"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragmented_at_wrist || false}
+                              onChange={handleCheckboxChange('fragmented_at_wrist')}
+                              size="small"
+                            />
+                          }
+                          label="At Wrist"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragmented_upper_leg || false}
+                              onChange={handleCheckboxChange('fragmented_upper_leg')}
+                              size="small"
+                            />
+                          }
+                          label="Upper Leg"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragmented_at_knee || false}
+                              onChange={handleCheckboxChange('fragmented_at_knee')}
+                              size="small"
+                            />
+                          }
+                          label="At Knee"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6, sm: 4 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.fragmented_at_ankle || false}
+                              onChange={handleCheckboxChange('fragmented_at_ankle')}
+                              size="small"
+                            />
+                          }
+                          label="At Ankle"
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  {/* Save Metadata Button */}
+                  <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="outlined"
+                      size="medium"
+                      startIcon={<SaveIcon />}
+                      onClick={handleSaveMetadata}
+                      disabled={!hasUnsavedChanges}
+                    >
+                      Save Metadata
+                    </Button>
+                  </Box>
+                </Box>
+              </Collapse>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Folder Selection Section */}
+            <Box>
+              <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
+                📁 Select Destination Folder
+              </Typography>
+
+              {view === 'folder-list' ? (
+                <Stack spacing={2}>
+                  {AVAILABLE_FOLDERS.map((folder) => (
+                    <Card
+                      key={folder.id}
+                      variant="outlined"
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        borderColor: selectedFolder?.id === folder.id ? 'primary.main' : 'divider',
+                        borderWidth: selectedFolder?.id === folder.id ? 2 : 1,
+                        '&:hover': {
+                          borderColor: 'primary.light',
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                      onClick={() => handleFolderClick(folder)}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', p: 3, gap: 2 }}>
+                        <Box
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            borderRadius: 1,
+                            bgcolor: 'grey.100',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <ImageIcon sx={{ fontSize: 40, color: 'grey.400' }} />
+                        </Box>
+
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <FolderIcon sx={{ color: 'text.secondary' }} />
+                            <Typography variant="h6" fontWeight={500}>
+                              {folder.name}
+                            </Typography>
+                          </Box>
+                          {folder.imageCount !== undefined && (
+                            <Typography variant="body2" color="text.secondary">
+                              {folder.imageCount} {folder.imageCount === 1 ? 'image' : 'images'}
+                            </Typography>
+                          )}
+                        </Box>
+
+                        {selectedFolder?.id === folder.id && (
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              bgcolor: 'primary.main',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white',
+                            }}
+                          >
+                            ✓
+                          </Box>
+                        )}
+                      </Box>
+                    </Card>
                   ))}
-                </ImageList>
+                </Stack>
+              ) : (
+                <Box>
+                  {folderImages.length === 0 ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        py: 8,
+                        gap: 2,
+                      }}
+                    >
+                      <FolderIcon sx={{ fontSize: 64, color: 'grey.300' }} />
+                      <Typography variant="body1" color="text.secondary">
+                        This folder is empty
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <ImageList cols={2} gap={16}>
+                      {folderImages.map((image) => (
+                        <ImageListItem key={image.id}>
+                          <Image
+                            src={image.url}
+                            alt={image.title}
+                            width={250}
+                            height={250}
+                            style={{
+                              borderRadius: 8,
+                              objectFit: 'cover',
+                              width: '100%',
+                              height: 'auto',
+                            }}
+                          />
+                        </ImageListItem>
+                      ))}
+                    </ImageList>
+                  )}
+                </Box>
               )}
             </Box>
-          )}
+          </Stack>
         </Box>
 
         {/* Footer Actions */}
@@ -240,17 +973,17 @@ export default function ApprovalDrawer({ open, imageId, onClose, onApprove, onAd
               startIcon={<CreateNewFolderIcon />}
               onClick={handleAddToNew}
             >
-              Add to New
+              Add to New Folder
             </Button>
             <Button
               variant="contained"
               size="large"
               fullWidth
-              startIcon={<AddIcon />}
+              startIcon={<SaveIcon />}
               onClick={handleAddToFolder}
               disabled={!selectedFolder}
             >
-              Add to {selectedFolder?.name || 'Folder'}
+              Save & Add to {selectedFolder?.name || 'Folder'}
             </Button>
           </Stack>
         </Box>
