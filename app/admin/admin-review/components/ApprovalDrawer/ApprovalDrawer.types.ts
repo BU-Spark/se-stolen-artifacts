@@ -25,4 +25,4 @@ export type ApprovalDrawerProps = {
   onAddToNew: (imageId: string, metadata: PendingImageMetadata) => void;
 };
 
-export type DrawerView = 'folder-list' | 'folder-contents';
+export type DrawerView = 'metadata' | 'folder-list' | 'folder-contents';

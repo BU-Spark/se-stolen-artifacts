@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { Box, Button, Card, CardActions, CardContent, CardMedia, Stack, Typography, Collapse } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EditIcon from '@mui/icons-material/Edit';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -39,7 +39,7 @@ export default function PendingImageCard({
     setViewMode((prev) => (prev === 'collapsed' ? 'viewing' : 'collapsed'));
   };
 
-  const handleApproveClick = () => {
+  const handleEditMetadataClick = () => {
     setDrawerOpen(true);
   };
 
@@ -108,14 +108,21 @@ export default function PendingImageCard({
         </CardContent>
 
         <CardActions sx={{ px: 3, pb: 3 }}>
-          <Button variant="contained" color="success" startIcon={<CheckCircleIcon />} onClick={handleApproveClick}>
-            Approve
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<EditIcon />}
+            onClick={handleEditMetadataClick}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            Edit Metadata
           </Button>
           <Button
             variant="contained"
             color="error"
             startIcon={<CancelIcon />}
             onClick={() => onDeny(internal_reference_number)}
+            sx={{ whiteSpace: 'nowrap' }}
           >
             Deny
           </Button>
@@ -125,8 +132,9 @@ export default function PendingImageCard({
             startIcon={<DownloadIcon />}
             onClick={() => onDownload(internal_reference_number)}
             disabled={downloadInFlight}
+            sx={{ whiteSpace: 'nowrap' }}
           >
-            {downloadInFlight ? 'Downloading...' : 'Download'}
+            {downloadInFlight ? 'Downloading...' : 'Download Image'}
           </Button>
         </CardActions>
       </Card>
