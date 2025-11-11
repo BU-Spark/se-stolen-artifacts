@@ -4,7 +4,6 @@ import type { ProcessMetadataRequest, ProcessMetadataResponse, ArtifactSearchMet
 import { callLLM } from '@/lib/llm/callMetadataLLM';
 import { parseLLMResponse } from '@/lib/llm/parseLLMResponse';
 import { insertArtifactMetadata } from '@/lib/llm/insertArtifactMetadata';
-import { createDefaultArtifactSearchMetadata } from '@/lib/llm/defaultArtifactMetadata';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,42 +14,82 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as ProcessMetadataRequest;
-    const { imageId, longDescription, shortDescription } = body;
+    const { imageId, shortDescription } = body;
 
-    // validate
-    if (!imageId || !longDescription) {
-      return NextResponse.json({ error: 'Missing required fields: imageId and longDescription' }, { status: 400 });
+    // validate common fields
+    if (!imageId || !shortDescription) {
+      return NextResponse.json({ error: 'Missing required fields: imageId and shortDescription' }, { status: 400 });
     }
 
-    console.log(`Processing metadata for image ${imageId}...`);
+    // Validate processWithAI flag
+    if (typeof body.processWithAI !== 'boolean') {
+      return NextResponse.json({ error: 'processWithAI must be a boolean value' }, { status: 400 });
+    }
 
-    // Try calling the LLM up to 2 times; on failure fallback to defaults
-    let metadata: ArtifactSearchMetadata | null = null;
-    let lastError: unknown = null;
+    console.log(`Processing metadata for image ${imageId}... (AI: ${body.processWithAI})`);
 
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const llmResponse = await callLLM({
-          longDescription,
-          shortDescription,
-        });
+    let metadata: ArtifactSearchMetadata;
 
-        const parsed = parseLLMResponse(llmResponse);
-        metadata = parsed;
-        break; // success
-      } catch (err) {
-        lastError = err;
-        console.warn(`LLM attempt ${attempt} failed`, err);
+    if (body.processWithAI) {
+      // AI Processing Path
+      const { longDescription } = body;
+
+      if (!longDescription) {
+        return NextResponse.json({ error: 'longDescription is required for AI processing' }, { status: 400 });
       }
-    }
 
-    if (!metadata) {
-      console.error('LLM failed twice, using fallback defaults.', lastError);
-      metadata = createDefaultArtifactSearchMetadata(shortDescription, longDescription);
+      let aiMetadata: ArtifactSearchMetadata | null = null;
+      let lastError: unknown = null;
+
+      // Try calling the LLM up to 2 times
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const llmResponse = await callLLM({
+            longDescription,
+            shortDescription,
+          });
+          const parsed = parseLLMResponse(llmResponse);
+          aiMetadata = parsed;
+          break; // success
+        } catch (err) {
+          lastError = err;
+          console.warn(`LLM attempt ${attempt} failed`, err);
+        }
+      }
+
+      if (!aiMetadata) {
+        // LLM failed completely - prompt user for manual entry
+        console.error('LLM failed twice, requiring manual metadata entry.', lastError);
+        const errorMessage = lastError instanceof Error ? lastError.message : 'AI processing failed';
+
+        const response: ProcessMetadataResponse = {
+          success: false,
+          imageId,
+          error: `AI metadata extraction failed: ${errorMessage}`,
+          requiresManualEntry: true,
+        };
+
+        return NextResponse.json(response, { status: 422 }); // 422 Unprocessable Entity
+      }
+
+      // Success: Carry through user-provided descriptions
+      metadata = {
+        ...aiMetadata,
+        shortDescription,
+        longDescription: body.longDescription,
+        aiGenerated: true, // Mark as AI-generated on success
+      };
     } else {
-      // Carry through user-provided descriptions on success as well
-      metadata.shortDescription = shortDescription;
-      metadata.longDescription = longDescription;
+      // Manual Processing Path
+      const { manualMetadata, longDescription } = body;
+
+      metadata = {
+        basicSearchMetadata: manualMetadata.basicSearchMetadata,
+        advancedSearchMetadata: manualMetadata.advancedSearchMetadata,
+        shortDescription,
+        longDescription,
+        aiGenerated: false, // Mark as manually entered
+      };
     }
 
     // Insert into database (works for both success and fallback)

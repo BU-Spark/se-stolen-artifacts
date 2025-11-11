@@ -5,17 +5,40 @@
  */
 
 /**
- * Request body for the LLM metadata processing endpoint
- * This data is sent to /api/process-metadata
+ * Base request body for metadata processing endpoint
  */
-export interface ProcessMetadataRequest {
+interface BaseProcessMetadataRequest {
   /** The internal reference ID of the uploaded image */
   imageId: string;
-  /** User-provided detailed description of the artifact */
-  longDescription: string;
   /** User-provided short summary of the artifact */
   shortDescription: string;
+  /** User-provided detailed description of the artifact */
+  longDescription?: string;
 }
+
+/**
+ * Request for AI-generated metadata processing
+ * AI will analyze the descriptions and generate structured metadata
+ */
+export interface AIProcessMetadataRequest extends BaseProcessMetadataRequest {
+  processWithAI: true;
+  longDescription: string; // Required for AI processing
+}
+
+/**
+ * Request for manually-entered metadata
+ * User provides pre-filled structured metadata
+ */
+export interface ManualProcessMetadataRequest extends BaseProcessMetadataRequest {
+  processWithAI: false;
+  /** Manually entered metadata provided by the user */
+  manualMetadata: ManualArtifactMetadata;
+}
+
+/**
+ * Union type for the process-metadata endpoint
+ */
+export type ProcessMetadataRequest = AIProcessMetadataRequest | ManualProcessMetadataRequest;
 
 /**
  * Expected response from the LLM metadata processing endpoint
@@ -29,6 +52,8 @@ export interface ProcessMetadataResponse {
   metadata?: ArtifactSearchMetadata;
   /** Error message if processing failed */
   error?: string;
+  /** Whether manual metadata entry is required (set when AI processing fails completely) */
+  requiresManualEntry?: boolean;
 }
 
 export interface BasicSearchMetadata {
@@ -92,6 +117,19 @@ export interface AdvancedSearchMetadata {
   fragmentedAtAnkle?: boolean;
 }
 
+/**
+ * Metadata for manually-entered artifacts
+ * Does not include AI-specific fields like rawLlmResponse
+ */
+export interface ManualArtifactMetadata {
+  basicSearchMetadata?: Partial<BasicSearchMetadata>;
+  advancedSearchMetadata?: Partial<AdvancedSearchMetadata>;
+}
+
+/**
+ * Complete artifact search metadata (used for storage and responses)
+ * Includes both manual and AI-generated data
+ */
 export interface ArtifactSearchMetadata {
   // Our defined interfaces from above
   basicSearchMetadata?: Partial<BasicSearchMetadata>;
@@ -99,25 +137,11 @@ export interface ArtifactSearchMetadata {
   // ============================================
   // METADATA TRACKING
   // ============================================
-  /** Raw LLM response for debugging/audit purposes */
+  /** Raw LLM response for debugging/audit purposes (only for AI-generated) */
   rawLlmResponse?: string;
   // Request information
-  // Short is required for UI
-  shortDescription: string;
+  shortDescription?: string;
   longDescription?: string;
-}
-
-/**
- * Request body for updating artifact metadata in the database
- * This would be used internally after LLM processing
- */
-export interface UpdateArtifactMetadataRequest {
-  /** The internal reference ID of the image/artifact */
-  imageId: string;
-  /** The statue_id from the database */
-  statueId?: number;
-  /** Structured metadata to update */
-  metadata: Partial<ArtifactSearchMetadata>;
-  /** Whether to overwrite existing metadata or merge */
-  mergeStrategy?: 'overwrite' | 'merge' | 'preserve';
+  /** Whether the metadata was AI-generated (true) or manually entered (false) */
+  aiGenerated?: boolean;
 }

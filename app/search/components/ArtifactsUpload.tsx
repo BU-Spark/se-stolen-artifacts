@@ -206,6 +206,11 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       return;
     }
 
+    if (!longDescription.trim()) {
+      setDescriptionError('Detailed description is required');
+      return;
+    }
+
     setIsUploading(true);
     setProgress(0);
     setError(null);
@@ -241,8 +246,8 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         throw new Error(result.error || 'Upload failed');
       }
 
-      // If we have an image ID, send the long description to the LLM processing endpoint
-      if (result.id && longDescription.trim()) {
+      // If we have an image ID, send the descriptions to the metadata processing endpoint
+      if (result.id) {
         try {
           const llmResponse = await fetch('/api/process-metadata', {
             method: 'POST',
@@ -253,18 +258,19 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
               imageId: result.id,
               longDescription: longDescription.trim(),
               shortDescription: shortDescription.trim(),
+              processWithAI: true, // Always use AI processing when longDescription is provided
             }),
           });
 
           const llmResult = await llmResponse.json();
 
           if (!llmResponse.ok) {
-            console.error('LLM processing failed:', llmResult.error);
+            console.error('Metadata processing failed:', llmResult.error);
           } else {
-            console.log('LLM processing successful:', llmResult);
+            console.log('Metadata processing successful:', llmResult);
           }
         } catch (llmErr) {
-          console.error('Error processing metadata with LLM:', llmErr);
+          console.error('Error processing metadata:', llmErr);
         }
       }
 
@@ -540,12 +546,17 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                   <TextField
                     label="Detailed Description"
                     value={longDescription}
-                    onChange={(e) => setLongDescription(e.target.value)}
+                    onChange={(e) => {
+                      setLongDescription(e.target.value);
+                      if (descriptionError) setDescriptionError(null);
+                    }}
                     placeholder="Please provide as much information as you can about this artifact (origin, history, condition, materials, provenance, etc.)"
                     fullWidth
                     multiline
                     rows={4}
                     variant="outlined"
+                    required
+                    error={!!descriptionError}
                     helperText="The more details you provide, the better we can catalog and identify this artifact"
                   />
                 </Stack>
