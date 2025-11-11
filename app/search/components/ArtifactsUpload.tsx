@@ -12,6 +12,7 @@ import {
   Alert,
   Chip,
   CircularProgress,
+  TextField,
 } from '@mui/material';
 import { CloudUpload, Clear, CheckCircle } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
@@ -49,6 +50,9 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [imageLoadError, setImageLoadError] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [shortDescription, setShortDescription] = useState<string>('');
+  const [longDescription, setLongDescription] = useState<string>('');
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatFileSize = (bytes: number): string => {
@@ -197,9 +201,15 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const handleUpload = async () => {
     if (!selectedFile) return;
 
+    if (!shortDescription.trim()) {
+      setDescriptionError('Short description is required');
+      return;
+    }
+
     setIsUploading(true);
     setProgress(0);
     setError(null);
+    setDescriptionError(null);
 
     // Simulate progress: 0% → 85% while uploading
     const progressInterval = setInterval(() => {
@@ -213,9 +223,11 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     }, 150);
 
     try {
-      // Create FormData to send the file
+      // Create FormData to send the file and descriptions
       const formData = new FormData();
       formData.append('file', selectedFile);
+      formData.append('shortDescription', shortDescription.trim());
+      formData.append('longDescription', longDescription.trim());
 
       // Call the upload API
       const response = await fetch('/api/upload', {
@@ -227,6 +239,33 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
 
       if (!response.ok) {
         throw new Error(result.error || 'Upload failed');
+      }
+
+      // If we have an image ID, send the long description to the LLM processing endpoint
+      if (result.id && longDescription.trim()) {
+        try {
+          const llmResponse = await fetch('/api/process-metadata', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageId: result.id,
+              longDescription: longDescription.trim(),
+              shortDescription: shortDescription.trim(),
+            }),
+          });
+
+          const llmResult = await llmResponse.json();
+
+          if (!llmResponse.ok) {
+            console.error('LLM processing failed:', llmResult.error);
+          } else {
+            console.log('LLM processing successful:', llmResult);
+          }
+        } catch (llmErr) {
+          console.error('Error processing metadata with LLM:', llmErr);
+        }
       }
 
       // Clear interval and jump to 100%
@@ -259,6 +298,9 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     setError(null);
     setImageLoadError(false);
     setIsLoadingPreview(false);
+    setShortDescription('');
+    setLongDescription('');
+    setDescriptionError(null);
     if (preview?.previewUrl) {
       URL.revokeObjectURL(preview.previewUrl);
     }
@@ -468,7 +510,48 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 </Box>
               )}
 
-              {/* Progress Bar - BELOW image preview */}
+              {/* Description Fields - BEFORE upload */}
+              {!isUploading && !uploadComplete && !imageLoadError && (
+                <Stack spacing={2} sx={{ mt: 2 }}>
+                  {descriptionError && (
+                    <Alert severity="error" onClose={() => setDescriptionError(null)}>
+                      {descriptionError}
+                    </Alert>
+                  )}
+                  <TextField
+                    label="Short Description"
+                    value={shortDescription}
+                    onChange={(e) => {
+                      setShortDescription(e.target.value);
+                      if (descriptionError) setDescriptionError(null);
+                    }}
+                    placeholder="Brief summary of the artifact"
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    required
+                    error={!!descriptionError}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        height: '40px',
+                      },
+                    }}
+                  />
+                  <TextField
+                    label="Detailed Description"
+                    value={longDescription}
+                    onChange={(e) => setLongDescription(e.target.value)}
+                    placeholder="Please provide as much information as you can about this artifact (origin, history, condition, materials, provenance, etc.)"
+                    fullWidth
+                    multiline
+                    rows={4}
+                    variant="outlined"
+                    helperText="The more details you provide, the better we can catalog and identify this artifact"
+                  />
+                </Stack>
+              )}
+
+              {/* Progress Bar - BELOW descriptions */}
               {(isUploading || uploadComplete) && (
                 <Box>
                   <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />

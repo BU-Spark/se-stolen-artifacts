@@ -9,7 +9,9 @@ type Selection = {
   id: string;
   label: string;
   type: 'binary' | 'text' | 'number';
-  value: unknown;
+  value: string | number | boolean;
+  placeholder?: string;
+  helperText?: string;
 };
 
 type CustomTagProps = {

@@ -10,6 +10,12 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData();
   const file = formData.get('file') as File;
+  const shortDescription = formData.get('shortDescription') as string;
+
+  // Validate that short description is provided
+  if (!shortDescription || shortDescription.trim() === '') {
+    return NextResponse.json({ error: 'Short description is required' }, { status: 400 });
+  }
 
   try {
     const result = await handleUploadImage({ file });
