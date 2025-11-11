@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       // Carry through user-provided descriptions on success as well
       metadata.shortDescription = shortDescription;
       metadata.longDescription = longDescription;
+      metadata.aiGenerated = true; // Mark as AI-generated on success
     }
 
     // Insert into database (works for both success and fallback)

@@ -105,19 +105,6 @@ export interface ArtifactSearchMetadata {
   // Short is required for UI
   shortDescription: string;
   longDescription?: string;
-}
-
-/**
- * Request body for updating artifact metadata in the database
- * This would be used internally after LLM processing
- */
-export interface UpdateArtifactMetadataRequest {
-  /** The internal reference ID of the image/artifact */
-  imageId: string;
-  /** The statue_id from the database */
-  statueId?: number;
-  /** Structured metadata to update */
-  metadata: Partial<ArtifactSearchMetadata>;
-  /** Whether to overwrite existing metadata or merge */
-  mergeStrategy?: 'overwrite' | 'merge' | 'preserve';
+  /** Whether the metadata was AI-generated (true) or manually entered (false) */
+  aiGenerated?: boolean;
 }
