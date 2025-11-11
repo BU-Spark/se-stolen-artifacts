@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Drawer,
   Box,
@@ -18,6 +18,7 @@ import {
   Collapse,
   Chip,
   Grid,
+  CircularProgress,
 } from '@mui/material';
 import Image from 'next/image';
 import CloseIcon from '@mui/icons-material/Close';
@@ -38,24 +39,6 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { ApprovalDrawerProps, Folder, FolderImage, DrawerView } from './ApprovalDrawer.types';
 import { PendingImageMetadata } from '../PendingImageCard/PendingImageCard.types';
 
-// TODO: Fetch these from your database or configuration
-const AVAILABLE_FOLDERS: Folder[] = [
-  { id: 'folder-1', name: 'Folder 1', imageCount: 12 },
-  { id: 'folder-2', name: 'Folder 2', imageCount: 8 },
-  { id: 'folder-3', name: 'Folder 3', imageCount: 5 },
-  { id: 'folder-4', name: 'Folder 4', imageCount: 0 },
-];
-
-// TODO: Fetch from API based on folder ID
-const MOCK_FOLDER_IMAGES: Record<string, FolderImage[]> = {
-  'folder-2': [
-    { id: '1', url: 'https://picsum.photos/seed/statue1/300/300', title: 'Ancient Statue 1' },
-    { id: '2', url: 'https://picsum.photos/seed/statue2/300/300', title: 'Ancient Statue 2' },
-    { id: '3', url: 'https://picsum.photos/seed/statue3/300/300', title: 'Ancient Statue 3' },
-    { id: '4', url: 'https://picsum.photos/seed/statue4/300/300', title: 'Ancient Statue 4' },
-  ],
-};
-
 export default function ApprovalDrawer({
   open,
   imageId,
@@ -72,13 +55,41 @@ export default function ApprovalDrawer({
   const [metadataExpanded, setMetadataExpanded] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [metadataSaved, setMetadataSaved] = useState(false);
+  const [availableFolders, setAvailableFolders] = useState<Folder[]>([]);
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [loadingFolderImages, setLoadingFolderImages] = useState(false);
   const drawerContentRef = useRef<HTMLDivElement>(null);
   const prevOpenRef = useRef(open);
+
+  // Fetch statues from API
+  const fetchStatues = useCallback(async () => {
+    setLoadingFolders(true);
+    try {
+      const response = await fetch('/api/admin/statues');
+      const data = await response.json();
+
+      if (response.ok && data.statues) {
+        setAvailableFolders(
+          data.statues.map((statue: { id: string; name: string; imageCount: number }) => ({
+            id: statue.id,
+            name: statue.name,
+            imageCount: statue.imageCount,
+          }))
+        );
+      } else {
+        console.error('Failed to fetch statues:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching statues:', error);
+    } finally {
+      setLoadingFolders(false);
+    }
+  }, []);
 
   // Reset when drawer opens (only when transitioning from closed to open)
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      // Drawer just opened - reset state to metadata view
+      // Drawer just opened - reset state to metadata view and fetch statues
       setView('metadata');
       setSelectedFolder(null);
       setFolderImages([]);
@@ -87,9 +98,11 @@ export default function ApprovalDrawer({
       setHasUnsavedChanges(false);
       // If metadata already exists and has content, consider it saved (user can proceed without re-saving)
       setMetadataSaved(metadata ? Object.keys(metadata).length > 0 : false);
+      // Fetch statues when drawer opens
+      fetchStatues();
     }
     prevOpenRef.current = open;
-  }, [open, metadata]);
+  }, [open, metadata, fetchStatues]);
 
   // Sync formData when metadata prop changes (after save)
   useEffect(() => {
@@ -101,11 +114,28 @@ export default function ApprovalDrawer({
     }
   }, [metadata, open, hasUnsavedChanges]);
 
-  const handleFolderClick = (folder: Folder) => {
+  const handleFolderClick = async (folder: Folder) => {
     setSelectedFolder(folder);
-    // TODO: Fetch images from API
-    setFolderImages(MOCK_FOLDER_IMAGES[folder.id] || []);
     setView('folder-contents');
+    setLoadingFolderImages(true);
+    setFolderImages([]); // Clear previous images while loading
+
+    try {
+      const response = await fetch(`/api/admin/statues/${folder.id}/images`);
+      const data = await response.json();
+
+      if (response.ok && data.images) {
+        setFolderImages(data.images);
+      } else {
+        console.error('Failed to fetch folder images:', data.error);
+        setFolderImages([]);
+      }
+    } catch (error) {
+      console.error('Error fetching folder images:', error);
+      setFolderImages([]);
+    } finally {
+      setLoadingFolderImages(false);
+    }
   };
 
   const handleBackToFolders = () => {
@@ -908,75 +938,102 @@ export default function ApprovalDrawer({
 
               {view === 'folder-list' ? (
                 <Stack spacing={2}>
-                  {AVAILABLE_FOLDERS.map((folder) => (
-                    <Card
-                      key={folder.id}
-                      variant="outlined"
-                      sx={{
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        borderColor: selectedFolder?.id === folder.id ? 'primary.main' : 'divider',
-                        borderWidth: selectedFolder?.id === folder.id ? 2 : 1,
-                        '&:hover': {
-                          borderColor: 'primary.light',
-                          bgcolor: 'action.hover',
-                        },
-                      }}
-                      onClick={() => handleFolderClick(folder)}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', p: 3, gap: 2 }}>
-                        <Box
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: 1,
-                            bgcolor: 'grey.100',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <ImageIcon sx={{ fontSize: 40, color: 'grey.400' }} />
-                        </Box>
-
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <FolderIcon sx={{ color: 'text.secondary' }} />
-                            <Typography variant="h6" fontWeight={500}>
-                              {folder.name}
-                            </Typography>
-                          </Box>
-                          {folder.imageCount !== undefined && (
-                            <Typography variant="body2" color="text.secondary">
-                              {folder.imageCount} {folder.imageCount === 1 ? 'image' : 'images'}
-                            </Typography>
-                          )}
-                        </Box>
-
-                        {selectedFolder?.id === folder.id && (
+                  {loadingFolders ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Loading folders...
+                      </Typography>
+                    </Box>
+                  ) : availableFolders.length === 0 ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No folders available
+                      </Typography>
+                    </Box>
+                  ) : (
+                    availableFolders.map((folder) => (
+                      <Card
+                        key={folder.id}
+                        variant="outlined"
+                        sx={{
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          borderColor: selectedFolder?.id === folder.id ? 'primary.main' : 'divider',
+                          borderWidth: selectedFolder?.id === folder.id ? 2 : 1,
+                          '&:hover': {
+                            borderColor: 'primary.light',
+                            bgcolor: 'action.hover',
+                          },
+                        }}
+                        onClick={() => handleFolderClick(folder)}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', p: 3, gap: 2 }}>
                           <Box
                             sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: '50%',
-                              bgcolor: 'primary.main',
+                              width: 80,
+                              height: 80,
+                              borderRadius: 1,
+                              bgcolor: 'grey.100',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: 'white',
+                              flexShrink: 0,
                             }}
                           >
-                            ✓
+                            <ImageIcon sx={{ fontSize: 40, color: 'grey.400' }} />
                           </Box>
-                        )}
-                      </Box>
-                    </Card>
-                  ))}
+
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <FolderIcon sx={{ color: 'text.secondary' }} />
+                              <Typography variant="h6" fontWeight={500}>
+                                {folder.name}
+                              </Typography>
+                            </Box>
+                            {folder.imageCount !== undefined && (
+                              <Typography variant="body2" color="text.secondary">
+                                {folder.imageCount} {folder.imageCount === 1 ? 'image' : 'images'}
+                              </Typography>
+                            )}
+                          </Box>
+
+                          {selectedFolder?.id === folder.id && (
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                bgcolor: 'primary.main',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                              }}
+                            >
+                              ✓
+                            </Box>
+                          )}
+                        </Box>
+                      </Card>
+                    ))
+                  )}
                 </Stack>
               ) : (
                 <Box>
-                  {folderImages.length === 0 ? (
+                  {loadingFolderImages ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        py: 8,
+                        gap: 2,
+                      }}
+                    >
+                      <CircularProgress size={40} />
+                    </Box>
+                  ) : folderImages.length === 0 ? (
                     <Box
                       sx={{
                         display: 'flex',
@@ -1001,6 +1058,7 @@ export default function ApprovalDrawer({
                             alt={image.title}
                             width={250}
                             height={250}
+                            unoptimized
                             style={{
                               borderRadius: 8,
                               objectFit: 'cover',

@@ -91,62 +91,87 @@ export default function AdminReviewPage() {
   }, []);
 
   const handleApprove = useCallback(async (imageId: string, folderId: string, metadata: PendingImage['metadata']) => {
-    // TODO: Integrate with approve endpoint
-    console.log(`Approving ${imageId} and moving to folder ${folderId}`, metadata);
+    console.log(`Approving ${imageId} and moving to statue ${folderId}`, metadata);
 
     try {
-      // TODO: Add API call here
-      // await fetch('/api/admin/approve', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ imageId, folderId, metadata }),
-      // });
+      const response = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId, folderId }), // folderId is the statue_id as string
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to approve image');
+      }
 
       // Remove from local state after successful approval
       setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
     } catch (error) {
       console.error('Failed to approve image:', error);
-      setError('Failed to approve image');
+      setError(error instanceof Error ? error.message : 'Failed to approve image');
     }
   }, []);
 
   const handleAddToNew = useCallback(async (imageId: string, metadata: PendingImage['metadata']) => {
-    // TODO: Integrate with create new folder endpoint
-    console.log(`Creating new folder and adding ${imageId}`, metadata);
+    console.log(`Creating new statue and adding ${imageId}`, metadata);
 
     try {
-      // TODO: Add API call here
-      // await fetch('/api/admin/add-to-new', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ imageId, metadata }),
-      // });
+      // First, create a new statue
+      const createResponse = await fetch('/api/admin/statues/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const createData = await createResponse.json();
+
+      if (!createResponse.ok) {
+        throw new Error(createData.error || 'Failed to create new statue');
+      }
+
+      // Then approve the image with the new statue_id
+      const approveResponse = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId, folderId: createData.statue.id }),
+      });
+
+      const approveData = await approveResponse.json();
+
+      if (!approveResponse.ok) {
+        throw new Error(approveData.error || 'Failed to approve image');
+      }
 
       // Remove from local state after successful addition
       setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
     } catch (error) {
-      console.error('Failed to add image to new folder:', error);
-      setError('Failed to add image to new folder');
+      console.error('Failed to add image to new statue:', error);
+      setError(error instanceof Error ? error.message : 'Failed to add image to new statue');
     }
   }, []);
 
   const handleDeny = useCallback(async (imageId: string) => {
-    // TODO: Integrate with deny endpoint
     console.log(`Denying ${imageId}`);
 
     try {
-      // TODO: Add API call here
-      // await fetch('/api/admin/deny', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ imageId }),
-      // });
+      const response = await fetch('/api/admin/deny', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to deny image');
+      }
 
       // Remove from local state after successful denial
       setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
     } catch (error) {
       console.error('Failed to deny image:', error);
-      setError('Failed to deny image');
+      setError(error instanceof Error ? error.message : 'Failed to deny image');
     }
   }, []);
 
