@@ -13,9 +13,14 @@ import {
   Chip,
   CircularProgress,
   TextField,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { CloudUpload, Clear, CheckCircle } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
+import { themeTokens } from '@/app/theme';
+import type { BasicSearchMetadata, AdvancedSearchMetadata, ProcessMetadataRequest } from '@/app/types/metadata.types';
+import ManualMetadataForm from './ManualMetadataForm';
 
 type LocalPreview = {
   kind: 'image' | 'csv' | 'json' | 'unknown';
@@ -53,6 +58,56 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [shortDescription, setShortDescription] = useState<string>('');
   const [longDescription, setLongDescription] = useState<string>('');
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
+  // metadata mode: 'ai' means use descriptions + LLM, 'manual' means user fills structured metadata
+  const [metadataMode, setMetadataMode] = useState<'ai' | 'manual'>('ai');
+
+  // Manual metadata state (partial, mirrors ManualArtifactMetadata)
+  const [manualBasic, setManualBasic] = useState<Partial<BasicSearchMetadata>>({
+    subject: '',
+    dealerName: '',
+    suspectedCurrentLocation: '',
+    artifactTitle: '',
+    photographLocation: '',
+    firstAppearanceYear: undefined,
+    firstAppearanceYearOutsideCambodia: undefined,
+    repatriated: false,
+  });
+
+  const [manualAdvanced, setManualAdvanced] = useState<Partial<AdvancedSearchMetadata>>({
+    imageSource: '',
+    material: '',
+    hasInscription: false,
+
+    // Head/Arms Configuration
+    multipleHeads: false,
+    fourArms: false,
+    eightArms: false,
+    tenArms: false,
+    overTenArms: false,
+
+    // Overall Condition
+    fragmentary: false,
+    fragmentsFromMultipleStatues: false,
+
+    // Body Parts Present
+    headPresent: false,
+    torsoPresent: false,
+    shoulderElbowPresent: false,
+    elbowWristPresent: false,
+    hipKneePresent: false,
+    kneeAnklePresent: false,
+    footPresent: false,
+    basePresent: false,
+
+    // Fragmentation Points
+    fragmentedAtNeck: false,
+    fragmentedAtShoulder: false,
+    fragmentedAtElbow: false,
+    fragmentedAtWrist: false,
+    fragmentedAtUpperLeg: false,
+    fragmentedAtKnee: false,
+    fragmentedAtAnkle: false,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatFileSize = (bytes: number): string => {
@@ -206,8 +261,9 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       return;
     }
 
-    if (!longDescription.trim()) {
-      setDescriptionError('Detailed description is required');
+    // long description is required only when using AI processing
+    if (metadataMode === 'ai' && !longDescription.trim()) {
+      setDescriptionError('Detailed description is required for AI processing');
       return;
     }
 
@@ -232,7 +288,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('shortDescription', shortDescription.trim());
-      formData.append('longDescription', longDescription.trim());
+      if (longDescription.trim()) formData.append('longDescription', longDescription.trim());
 
       // Call the upload API
       const response = await fetch('/api/upload', {
@@ -249,17 +305,44 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       // If we have an image ID, send the descriptions to the metadata processing endpoint
       if (result.id) {
         try {
+          // Build metadata processing payload depending on mode
+          const payload: ProcessMetadataRequest =
+            metadataMode === 'ai'
+              ? {
+                  imageId: result.id,
+                  shortDescription: shortDescription.trim(),
+                  processWithAI: true,
+                  longDescription: longDescription.trim(),
+                }
+              : {
+                  imageId: result.id,
+                  shortDescription: shortDescription.trim(),
+                  processWithAI: false,
+                  manualMetadata: {
+                    basicSearchMetadata: manualBasic,
+                    advancedSearchMetadata: manualAdvanced,
+                  },
+                  ...(longDescription.trim() && { longDescription: longDescription.trim() }),
+                };
+
+          if (metadataMode === 'ai') {
+            payload.longDescription = longDescription.trim();
+          } else {
+            // manual mode - attach structured manualMetadata
+            payload.manualMetadata = {
+              basicSearchMetadata: manualBasic,
+              advancedSearchMetadata: manualAdvanced,
+            };
+            // longDescription optional for manual mode
+            if (longDescription.trim()) payload.longDescription = longDescription.trim();
+          }
+
           const llmResponse = await fetch('/api/process-metadata', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              imageId: result.id,
-              longDescription: longDescription.trim(),
-              shortDescription: shortDescription.trim(),
-              processWithAI: true, // Always use AI processing when longDescription is provided
-            }),
+            body: JSON.stringify(payload),
           });
 
           const llmResult = await llmResponse.json();
@@ -346,13 +429,6 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
-            </Alert>
-          )}
-
-          {/* Success Alert */}
-          {uploadComplete && !error && (
-            <Alert severity="success" icon={<CheckCircle />}>
-              Image submitted for admin review! ({selectedFile?.name})
             </Alert>
           )}
 
@@ -516,7 +592,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 </Box>
               )}
 
-              {/* Description Fields - BEFORE upload */}
+              {/* Description / Metadata Mode Tabs */}
               {!isUploading && !uploadComplete && !imageLoadError && (
                 <Stack spacing={2} sx={{ mt: 2 }}>
                   {descriptionError && (
@@ -524,6 +600,18 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                       {descriptionError}
                     </Alert>
                   )}
+
+                  <Tabs
+                    value={metadataMode}
+                    onChange={(_, v) => setMetadataMode(v as 'ai' | 'manual')}
+                    aria-label="Metadata mode tabs"
+                    sx={{ mb: 1 }}
+                  >
+                    <Tab value="ai" label="Long Description Metadata Entry" />
+                    <Tab value="manual" label="Manual Metadata Entry" />
+                  </Tabs>
+
+                  {/* Always show short description */}
                   <TextField
                     label="Short Description"
                     value={shortDescription}
@@ -543,29 +631,52 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                       },
                     }}
                   />
-                  <TextField
-                    label="Detailed Description"
-                    value={longDescription}
-                    onChange={(e) => {
-                      setLongDescription(e.target.value);
-                      if (descriptionError) setDescriptionError(null);
-                    }}
-                    placeholder="Please provide as much information as you can about this artifact (origin, history, condition, materials, provenance, etc.)"
-                    fullWidth
-                    multiline
-                    rows={4}
-                    variant="outlined"
-                    required
-                    error={!!descriptionError}
-                    helperText="The more details you provide, the better we can catalog and identify this artifact"
-                  />
+
+                  {metadataMode === 'ai' && (
+                    <TextField
+                      label="Detailed Description"
+                      value={longDescription}
+                      onChange={(e) => {
+                        setLongDescription(e.target.value);
+                        if (descriptionError) setDescriptionError(null);
+                      }}
+                      placeholder="Please provide as much information as you can about this artifact (origin, history, condition, materials, provenance, etc.)"
+                      fullWidth
+                      multiline
+                      rows={4}
+                      variant="outlined"
+                      required
+                      error={!!descriptionError}
+                      helperText="The more details you provide, the better we can catalog and identify this artifact"
+                    />
+                  )}
+
+                  {metadataMode === 'manual' && (
+                    <ManualMetadataForm
+                      manualBasic={manualBasic}
+                      setManualBasic={setManualBasic}
+                      manualAdvanced={manualAdvanced}
+                      setManualAdvanced={setManualAdvanced}
+                    />
+                  )}
                 </Stack>
               )}
 
               {/* Progress Bar - BELOW descriptions */}
               {(isUploading || uploadComplete) && (
                 <Box>
-                  <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
+                  <LinearProgress
+                    variant="determinate"
+                    value={progress}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: (theme) => alpha(theme.palette.grey[400], 0.25),
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: themeTokens.secondaryBlue,
+                      },
+                    }}
+                  />
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: 'right' }}>
                     {progress}%
                   </Typography>

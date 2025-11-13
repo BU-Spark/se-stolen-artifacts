@@ -220,7 +220,7 @@ const theme = createTheme({
         root: {
           color: lighten(secondary, 0.35),
           '&.Mui-checked': {
-            color: primary,
+            color: secondaryBlue,
           },
         },
       },
