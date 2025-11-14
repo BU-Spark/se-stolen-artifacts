@@ -1,29 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import {
-  Box,
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardMedia,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import { Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
 import { useUser } from '@clerk/nextjs';
-
-type PendingImage = {
-  internal_reference_number: string;
-  image_url?: string | null;
-  title?: string | null;
-  description?: string | null;
-};
+import PendingImageCard, { PendingImage } from './components/PendingImageCard';
 
 type PendingImagesResponse = {
   images: PendingImage[];
@@ -90,9 +70,109 @@ export default function AdminReviewPage() {
     }
   }, []);
 
-  const handleDecisionClick = useCallback((imageId: string, decision: 'approve' | 'deny') => {
-    // TODO: Integrate with approve/deny endpoints when available.
-    console.log(`Admin decision for ${imageId}: ${decision}`);
+  const handleSaveMetadata = useCallback(async (imageId: string, metadata: PendingImage['metadata']) => {
+    // TODO: API call to update metadata
+    console.log('Saving metadata for', imageId, metadata);
+
+    try {
+      // TODO: Add API call here
+      // await fetch('/api/admin/update-metadata', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ imageId, metadata }),
+      // });
+
+      // Update local state with new metadata
+      setImages((prev) => prev.map((img) => (img.internal_reference_number === imageId ? { ...img, metadata } : img)));
+    } catch (error) {
+      console.error('Failed to save metadata:', error);
+      setError('Failed to save metadata');
+    }
+  }, []);
+
+  const handleApprove = useCallback(async (imageId: string, folderId: string, metadata: PendingImage['metadata']) => {
+    console.log(`Approving ${imageId} and moving to statue ${folderId}`, metadata);
+
+    try {
+      const response = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId, folderId }), // folderId is the statue_id as string
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to approve image');
+      }
+
+      // Remove from local state after successful approval
+      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+    } catch (error) {
+      console.error('Failed to approve image:', error);
+      setError(error instanceof Error ? error.message : 'Failed to approve image');
+    }
+  }, []);
+
+  const handleAddToNew = useCallback(async (imageId: string, metadata: PendingImage['metadata']) => {
+    console.log(`Creating new statue and adding ${imageId}`, metadata);
+
+    try {
+      // First, create a new statue
+      const createResponse = await fetch('/api/admin/statues/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const createData = await createResponse.json();
+
+      if (!createResponse.ok) {
+        throw new Error(createData.error || 'Failed to create new statue');
+      }
+
+      // Then approve the image with the new statue_id
+      const approveResponse = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId, folderId: createData.statue.id }),
+      });
+
+      const approveData = await approveResponse.json();
+
+      if (!approveResponse.ok) {
+        throw new Error(approveData.error || 'Failed to approve image');
+      }
+
+      // Remove from local state after successful addition
+      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+    } catch (error) {
+      console.error('Failed to add image to new statue:', error);
+      setError(error instanceof Error ? error.message : 'Failed to add image to new statue');
+    }
+  }, []);
+
+  const handleDeny = useCallback(async (imageId: string) => {
+    console.log(`Denying ${imageId}`);
+
+    try {
+      const response = await fetch('/api/admin/deny', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to deny image');
+      }
+
+      // Remove from local state after successful denial
+      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+    } catch (error) {
+      console.error('Failed to deny image:', error);
+      setError(error instanceof Error ? error.message : 'Failed to deny image');
+    }
   }, []);
 
   return (
@@ -136,66 +216,21 @@ export default function AdminReviewPage() {
                 display: 'grid',
                 gap: 3,
                 gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                alignItems: 'start',
               }}
             >
-              {images.map((image) => {
-                const { internal_reference_number, image_url, title, description } = image;
-                return (
-                  <Box key={internal_reference_number} sx={{ display: 'flex' }}>
-                    <Card sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                      <CardMedia
-                        component="img"
-                        image={image_url || '/image-404-placeholder.avif'}
-                        alt={title || `Pending image ${internal_reference_number}`}
-                        sx={{ height: 280, objectFit: 'cover' }}
-                        loading="lazy"
-                      />
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        <Stack spacing={1}>
-                          <Typography variant="h6" color="text.primary">
-                            {title || `Image ${internal_reference_number}`}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Reference ID: {internal_reference_number}
-                          </Typography>
-                          {description ? (
-                            <Typography variant="body2" color="text.secondary">
-                              {description}
-                            </Typography>
-                          ) : null}
-                        </Stack>
-                      </CardContent>
-                      <CardActions sx={{ px: 3, pb: 3 }}>
-                        <Button
-                          variant="contained"
-                          color="success"
-                          startIcon={<CheckCircleIcon />}
-                          onClick={() => handleDecisionClick(internal_reference_number, 'approve')}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="error"
-                          startIcon={<CancelIcon />}
-                          onClick={() => handleDecisionClick(internal_reference_number, 'deny')}
-                        >
-                          Deny
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="secondary"
-                          startIcon={<DownloadIcon />}
-                          onClick={() => handleDownload(internal_reference_number)}
-                          disabled={downloadInFlight === internal_reference_number}
-                        >
-                          {downloadInFlight === internal_reference_number ? 'Downloading...' : 'Download'}
-                        </Button>
-                      </CardActions>
-                    </Card>
-                  </Box>
-                );
-              })}
+              {images.map((image) => (
+                <PendingImageCard
+                  key={image.internal_reference_number}
+                  image={image}
+                  downloadInFlight={downloadInFlight === image.internal_reference_number}
+                  onDownload={handleDownload}
+                  onSaveMetadata={handleSaveMetadata}
+                  onApprove={handleApprove}
+                  onAddToNew={handleAddToNew}
+                  onDeny={handleDeny}
+                />
+              ))}
             </Box>
           )}
         </Container>

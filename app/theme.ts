@@ -113,8 +113,11 @@ const theme = createTheme({
           color: '#fff',
         },
         containedSecondary: {
-          backgroundImage: `linear-gradient(135deg, ${primaryRed}, ${darken(primaryRed, 0.18)})`,
+          backgroundColor: secondary,
           color: '#fff',
+          '&:hover': {
+            backgroundColor: darken(secondary, 0.15),
+          },
         },
         outlined: {
           borderColor: secondary,
@@ -220,7 +223,7 @@ const theme = createTheme({
         root: {
           color: lighten(secondary, 0.35),
           '&.Mui-checked': {
-            color: primary,
+            color: secondary,
           },
         },
       },

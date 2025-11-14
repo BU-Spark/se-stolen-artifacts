@@ -10,12 +10,17 @@ const isPublicRoute = createRouteMatcher([
   '/signin(.*)',
   '/signup(.*)',
   '/signout(.*)',
+  // '/api/process-metadata',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
+  const { userId } = await auth();
+
+  if (!isPublicRoute(req) && !userId) {
     // Protect all non-public routes including /search
-    await auth.protect();
+    const signInUrl = new URL('/signin', req.url);
+    signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
+    return NextResponse.redirect(signInUrl.toString());
   }
 
   type SessionMetadata = {
