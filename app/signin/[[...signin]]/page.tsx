@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useSignIn } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Box, Button, TextField, Typography, Paper, Divider, Alert, CircularProgress, Stack } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 export default function SignInPage() {
@@ -105,13 +105,18 @@ export default function SignInPage() {
                 justifyContent: 'center',
                 width: 56,
                 height: 56,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
                 mb: 1.5,
-                background: 'linear-gradient(135deg, #E00025, #B8001E)',
               }}
             >
-              <LockOutlinedIcon sx={{ fontSize: 28, color: 'white' }} />
+              <Image
+                src="/KSP_Eye.png"
+                alt="KSP Eye"
+                width={56}
+                height={56}
+                style={{
+                  objectFit: 'contain',
+                }}
+              />
             </Box>
             <Typography variant="h5" fontWeight={700} color="secondary.main" gutterBottom>
               Welcome Back

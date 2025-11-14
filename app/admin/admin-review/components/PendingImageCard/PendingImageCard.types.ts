@@ -45,6 +45,8 @@ export type PendingImage = {
   image_url?: string | null;
   title?: string | null;
   description?: string | null;
+  short_description?: string | null;
+  ai_generated?: boolean | null;
   metadata?: PendingImageMetadata;
 };
 
