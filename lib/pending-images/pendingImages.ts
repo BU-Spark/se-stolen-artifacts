@@ -37,21 +37,24 @@ export async function handleGetPendingImages() {
 
     if (imageError) return { images: [], error: imageError.message };
 
-    // Fetch short_description from temp_artifact_metadata
+    // Fetch short_description and ai_generated from temp_artifact_metadata
     const { data: metadataRecords, error: metadataError } = await supabase
       .from('temp_artifact_metadata')
-      .select('image_id, short_description')
+      .select('image_id, short_description, ai_generated')
       .in('image_id', imageIds);
 
     if (metadataError && process.env.NODE_ENV !== 'production') {
       console.error('Error fetching metadata:', metadataError);
     }
 
-    // Create a map of image_id to short_description
-    const metadataMap = new Map<string, string | null>();
+    // Create a map of image_id to short_description and ai_generated
+    const metadataMap = new Map<string, { short_description: string | null; ai_generated: boolean | null }>();
     (metadataRecords ?? []).forEach((record) => {
       if (record.image_id) {
-        metadataMap.set(record.image_id, record.short_description ?? null);
+        metadataMap.set(record.image_id, {
+          short_description: record.short_description ?? null,
+          ai_generated: record.ai_generated ?? null,
+        });
       }
     });
 
@@ -63,7 +66,9 @@ export async function handleGetPendingImages() {
           console.log('Attempting to resolve image URL for', image);
         }
 
-        const shortDescription = metadataMap.get(image.internal_reference_number) ?? null;
+        const metadata = metadataMap.get(image.internal_reference_number);
+        const shortDescription = metadata?.short_description ?? null;
+        const aiGenerated = metadata?.ai_generated ?? null;
 
         if (!image?.image_gcs) {
           return resolvedUrl
@@ -71,10 +76,12 @@ export async function handleGetPendingImages() {
                 ...image,
                 image_url: resolvedUrl,
                 short_description: shortDescription,
+                ai_generated: aiGenerated,
               }
             : {
                 ...image,
                 short_description: shortDescription,
+                ai_generated: aiGenerated,
               };
         }
 
@@ -102,10 +109,12 @@ export async function handleGetPendingImages() {
                 ...image,
                 image_url: resolvedUrl,
                 short_description: shortDescription,
+                ai_generated: aiGenerated,
               }
             : {
                 ...image,
                 short_description: shortDescription,
+                ai_generated: aiGenerated,
               };
         }
 
@@ -113,6 +122,7 @@ export async function handleGetPendingImages() {
           ...image,
           image_url: signedUrlData.signedUrl,
           short_description: shortDescription,
+          ai_generated: aiGenerated,
         };
       })
     );

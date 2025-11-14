@@ -54,7 +54,7 @@ export default function PendingImageCard({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const { internal_reference_number, image_url, title, description, short_description, metadata } = image;
+  const { internal_reference_number, image_url, title, description, short_description, ai_generated, metadata } = image;
 
   const handleEditMetadataClick = () => {
     setDrawerOpen(true);
@@ -162,7 +162,20 @@ export default function PendingImageCard({
 
   return (
     <>
-      <Card ref={cardRef} sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <Card
+        ref={cardRef}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          ...(ai_generated === true && {
+            boxShadow:
+              '0 0 25px rgba(255, 193, 7, 0.8), 0 0 50px rgba(255, 193, 7, 0.6), 0 0 75px rgba(255, 193, 7, 0.4)',
+            border: '2px solid rgba(255, 193, 7, 0.5)',
+            transition: 'box-shadow 0.3s ease, border 0.3s ease',
+          }),
+        }}
+      >
         <Box sx={{ position: 'relative' }}>
           <CardMedia
             component="img"
