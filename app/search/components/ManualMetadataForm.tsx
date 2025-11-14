@@ -61,7 +61,7 @@ export default function ManualMetadataForm({
           </Grid>
           <Grid size={{ xs: 6 }}>
             <TextField
-              label="Year First Apperance Outside Cambodia"
+              label="Year First Appearance Outside Cambodia"
               type="number"
               value={manualBasic.firstAppearanceYearOutsideCambodia || ''}
               onChange={(e) =>

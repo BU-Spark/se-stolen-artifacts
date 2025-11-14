@@ -26,6 +26,8 @@ export default function DropZone({
 }: DropZoneProps) {
   return (
     <Box
+      role="button"
+      tabIndex={0}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -45,6 +47,12 @@ export default function DropZone({
         },
       }}
       onClick={() => fileInputRef.current?.click()}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          fileInputRef.current?.click();
+        }
+      }}
     >
       <Stack spacing={2} alignItems="center">
         <CloudUpload sx={{ fontSize: 56, color: isDragging ? 'primary.main' : 'text.secondary' }} />
