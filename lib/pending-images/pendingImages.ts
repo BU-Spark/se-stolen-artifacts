@@ -37,6 +37,24 @@ export async function handleGetPendingImages() {
 
     if (imageError) return { images: [], error: imageError.message };
 
+    // Fetch short_description from temp_artifact_metadata
+    const { data: metadataRecords, error: metadataError } = await supabase
+      .from('temp_artifact_metadata')
+      .select('image_id, short_description')
+      .in('image_id', imageIds);
+
+    if (metadataError && process.env.NODE_ENV !== 'production') {
+      console.error('Error fetching metadata:', metadataError);
+    }
+
+    // Create a map of image_id to short_description
+    const metadataMap = new Map<string, string | null>();
+    (metadataRecords ?? []).forEach((record) => {
+      if (record.image_id) {
+        metadataMap.set(record.image_id, record.short_description ?? null);
+      }
+    });
+
     const enhancedImages = await Promise.all(
       (images ?? []).map(async (image) => {
         let resolvedUrl = image?.image_url ?? null;
@@ -45,13 +63,19 @@ export async function handleGetPendingImages() {
           console.log('Attempting to resolve image URL for', image);
         }
 
+        const shortDescription = metadataMap.get(image.internal_reference_number) ?? null;
+
         if (!image?.image_gcs) {
           return resolvedUrl
             ? {
                 ...image,
                 image_url: resolvedUrl,
+                short_description: shortDescription,
               }
-            : image;
+            : {
+                ...image,
+                short_description: shortDescription,
+              };
         }
 
         const storagePath = normalizeStoragePath(image.image_gcs);
@@ -77,13 +101,18 @@ export async function handleGetPendingImages() {
             ? {
                 ...image,
                 image_url: resolvedUrl,
+                short_description: shortDescription,
               }
-            : image;
+            : {
+                ...image,
+                short_description: shortDescription,
+              };
         }
 
         return {
           ...image,
           image_url: signedUrlData.signedUrl,
+          short_description: shortDescription,
         };
       })
     );
