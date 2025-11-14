@@ -64,7 +64,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
     () => ADVANCED_PARAMS.filter((param) => !advancedSelections.some((selection) => selection.id === param.id)),
     [advancedSelections]
   );
-  const [pre1900, setPre1900] = useState(false);
+  const [pre1900, setPre1900] = useState<Record<string, boolean>>({});
 
   const subjectField = BASIC_FIELDS.find((field) => field.id === 'subject');
   const supportingTextFields = BASIC_FIELDS.filter((field) => field.type === 'text' && field.id !== 'subject');
@@ -219,7 +219,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
     event.preventDefault(); // prevents page reload
 
     const hasBasic =
-      pre1900 ||
+      Object.values(pre1900).some((val) => val) ||
       Object.entries(basicValues).some(([key, value]) => {
         const field = BASIC_FIELDS.find((f) => f.id === key);
         if (!field) return false;
@@ -348,10 +348,10 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
                             <FormControlLabel
                               control={
                                 <Checkbox
-                                  checked={pre1900}
+                                  checked={pre1900[field.id] || false}
                                   onChange={(event) => {
                                     const checked = event.target.checked;
-                                    setPre1900(checked);
+                                    setPre1900((prev) => ({ ...prev, [field.id]: checked }));
                                   }}
                                 />
                               }
@@ -370,8 +370,8 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
                                 ]}
                                 value={sliderValue as number[]}
                                 valueLabelDisplay="auto"
-                                sx={{ flexGrow: 1, ml: '2 !important' }}
-                                disabled={pre1900}
+                                sx={{ flexGrow: 1, ml: 2 }}
+                                disabled={pre1900[field.id] || false}
                                 onChange={(_event, newValue) => {
                                   if (Array.isArray(newValue) && newValue.length === 2) {
                                     handleBasicChange(field.id, [...newValue]);
