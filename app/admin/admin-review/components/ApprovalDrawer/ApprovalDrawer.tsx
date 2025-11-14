@@ -30,7 +30,6 @@ import SaveIcon from '@mui/icons-material/Save';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import CheckIcon from '@mui/icons-material/Check';
-import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
 import CategoryIcon from '@mui/icons-material/Category';
 import PersonIcon from '@mui/icons-material/Person';
@@ -43,10 +42,11 @@ export default function ApprovalDrawer({
   open,
   imageId,
   metadata,
+  selectedFolderId,
+  selectedFolderName,
   onClose,
   onSaveMetadata,
-  onApprove,
-  onAddToNew,
+  onFolderSelected,
 }: ApprovalDrawerProps) {
   const [view, setView] = useState<DrawerView>('metadata');
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -69,13 +69,12 @@ export default function ApprovalDrawer({
       const data = await response.json();
 
       if (response.ok && data.statues) {
-        setAvailableFolders(
-          data.statues.map((statue: { id: string; name: string; imageCount: number }) => ({
-            id: statue.id,
-            name: statue.name,
-            imageCount: statue.imageCount,
-          }))
-        );
+        const folders = data.statues.map((statue: { id: string; name: string; imageCount: number }) => ({
+          id: statue.id,
+          name: statue.name,
+          imageCount: statue.imageCount,
+        }));
+        setAvailableFolders(folders);
       } else {
         console.error('Failed to fetch statues:', data.error);
       }
@@ -91,13 +90,16 @@ export default function ApprovalDrawer({
     if (open && !prevOpenRef.current) {
       // Drawer just opened - reset state to metadata view and fetch statues
       setView('metadata');
-      setSelectedFolder(null);
       setFolderImages([]);
       setFormData(metadata || {});
-      setMetadataExpanded(true);
       setHasUnsavedChanges(false);
       // If metadata already exists and has content, consider it saved (user can proceed without re-saving)
-      setMetadataSaved(metadata ? Object.keys(metadata).length > 0 : false);
+      const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
+      setMetadataSaved(hasMetadata);
+      // If metadata is saved, default to collapsed summary view; otherwise show form expanded
+      setMetadataExpanded(!hasMetadata);
+      // Reset selected folder state - will be restored after folders are fetched
+      setSelectedFolder(null);
       // Fetch statues when drawer opens
       fetchStatues();
     }
@@ -113,6 +115,25 @@ export default function ApprovalDrawer({
       }
     }
   }, [metadata, open, hasUnsavedChanges]);
+
+  // Restore selected folder when availableFolders are loaded and selectedFolderId is provided
+  useEffect(() => {
+    if (availableFolders.length > 0 && selectedFolderId !== undefined) {
+      if (selectedFolderId) {
+        // selectedFolderId is a string (folder ID was selected)
+        const folder = availableFolders.find((f) => f.id === selectedFolderId);
+        if (folder) {
+          setSelectedFolder(folder);
+        }
+      } else if (selectedFolderId === null) {
+        // Explicit null means "new folder" was selected (not just uninitialized state)
+        setSelectedFolder(null);
+      }
+    } else if (selectedFolderId === undefined) {
+      // No selection has been made - clear any existing selection
+      setSelectedFolder(null);
+    }
+  }, [availableFolders, selectedFolderId]);
 
   const handleFolderClick = async (folder: Folder) => {
     setSelectedFolder(folder);
@@ -176,23 +197,18 @@ export default function ApprovalDrawer({
     setHasUnsavedChanges(false);
     setMetadataExpanded(false); // Collapse after saving
     setMetadataSaved(true); // Mark metadata as saved
-
-    // Scroll to top of drawer content
-    setTimeout(() => {
-      drawerContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
   };
 
+  // Handle selecting an existing folder
   const handleAddToFolder = () => {
     if (selectedFolder) {
-      onApprove(imageId, selectedFolder.id, formData);
-      onClose();
+      // Pass selected folder back to parent with name for immediate display
+      onFolderSelected?.(selectedFolder.id, selectedFolder.name);
+      // Navigate back to metadata view (summary collapsed if metadata is saved)
+      setView('metadata');
+      const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
+      setMetadataExpanded(!hasMetadata);
     }
-  };
-
-  const handleAddToNew = () => {
-    onAddToNew(imageId, formData);
-    onClose();
   };
 
   // Helper to get fragmentation points that are true
@@ -282,7 +298,23 @@ export default function ApprovalDrawer({
                   if (view === 'folder-contents') {
                     handleBackToFolders();
                   } else {
+                    // Navigating back to metadata - restore saved folder selection
                     setView('metadata');
+                    // Restore from saved selectedFolderId prop, not from local browsing state
+                    if (selectedFolderId) {
+                      const folder = availableFolders.find((f) => f.id === selectedFolderId);
+                      if (folder) {
+                        setSelectedFolder(folder);
+                      }
+                    } else if (selectedFolderId === null) {
+                      setSelectedFolder(null);
+                    } else {
+                      // No saved selection - clear local state
+                      setSelectedFolder(null);
+                    }
+                    // Restore collapsed state if metadata is saved
+                    const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
+                    setMetadataExpanded(!hasMetadata);
                   }
                 }}
                 size="small"
@@ -310,44 +342,99 @@ export default function ApprovalDrawer({
             <Stack spacing={4}>
               {/* Metadata Editing Section */}
               <Box>
+                {/* Status and Toggle Bar */}
                 <Box
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     mb: 2,
-                    cursor: 'pointer',
+                    pb: 1,
+                    borderBottom: 1,
+                    borderColor: 'divider',
                   }}
-                  onClick={() => setMetadataExpanded(!metadataExpanded)}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EditIcon sx={{ fontSize: 20 }} />
-                    <Typography variant="h6" fontWeight={600}>
-                      Edit Metadata
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {hasUnsavedChanges && (
-                      <Typography variant="caption" color="warning.main" sx={{ fontStyle: 'italic' }}>
-                        Unsaved changes
-                      </Typography>
-                    )}
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMetadataExpanded(!metadataExpanded);
-                      }}
+                  {hasUnsavedChanges ? (
+                    <Typography
+                      variant="body2"
+                      color="warning.main"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                     >
-                      {metadataExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                    </IconButton>
-                  </Box>
+                      <WarningIcon sx={{ fontSize: 16 }} />
+                      Metadata must be saved before selecting folder
+                    </Typography>
+                  ) : metadataSaved ? (
+                    <Typography
+                      variant="body2"
+                      color="success.main"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      <CheckIcon sx={{ fontSize: 16 }} />
+                      All changes saved
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Ready to edit
+                    </Typography>
+                  )}
+                  <IconButton
+                    size="small"
+                    onClick={() => setMetadataExpanded(!metadataExpanded)}
+                    aria-label={metadataExpanded ? 'Collapse metadata' : 'Expand metadata'}
+                  >
+                    {metadataExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  </IconButton>
                 </Box>
 
                 {/* Collapsed Summary View */}
                 {!metadataExpanded && (
                   <Box sx={{ mt: 1 }}>
                     <Stack spacing={2.5}>
+                      {/* Selected Folder Indicator - Show immediately using selectedFolderName prop */}
+                      {selectedFolderId !== undefined && (
+                        <Box
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 1,
+                            bgcolor: 'secondary.main',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 1,
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <FolderIcon sx={{ fontSize: 18 }} />
+                            <Typography variant="body2" fontWeight={500}>
+                              Destination:{' '}
+                              <strong>
+                                {selectedFolderId === null
+                                  ? 'New Folder'
+                                  : selectedFolderName || selectedFolder?.name || 'Loading...'}
+                              </strong>
+                            </Typography>
+                          </Box>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={handleNavigateToFolders}
+                            sx={{
+                              color: 'white',
+                              borderColor: 'rgba(255, 255, 255, 0.5)',
+                              minWidth: 'auto',
+                              px: 1.5,
+                              '&:hover': {
+                                borderColor: 'white',
+                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                              },
+                            }}
+                          >
+                            Change
+                          </Button>
+                        </Box>
+                      )}
+
                       {/* Basic Information Summary - Always show header, show content if exists */}
                       <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
@@ -506,9 +593,12 @@ export default function ApprovalDrawer({
                   <Box>
                     {/* Basic Information */}
                     <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                        Basic Information
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <InfoIcon sx={{ fontSize: 18 }} />
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Basic Information
+                        </Typography>
+                      </Box>
                       <Stack spacing={2} sx={{ mt: 2 }}>
                         <TextField
                           label="Title of Object"
@@ -926,16 +1016,6 @@ export default function ApprovalDrawer({
           ) : (
             /* Folder Selection Section */
             <Box>
-              <Typography
-                variant="h6"
-                fontWeight={600}
-                gutterBottom
-                sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <FolderIcon sx={{ fontSize: 24 }} />
-                Select Destination Folder
-              </Typography>
-
               {view === 'folder-list' ? (
                 <Stack spacing={2}>
                   {loadingFolders ? (
@@ -958,10 +1038,10 @@ export default function ApprovalDrawer({
                         sx={{
                           cursor: 'pointer',
                           transition: 'all 0.2s',
-                          borderColor: selectedFolder?.id === folder.id ? 'primary.main' : 'divider',
+                          borderColor: selectedFolder?.id === folder.id ? 'secondary.main' : 'divider',
                           borderWidth: selectedFolder?.id === folder.id ? 2 : 1,
                           '&:hover': {
-                            borderColor: 'primary.light',
+                            borderColor: selectedFolder?.id === folder.id ? 'secondary.main' : 'secondary.light',
                             bgcolor: 'action.hover',
                           },
                         }}
@@ -1003,7 +1083,7 @@ export default function ApprovalDrawer({
                                 width: 32,
                                 height: 32,
                                 borderRadius: '50%',
-                                bgcolor: 'primary.main',
+                                bgcolor: 'secondary.main',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1088,7 +1168,7 @@ export default function ApprovalDrawer({
           {view === 'metadata' ? (
             <Button
               variant="contained"
-              color="primary"
+              color="secondary"
               size="large"
               fullWidth
               endIcon={<ArrowForwardIcon />}
@@ -1105,14 +1185,14 @@ export default function ApprovalDrawer({
                 size="large"
                 fullWidth
                 startIcon={<CreateNewFolderIcon />}
-                onClick={handleAddToNew}
+                onClick={() => {}}
                 sx={{ whiteSpace: 'nowrap' }}
               >
-                Add to New Folder
+                Select New Folder
               </Button>
               <Button
                 variant="contained"
-                color="primary"
+                color="secondary"
                 size="large"
                 fullWidth
                 startIcon={<SaveIcon />}
@@ -1120,7 +1200,7 @@ export default function ApprovalDrawer({
                 disabled={!selectedFolder}
                 sx={{ whiteSpace: 'nowrap' }}
               >
-                Save & Add to {selectedFolder?.name || 'Folder'}
+                Select {selectedFolder?.name || 'Folder'}
               </Button>
             </Stack>
           )}

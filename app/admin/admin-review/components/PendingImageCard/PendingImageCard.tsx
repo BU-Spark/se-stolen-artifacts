@@ -1,14 +1,10 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Box, Button, Card, CardActions, CardContent, CardMedia, Stack, Typography, Collapse } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import EditIcon from '@mui/icons-material/Edit';
+import { Box, Button, Card, CardActions, CardContent, CardMedia, Stack, Typography } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { PendingImage, MetadataViewMode } from './PendingImageCard.types';
-import MetadataSection from './MetadataSection';
+import { PendingImage } from './PendingImageCard.types';
 import ApprovalDrawer from '../ApprovalDrawer';
 
 type PendingImageCardProps = {
@@ -23,21 +19,16 @@ type PendingImageCardProps = {
 
 export default function PendingImageCard({
   image,
-  downloadInFlight,
-  onDownload,
   onSaveMetadata,
   onApprove,
   onAddToNew,
   onDeny,
 }: PendingImageCardProps) {
-  const [viewMode, setViewMode] = useState<MetadataViewMode>('collapsed');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null | undefined>(undefined);
+  const [selectedFolderName, setSelectedFolderName] = useState<string | null | undefined>(undefined);
   const cardRef = useRef<HTMLDivElement>(null);
   const { internal_reference_number, image_url, title, description, metadata } = image;
-
-  const handleToggleMetadata = () => {
-    setViewMode((prev) => (prev === 'collapsed' ? 'viewing' : 'collapsed'));
-  };
 
   const handleEditMetadataClick = () => {
     setDrawerOpen(true);
@@ -59,6 +50,11 @@ export default function PendingImageCard({
   const handleAddToNew = (imageId: string, metadata: PendingImage['metadata']) => {
     onAddToNew(imageId, metadata);
     setDrawerOpen(false);
+  };
+
+  const handleFolderSelected = (folderId: string | null, folderName?: string | null) => {
+    setSelectedFolderId(folderId);
+    setSelectedFolderName(folderName || (folderId === null ? null : undefined));
   };
 
   return (
@@ -87,54 +83,39 @@ export default function PendingImageCard({
             )}
           </Stack>
 
-          {/* Expandable Metadata Section */}
+          {/* Edit Metadata Button */}
           <Box sx={{ mt: 2 }}>
-            <Button
-              onClick={handleToggleMetadata}
-              endIcon={viewMode === 'collapsed' ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-              variant="outlined"
-              fullWidth
-              size="small"
-            >
-              {viewMode === 'collapsed' ? 'Show Metadata' : 'Hide Metadata'}
+            <Button onClick={handleEditMetadataClick} variant="outlined" fullWidth size="small">
+              Edit Metadata
             </Button>
-
-            <Collapse in={viewMode !== 'collapsed'} timeout="auto">
-              <Box sx={{ mt: 2 }}>
-                <MetadataSection metadata={metadata} />
-              </Box>
-            </Collapse>
           </Box>
         </CardContent>
 
         <CardActions sx={{ px: 3, pb: 3 }}>
           <Button
             variant="contained"
-            color="primary"
-            startIcon={<EditIcon />}
-            onClick={handleEditMetadataClick}
+            color="success"
+            startIcon={<CheckCircleIcon />}
+            onClick={() => {
+              // If a folder is selected, approve to that folder; otherwise create new folder
+              if (selectedFolderId && typeof selectedFolderId === 'string') {
+                onApprove(internal_reference_number, selectedFolderId, metadata || {});
+              } else {
+                onAddToNew(internal_reference_number, metadata || {});
+              }
+            }}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            Edit Metadata
+            Approve
           </Button>
           <Button
             variant="contained"
-            color="error"
+            color="primary"
             startIcon={<CancelIcon />}
             onClick={() => onDeny(internal_reference_number)}
             sx={{ whiteSpace: 'nowrap' }}
           >
             Deny
-          </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            startIcon={<DownloadIcon />}
-            onClick={() => onDownload(internal_reference_number)}
-            disabled={downloadInFlight}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            {downloadInFlight ? 'Downloading...' : 'Download Image'}
           </Button>
         </CardActions>
       </Card>
@@ -146,10 +127,13 @@ export default function PendingImageCard({
         imageUrl={image_url ?? null}
         imageTitle={title || `Image ${internal_reference_number}`}
         metadata={metadata}
+        selectedFolderId={selectedFolderId}
+        selectedFolderName={selectedFolderName}
         onClose={handleDrawerClose}
         onSaveMetadata={handleSaveMetadata}
         onApprove={handleApprove}
         onAddToNew={handleAddToNew}
+        onFolderSelected={handleFolderSelected}
       />
     </>
   );
