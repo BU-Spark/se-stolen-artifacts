@@ -7,11 +7,13 @@ import { insertArtifactMetadata } from '@/lib/llm/insertArtifactMetadata';
 
 export async function POST(request: NextRequest) {
   try {
-    // COMMENT THIS OUT IF YOU WANT TO TEST THE ENDPOINT DIRECTLY
+    // COMMENT THIS OUT IF YOU WANT TO TEST THE ENDPOINT DIRECTLY (postman)
+    // --------------------------------------------------------------------
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    // --------------------------------------------------------------------
 
     const body = (await request.json()) as ProcessMetadataRequest;
     const { imageId, shortDescription } = body;

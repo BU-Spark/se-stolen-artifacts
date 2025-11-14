@@ -1,6 +1,9 @@
 'use client';
 
+import { themeTokens } from '@/app/theme';
 import { useState, useRef, useCallback } from 'react';
+
+// MUI
 import {
   Box,
   Button,
@@ -12,11 +15,21 @@ import {
   Alert,
   Chip,
   CircularProgress,
-  TextField,
 } from '@mui/material';
 import { CloudUpload, Clear, CheckCircle } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 
+// major metadata types
+import type { BasicSearchMetadata, AdvancedSearchMetadata, ProcessMetadataRequest } from '@/app/types/metadata.types';
+
+// local components
+import DropZone from './DropZone';
+import DescriptionMetadataEntry from './DescriptionMetadataEntry';
+
+// local utils
+import { formatFileSize, validateFile, getFileKind } from '@/app/search/utils';
+
+// local types
 type LocalPreview = {
   kind: 'image' | 'csv' | 'json' | 'unknown';
   name: string;
@@ -29,16 +42,7 @@ type ArtifactsUploadProps = {
   onUploadComplete?: () => void;
 };
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp', '.csv', '.json'];
-const ACCEPTED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'text/csv',
-  'application/json',
-  'application/csv',
-];
 
 export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -53,38 +57,57 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [shortDescription, setShortDescription] = useState<string>('');
   const [longDescription, setLongDescription] = useState<string>('');
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
+  // metadata mode: 'ai' means use descriptions + LLM, 'manual' means user fills structured metadata
+  const [metadataMode, setMetadataMode] = useState<'ai' | 'manual'>('ai');
+
+  // Manual metadata state (partial, mirrors ManualArtifactMetadata)
+  const [manualBasic, setManualBasic] = useState<Partial<BasicSearchMetadata>>({
+    subject: '',
+    dealerName: '',
+    suspectedCurrentLocation: '',
+    artifactTitle: '',
+    photographLocation: '',
+    firstAppearanceYear: undefined,
+    firstAppearanceYearOutsideCambodia: undefined,
+    repatriated: false,
+  });
+
+  const [manualAdvanced, setManualAdvanced] = useState<Partial<AdvancedSearchMetadata>>({
+    imageSource: '',
+    material: '',
+    hasInscription: false,
+
+    // Head/Arms Configuration
+    multipleHeads: false,
+    fourArms: false,
+    eightArms: false,
+    tenArms: false,
+    overTenArms: false,
+
+    // Overall Condition
+    fragmentary: false,
+    fragmentsFromMultipleStatues: false,
+
+    // Body Parts Present
+    headPresent: false,
+    torsoPresent: false,
+    shoulderElbowPresent: false,
+    elbowWristPresent: false,
+    hipKneePresent: false,
+    kneeAnklePresent: false,
+    footPresent: false,
+    basePresent: false,
+
+    // Fragmentation Points
+    fragmentedAtNeck: false,
+    fragmentedAtShoulder: false,
+    fragmentedAtElbow: false,
+    fragmentedAtWrist: false,
+    fragmentedAtUpperLeg: false,
+    fragmentedAtKnee: false,
+    fragmentedAtAnkle: false,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
-  const validateFile = (file: File): string | null => {
-    // Check file size
-    if (file.size > MAX_FILE_SIZE) {
-      return `File size exceeds 10MB limit. Your file is ${formatFileSize(file.size)}.`;
-    }
-
-    // Check file type
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    const isValidExtension = ACCEPTED_TYPES.includes(fileExtension);
-    const isValidMimeType = ACCEPTED_MIME_TYPES.includes(file.type);
-
-    if (!isValidExtension && !isValidMimeType) {
-      return `Unsupported file type. Accepted formats: ${ACCEPTED_TYPES.join(', ')}`;
-    }
-
-    return null;
-  };
-
-  const getFileKind = (file: File): LocalPreview['kind'] => {
-    if (file.type.startsWith('image/')) return 'image';
-    if (file.name.endsWith('.csv') || file.type === 'text/csv') return 'csv';
-    if (file.name.endsWith('.json') || file.type === 'application/json') return 'json';
-    return 'unknown';
-  };
 
   const generatePreview = async (file: File): Promise<LocalPreview> => {
     const kind = getFileKind(file);
@@ -156,7 +179,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         setIsLoadingPreview(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     []
   );
 
@@ -206,8 +229,9 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       return;
     }
 
-    if (!longDescription.trim()) {
-      setDescriptionError('Detailed description is required');
+    // long description is required only when using AI processing
+    if (metadataMode === 'ai' && !longDescription.trim()) {
+      setDescriptionError('Detailed description is required for AI processing');
       return;
     }
 
@@ -232,7 +256,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('shortDescription', shortDescription.trim());
-      formData.append('longDescription', longDescription.trim());
+      if (longDescription.trim()) formData.append('longDescription', longDescription.trim());
 
       // Call the upload API
       const response = await fetch('/api/upload', {
@@ -249,17 +273,32 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       // If we have an image ID, send the descriptions to the metadata processing endpoint
       if (result.id) {
         try {
+          // Build metadata processing payload depending on mode
+          const payload: ProcessMetadataRequest =
+            metadataMode === 'ai'
+              ? {
+                  imageId: result.id,
+                  shortDescription: shortDescription.trim(),
+                  processWithAI: true,
+                  longDescription: longDescription.trim(),
+                }
+              : {
+                  imageId: result.id,
+                  shortDescription: shortDescription.trim(),
+                  processWithAI: false,
+                  manualMetadata: {
+                    basicSearchMetadata: manualBasic,
+                    advancedSearchMetadata: manualAdvanced,
+                  },
+                  ...(longDescription.trim() && { longDescription: longDescription.trim() }),
+                };
+
           const llmResponse = await fetch('/api/process-metadata', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              imageId: result.id,
-              longDescription: longDescription.trim(),
-              shortDescription: shortDescription.trim(),
-              processWithAI: true, // Always use AI processing when longDescription is provided
-            }),
+            body: JSON.stringify(payload),
           });
 
           const llmResult = await llmResponse.json();
@@ -349,55 +388,18 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
             </Alert>
           )}
 
-          {/* Success Alert */}
-          {uploadComplete && !error && (
-            <Alert severity="success" icon={<CheckCircle />}>
-              Image submitted for admin review! ({selectedFile?.name})
-            </Alert>
-          )}
-
           {/* Drop Zone */}
           {!selectedFile && !isLoadingPreview && (
-            <Box
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              sx={{
-                border: '2px dashed',
-                borderColor: isDragging ? 'primary.main' : 'divider',
-                borderRadius: 3,
-                p: 6,
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                backgroundColor: isDragging ? (theme) => alpha(theme.palette.grey[500], 0.15) : 'transparent',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  backgroundColor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                },
-              }}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Stack spacing={2} alignItems="center">
-                <CloudUpload sx={{ fontSize: 56, color: isDragging ? 'primary.main' : 'text.secondary' }} />
-                <Box>
-                  <Typography variant="body1" fontWeight={600} gutterBottom>
-                    {isDragging ? 'Drop your file here' : 'Drop your file here or click to browse'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Accepted formats: JPG, PNG, WEBP, CSV, JSON (max 10MB)
-                  </Typography>
-                </Box>
-              </Stack>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED_TYPES.join(',')}
-                onChange={handleFileInputChange}
-                style={{ display: 'none' }}
-              />
-            </Box>
+            <DropZone
+              isDragging={isDragging}
+              handleDragEnter={handleDragEnter}
+              handleDragLeave={handleDragLeave}
+              handleDragOver={handleDragOver}
+              handleDrop={handleDrop}
+              handleFileInputChange={handleFileInputChange}
+              fileInputRef={fileInputRef}
+              ACCEPTED_TYPES={ACCEPTED_TYPES}
+            />
           )}
 
           {/* Loading State */}
@@ -516,56 +518,39 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 </Box>
               )}
 
-              {/* Description Fields - BEFORE upload */}
+              {/* Description / Metadata Mode Tabs */}
               {!isUploading && !uploadComplete && !imageLoadError && (
-                <Stack spacing={2} sx={{ mt: 2 }}>
-                  {descriptionError && (
-                    <Alert severity="error" onClose={() => setDescriptionError(null)}>
-                      {descriptionError}
-                    </Alert>
-                  )}
-                  <TextField
-                    label="Short Description"
-                    value={shortDescription}
-                    onChange={(e) => {
-                      setShortDescription(e.target.value);
-                      if (descriptionError) setDescriptionError(null);
-                    }}
-                    placeholder="Brief summary of the artifact"
-                    fullWidth
-                    size="small"
-                    variant="outlined"
-                    required
-                    error={!!descriptionError}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        height: '40px',
-                      },
-                    }}
-                  />
-                  <TextField
-                    label="Detailed Description"
-                    value={longDescription}
-                    onChange={(e) => {
-                      setLongDescription(e.target.value);
-                      if (descriptionError) setDescriptionError(null);
-                    }}
-                    placeholder="Please provide as much information as you can about this artifact (origin, history, condition, materials, provenance, etc.)"
-                    fullWidth
-                    multiline
-                    rows={4}
-                    variant="outlined"
-                    required
-                    error={!!descriptionError}
-                    helperText="The more details you provide, the better we can catalog and identify this artifact"
-                  />
-                </Stack>
+                <DescriptionMetadataEntry
+                  metadataMode={metadataMode}
+                  setMetadataMode={setMetadataMode}
+                  shortDescription={shortDescription}
+                  setShortDescription={setShortDescription}
+                  longDescription={longDescription}
+                  setLongDescription={setLongDescription}
+                  descriptionError={descriptionError}
+                  setDescriptionError={setDescriptionError}
+                  manualBasic={manualBasic}
+                  setManualBasic={setManualBasic}
+                  manualAdvanced={manualAdvanced}
+                  setManualAdvanced={setManualAdvanced}
+                />
               )}
 
               {/* Progress Bar - BELOW descriptions */}
               {(isUploading || uploadComplete) && (
                 <Box>
-                  <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
+                  <LinearProgress
+                    variant="determinate"
+                    value={progress}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: (theme) => alpha(theme.palette.grey[400], 0.25),
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: themeTokens.secondaryBlue,
+                      },
+                    }}
+                  />
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: 'right' }}>
                     {progress}%
                   </Typography>
