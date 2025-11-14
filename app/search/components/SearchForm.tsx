@@ -64,6 +64,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
     () => ADVANCED_PARAMS.filter((param) => !advancedSelections.some((selection) => selection.id === param.id)),
     [advancedSelections]
   );
+  const [pre1900, setPre1900] = useState(false);
 
   const subjectField = BASIC_FIELDS.find((field) => field.id === 'subject');
   const supportingTextFields = BASIC_FIELDS.filter((field) => field.type === 'text' && field.id !== 'subject');
@@ -217,16 +218,18 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // prevents page reload
 
-    const hasBasic = Object.entries(basicValues).some(([key, value]) => {
-      const field = BASIC_FIELDS.find((f) => f.id === key);
-      if (!field) return false;
-      if (field.type === 'checkbox') return Boolean(value);
-      if (field.type === 'slider') {
-        const sliderValue = Array.isArray(value) ? value : field.defaultValue || [];
-        return (sliderValue as number[])[0] !== field.min || (sliderValue as number[])[1] !== field.max;
-      }
-      return String(value ?? '').trim() !== '';
-    });
+    const hasBasic =
+      pre1900 ||
+      Object.entries(basicValues).some(([key, value]) => {
+        const field = BASIC_FIELDS.find((f) => f.id === key);
+        if (!field) return false;
+        if (field.type === 'checkbox') return Boolean(value);
+        if (field.type === 'slider') {
+          const sliderValue = Array.isArray(value) ? value : field.defaultValue || [];
+          return (sliderValue as number[])[0] !== field.min || (sliderValue as number[])[1] !== field.max;
+        }
+        return String(value ?? '').trim() !== '';
+      });
 
     if (!hasBasic) {
       alert('Must fill out at least one parameter before searching!');
@@ -235,7 +238,10 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
 
     const payload = {
       query,
-      basics: basicValues,
+      basics: {
+        ...basicValues,
+        pre1900,
+      },
       advanced: advancedSelections.map((selection) => {
         if (selection.id === 'limbsPresent') {
           return { id: selection.id, value: normalizeLimbList(String(selection.value)) };
@@ -336,34 +342,50 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
                           <Stack
                             direction="row"
                             alignItems="center"
-                            spacing={2}
-                            sx={{ width: { xs: '100%', md: '75%', ml: 10 } }}
+                            spacing={4}
+                            sx={{ flexWrap: { xs: 'wrap', md: 'nowrap' } }}
                           >
-                            <Slider
-                              color="secondary"
-                              min={field.min || 0}
-                              max={field.max || 100}
-                              step={1}
-                              marks={[
-                                { value: field.min || 0, label: String(field.min || 0) },
-                                { value: field.max || 100, label: String(field.max || 100) },
-                              ]}
-                              value={sliderValue as number[]}
-                              valueLabelDisplay="auto"
-                              sx={{ flexGrow: 1 }}
-                              onChange={(_event, newValue) => {
-                                if (Array.isArray(newValue) && newValue.length === 2) {
-                                  handleBasicChange(field.id, [...newValue]);
-                                }
-                              }}
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={pre1900}
+                                  onChange={(event) => {
+                                    const checked = event.target.checked;
+                                    setPre1900(checked);
+                                  }}
+                                />
+                              }
+                              label="Pre-1900"
+                              sx={{ mr: { md: 3 }, mb: { xs: 1, md: 0 } }}
                             />
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ minWidth: 100, textAlign: 'right' }}
-                            >
-                              {`${rangeStart} - ${rangeEnd}`}
-                            </Typography>
+                            <Stack direction="row" alignItems="center" spacing={2} sx={{ flex: 1 }}>
+                              <Slider
+                                color="secondary"
+                                min={field.min || 0}
+                                max={field.max || 100}
+                                step={1}
+                                marks={[
+                                  { value: field.min || 0, label: String(field.min || 0) },
+                                  { value: field.max || 100, label: String(field.max || 100) },
+                                ]}
+                                value={sliderValue as number[]}
+                                valueLabelDisplay="auto"
+                                sx={{ flexGrow: 1, ml: '2 !important' }}
+                                disabled={pre1900}
+                                onChange={(_event, newValue) => {
+                                  if (Array.isArray(newValue) && newValue.length === 2) {
+                                    handleBasicChange(field.id, [...newValue]);
+                                  }
+                                }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ minWidth: 100, textAlign: 'right' }}
+                              >
+                                {`${rangeStart} - ${rangeEnd}`}
+                              </Typography>
+                            </Stack>
                           </Stack>
                         </Stack>
                       );

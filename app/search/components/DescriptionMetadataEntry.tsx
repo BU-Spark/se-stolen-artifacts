@@ -83,7 +83,7 @@ export default function DescriptionMetadataEntry({
           helperText="The more details you provide, the better we can catalog and identify this artifact"
           InputProps={{
             endAdornment: (
-              <InputAdornment position="end">
+              <InputAdornment position="end" sx={{ pr: 3 }}>
                 <Tooltip
                   title={
                     <div>
