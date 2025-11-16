@@ -101,7 +101,7 @@ export default function Navbar() {
             color: 'inherit',
           }}
         >
-          <Image src="/logo.jpeg" alt="Khmer Statuary Project logo" width={32} height={32} priority />
+          <Image src="/KSP_Eye.png" alt="Khmer Statuary Project logo" width={32} height={16} priority />
           <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
             Khmer Statuary Project
           </Typography>
