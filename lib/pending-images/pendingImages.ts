@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 const storageBucket = 'spark';
 
-function normalizeStoragePath(path: string) {
+function normalizeStoragePath(path: string | null | undefined) {
+  if (!path) return null; // Return null if the path is null or undefined
   const bucketPrefix = `${storageBucket}/`;
-  if (!path) return path;
   const trimmed = path.replace(/^\//, '');
   return trimmed.startsWith(bucketPrefix) ? trimmed.slice(bucketPrefix.length) : trimmed;
 }
@@ -21,108 +21,39 @@ export async function handleGetPendingImages() {
       };
     }
 
-    const { data: approvals, error: approvalError } = await supabase
-      .from('approval')
-      .select('image_id')
+    const { data: pendingData, error: queryError } = await supabase
+      .from('artifact_metadata_upload_log')
+      .select('internal_reference_number, gcs_path, short_description, ai_generated')
       .eq('status', 'pending_review');
 
-    if (approvalError) return { images: [], error: approvalError.message };
+    if (queryError) return { images: [], error: queryError.message };
 
-    const imageIds = approvals.map((a) => a.image_id);
-
-    const { data: images, error: imageError } = await supabase
-      .from('images')
-      .select('*')
-      .in('internal_reference_number', imageIds);
-
-    if (imageError) return { images: [], error: imageError.message };
-
-    // Fetch short_description and ai_generated from temp_artifact_metadata
-    const { data: metadataRecords, error: metadataError } = await supabase
-      .from('temp_artifact_metadata')
-      .select('image_id, short_description, ai_generated')
-      .in('image_id', imageIds);
-
-    if (metadataError && process.env.NODE_ENV !== 'production') {
-      console.error('Error fetching metadata:', metadataError);
-    }
-
-    // Create a map of image_id to short_description and ai_generated
-    const metadataMap = new Map<string, { short_description: string | null; ai_generated: boolean | null }>();
-    (metadataRecords ?? []).forEach((record) => {
-      if (record.image_id) {
-        metadataMap.set(record.image_id, {
-          short_description: record.short_description ?? null,
-          ai_generated: record.ai_generated ?? null,
-        });
-      }
-    });
-
+    // Enhance the images directly from the approvals query
     const enhancedImages = await Promise.all(
-      (images ?? []).map(async (image) => {
-        let resolvedUrl = image?.image_url ?? null;
-
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('Attempting to resolve image URL for', image);
+      pendingData.map(async (approval) => {
+        const storagePath = normalizeStoragePath(approval.gcs_path);
+        if (!storagePath) {
+          console.error('Invalid storage path:', approval.gcs_path);
+          return null; // Handle the invalid path case
         }
 
-        const metadata = metadataMap.get(image.internal_reference_number);
-        const shortDescription = metadata?.short_description ?? null;
-        const aiGenerated = metadata?.ai_generated ?? null;
-
-        if (!image?.image_gcs) {
-          return resolvedUrl
-            ? {
-                ...image,
-                image_url: resolvedUrl,
-                short_description: shortDescription,
-                ai_generated: aiGenerated,
-              }
-            : {
-                ...image,
-                short_description: shortDescription,
-                ai_generated: aiGenerated,
-              };
-        }
-
-        const storagePath = normalizeStoragePath(image.image_gcs);
         const storageClient = supabase.storage.from(storageBucket);
         const { data: signedUrlData, error: signedUrlError } = await storageClient.createSignedUrl(
           storagePath,
-          60 * 60
+          60 * 60 // 1 hour expiration
         );
 
-        if (signedUrlError || !signedUrlData?.signedUrl) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.error('Signed URL error', { error: signedUrlError, storagePath });
-          }
-
-          if (!resolvedUrl) {
-            const { data: publicUrlData } = storageClient.getPublicUrl(storagePath);
-            if (publicUrlData?.publicUrl) {
-              resolvedUrl = publicUrlData.publicUrl;
-            }
-          }
-
-          return resolvedUrl
-            ? {
-                ...image,
-                image_url: resolvedUrl,
-                short_description: shortDescription,
-                ai_generated: aiGenerated,
-              }
-            : {
-                ...image,
-                short_description: shortDescription,
-                ai_generated: aiGenerated,
-              };
-        }
+        const resolvedUrl =
+          signedUrlError || !signedUrlData?.signedUrl
+            ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${storageBucket}/${storagePath}`
+            : signedUrlData.signedUrl;
 
         return {
-          ...image,
-          image_url: signedUrlData.signedUrl,
-          short_description: shortDescription,
-          ai_generated: aiGenerated,
+          image_id: approval.internal_reference_number,
+          internal_reference_number: approval.internal_reference_number,
+          image_url: resolvedUrl,
+          short_description: approval.short_description,
+          ai_generated: approval.ai_generated,
         };
       })
     );

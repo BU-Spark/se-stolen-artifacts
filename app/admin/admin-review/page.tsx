@@ -30,7 +30,7 @@ export default function AdminReviewPage() {
         if (!response.ok) {
           throw new Error(payload.error || 'Failed to load pending images.');
         }
-        setImages(payload.images ?? []);
+        setImages(payload.images?.filter((img) => img !== null && img !== undefined) ?? []);
         if (process.env.NODE_ENV !== 'production') {
           console.log('Fetched pending images:', payload.images);
         }
@@ -219,18 +219,24 @@ export default function AdminReviewPage() {
                 alignItems: 'start',
               }}
             >
-              {images.map((image) => (
-                <PendingImageCard
-                  key={image.internal_reference_number}
-                  image={image}
-                  downloadInFlight={downloadInFlight === image.internal_reference_number}
-                  onDownload={handleDownload}
-                  onSaveMetadata={handleSaveMetadata}
-                  onApprove={handleApprove}
-                  onAddToNew={handleAddToNew}
-                  onDeny={handleDeny}
-                />
-              ))}
+              {images.map((image, index) => {
+                if (!image) {
+                  console.error('Encountered null or undefined image:', image);
+                  return null; // Skip rendering for invalid images
+                }
+                return (
+                  <PendingImageCard
+                    key={image.image_id || `image-${index}`}
+                    image={image}
+                    downloadInFlight={downloadInFlight === image.image_id}
+                    onDownload={handleDownload}
+                    onSaveMetadata={handleSaveMetadata}
+                    onApprove={handleApprove}
+                    onAddToNew={handleAddToNew}
+                    onDeny={handleDeny}
+                  />
+                );
+              })}
             </Box>
           )}
         </Container>

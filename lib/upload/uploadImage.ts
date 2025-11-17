@@ -12,6 +12,7 @@ export async function handleUploadImage({ file }: { file: File }) {
   }
 
   const newImageId = crypto.randomUUID();
+  const internalReferenceNumber = `IRN-${Date.now()}`; // Generate a human-readable internal reference number
   const fileExtension = file.name.split('.').pop();
   const filePath = `uploads/${newImageId}.${fileExtension}`;
 
@@ -29,6 +30,7 @@ export async function handleUploadImage({ file }: { file: File }) {
     console.log('Upload successful. New image ID:', newImageId);
     return {
       id: newImageId,
+      internalReferenceNumber: internalReferenceNumber, // Include the internal reference number in the return object
       publicUrl: publicUrl,
       gcsPath: gcsPath,
     };

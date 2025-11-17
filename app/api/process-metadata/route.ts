@@ -16,11 +16,14 @@ export async function POST(request: NextRequest) {
     // --------------------------------------------------------------------
 
     const body = (await request.json()) as ProcessMetadataRequest;
-    const { imageId, gcsPath, shortDescription } = body;
+    const { imageId, gcsPath, shortDescription, internalReferenceNumber } = body; // Destructure internalReferenceNumber
 
     // validate common fields
-    if (!imageId || !gcsPath || !shortDescription) {
-      return NextResponse.json({ error: 'Missing required fields: imageId and shortDescription' }, { status: 400 });
+    if (!imageId || !gcsPath || !shortDescription || !internalReferenceNumber) {
+      return NextResponse.json(
+        { error: 'Missing required fields: imageId, shortDescription, or internalReferenceNumber' },
+        { status: 400 }
+      );
     }
 
     // Validate processWithAI flag
@@ -94,8 +97,13 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    if (!metadata) {
+      console.error('Metadata is undefined. Cannot insert into database.');
+      return NextResponse.json({ error: 'Metadata is required but was not provided.' }, { status: 400 });
+    }
+
     // Insert into database (works for both success and fallback)
-    await insertArtifactMetadata(imageId, gcsPath, metadata);
+    await insertArtifactMetadata(imageId, gcsPath, internalReferenceNumber, metadata); // Pass internalReferenceNumber
 
     const response: ProcessMetadataResponse = {
       success: true,

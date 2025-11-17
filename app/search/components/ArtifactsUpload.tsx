@@ -282,6 +282,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                   shortDescription: shortDescription.trim(),
                   processWithAI: true,
                   longDescription: longDescription.trim(),
+                  internalReferenceNumber: result.internalReferenceNumber,
                 }
               : {
                   imageId: result.id,
@@ -292,6 +293,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                     basicSearchMetadata: manualBasic,
                     advancedSearchMetadata: manualAdvanced,
                   },
+                  internalReferenceNumber: result.internalReferenceNumber,
                   ...(longDescription.trim() && { longDescription: longDescription.trim() }),
                 };
 

@@ -16,6 +16,8 @@ interface BaseProcessMetadataRequest {
   shortDescription: string;
   /** User-provided detailed description of the artifact */
   longDescription?: string;
+  /** Internal reference number for tracking */
+  internalReferenceNumber: string;
 }
 
 /**

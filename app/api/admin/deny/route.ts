@@ -12,7 +12,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Update approval status to 'admin_rejected'
-    const { error } = await supabase.from('approval').update({ status: 'admin_rejected' }).eq('image_id', imageId);
+    const { error } = await supabase
+      .from('artifact_metadata_upload_log')
+      .update({ status: 'admin_rejected' })
+      .eq('image_id', imageId);
 
     if (error) {
       console.error('Error updating approval status:', error);

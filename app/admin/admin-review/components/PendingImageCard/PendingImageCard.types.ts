@@ -41,6 +41,7 @@ export type PendingImageMetadata = {
 };
 
 export type PendingImage = {
+  image_id: string; // Added image_id to align with API response
   internal_reference_number: string;
   image_url?: string | null;
   title?: string | null;

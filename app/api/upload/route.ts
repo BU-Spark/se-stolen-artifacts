@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       id: result.id,
       publicUrl: result.publicUrl,
       gcsPath: result.gcsPath,
+      internalReferenceNumber: result.internalReferenceNumber, // Include internal reference number in the response
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
