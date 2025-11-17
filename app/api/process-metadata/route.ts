@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
     // --------------------------------------------------------------------
 
     const body = (await request.json()) as ProcessMetadataRequest;
-    const { imageId, shortDescription } = body;
+    const { imageId, gcsPath, shortDescription } = body;
 
     // validate common fields
-    if (!imageId || !shortDescription) {
+    if (!imageId || !gcsPath || !shortDescription) {
       return NextResponse.json({ error: 'Missing required fields: imageId and shortDescription' }, { status: 400 });
     }
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert into database (works for both success and fallback)
-    await insertArtifactMetadata(imageId, metadata);
+    await insertArtifactMetadata(imageId, gcsPath, metadata);
 
     const response: ProcessMetadataResponse = {
       success: true,

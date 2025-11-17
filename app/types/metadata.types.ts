@@ -10,6 +10,8 @@
 interface BaseProcessMetadataRequest {
   /** The internal reference ID of the uploaded image */
   imageId: string;
+  /** GCS Path to be stored with imageId in the log table*/
+  gcsPath: string;
   /** User-provided short summary of the artifact */
   shortDescription: string;
   /** User-provided detailed description of the artifact */

@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: 'Upload successful, pending approval',
-      status: result.status,
+      message: 'Image bucket upload successful. Still need to upload metadata',
       id: result.id,
-      url: result.url,
+      publicUrl: result.publicUrl,
+      gcsPath: result.gcsPath,
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
