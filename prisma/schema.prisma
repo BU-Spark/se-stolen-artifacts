@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://spark_sql_user:Klsc1HojiCf9ohgidI4QnD2cpWcH0tfm@dpg-d3h5ueqli9vc73dsa0c0-a.virginia-postgres.render.com/spark_sql"
 }
 
 model Names {
