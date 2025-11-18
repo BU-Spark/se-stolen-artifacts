@@ -30,6 +30,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import CheckIcon from '@mui/icons-material/Check';
+import CancelIcon from '@mui/icons-material/Cancel';
 import InfoIcon from '@mui/icons-material/Info';
 import CategoryIcon from '@mui/icons-material/Category';
 import PersonIcon from '@mui/icons-material/Person';
@@ -46,6 +47,9 @@ export default function ApprovalDrawer({
   selectedFolderName,
   onClose,
   onSaveMetadata,
+  onApprove,
+  onAddToNew,
+  onDeny,
   onFolderSelected,
 }: ApprovalDrawerProps) {
   const [view, setView] = useState<DrawerView>('metadata');
@@ -209,6 +213,16 @@ export default function ApprovalDrawer({
       const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
       setMetadataExpanded(!hasMetadata);
     }
+  };
+
+  // Handle selecting a new folder
+  const handleSelectNewFolder = () => {
+    // Pass null to indicate new folder selection
+    onFolderSelected?.(null, null);
+    // Navigate back to metadata view (summary collapsed if metadata is saved)
+    setView('metadata');
+    const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
+    setMetadataExpanded(!hasMetadata);
   };
 
   // Helper to get fragmentation points that are true
@@ -1166,18 +1180,53 @@ export default function ApprovalDrawer({
           }}
         >
           {view === 'metadata' ? (
-            <Button
-              variant="contained"
-              color="secondary"
-              size="large"
-              fullWidth
-              endIcon={<ArrowForwardIcon />}
-              onClick={handleNavigateToFolders}
-              disabled={!metadataSaved || hasUnsavedChanges}
-              sx={{ whiteSpace: 'nowrap' }}
-            >
-              Next: Select Folder
-            </Button>
+            // Show Approve/Deny buttons if folder is selected, otherwise show Next button
+            selectedFolderId !== undefined ? (
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="large"
+                  fullWidth
+                  startIcon={<CheckIcon />}
+                  onClick={() => {
+                    if (selectedFolderId && typeof selectedFolderId === 'string') {
+                      onApprove(imageId, selectedFolderId, formData);
+                    } else {
+                      onAddToNew(imageId, formData);
+                    }
+                  }}
+                  disabled={!metadataSaved || hasUnsavedChanges}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  fullWidth
+                  startIcon={<CancelIcon />}
+                  onClick={onDeny}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  Deny
+                </Button>
+              </Stack>
+            ) : (
+              <Button
+                variant="contained"
+                color="secondary"
+                size="large"
+                fullWidth
+                endIcon={<ArrowForwardIcon />}
+                onClick={handleNavigateToFolders}
+                disabled={!metadataSaved || hasUnsavedChanges}
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                Next: Select Folder
+              </Button>
+            )
           ) : (
             <Stack direction="row" spacing={2}>
               <Button
@@ -1185,7 +1234,7 @@ export default function ApprovalDrawer({
                 size="large"
                 fullWidth
                 startIcon={<CreateNewFolderIcon />}
-                onClick={() => {}}
+                onClick={handleSelectNewFolder}
                 sx={{ whiteSpace: 'nowrap' }}
               >
                 Select New Folder
