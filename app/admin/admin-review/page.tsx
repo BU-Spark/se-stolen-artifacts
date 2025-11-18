@@ -46,10 +46,10 @@ export default function AdminReviewPage() {
     fetchPendingImages();
   }, [isLoaded, isSignedIn]);
 
-  const handleDownload = useCallback(async (imageId: string) => {
+  const handleDownload = useCallback(async (internalReferenceNumber: string) => {
     try {
-      setDownloadInFlight(imageId);
-      const response = await fetch(`/api/download/${encodeURIComponent(imageId)}`);
+      setDownloadInFlight(internalReferenceNumber);
+      const response = await fetch(`/api/download/${encodeURIComponent(internalReferenceNumber)}`);
       if (!response.ok) {
         throw new Error('Could not download image.');
       }
@@ -57,7 +57,7 @@ export default function AdminReviewPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${imageId}.jpg`;
+      link.download = `${internalReferenceNumber}.jpg`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -66,56 +66,64 @@ export default function AdminReviewPage() {
       const message = downloadError instanceof Error ? downloadError.message : 'Could not download image.';
       setError(message);
     } finally {
-      setDownloadInFlight((current) => (current === imageId ? null : current));
+      setDownloadInFlight((current) => (current === internalReferenceNumber ? null : current));
     }
   }, []);
 
-  const handleSaveMetadata = useCallback(async (imageId: string, metadata: PendingImage['metadata']) => {
-    // TODO: API call to update metadata
-    console.log('Saving metadata for', imageId, metadata);
+  const handleSaveMetadata = useCallback(
+    async (internalReferenceNumber: string, metadata: PendingImage['metadata']) => {
+      // TODO: API call to update metadata
+      console.log('Saving metadata for', internalReferenceNumber, metadata);
 
-    try {
-      // TODO: Add API call here
-      // await fetch('/api/admin/update-metadata', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ imageId, metadata }),
-      // });
+      try {
+        // TODO: Add API call here
+        // await fetch('/api/admin/update-metadata', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ imageId: internalReferenceNumber, metadata }),
+        // });
 
-      // Update local state with new metadata
-      setImages((prev) => prev.map((img) => (img.image_id === imageId ? { ...img, metadata } : img)));
-    } catch (error) {
-      console.error('Failed to save metadata:', error);
-      setError('Failed to save metadata');
-    }
-  }, []);
-
-  const handleApprove = useCallback(async (imageId: string, folderId: string, metadata: PendingImage['metadata']) => {
-    console.log(`Approving ${imageId} and moving to statue ${folderId}`, metadata);
-
-    try {
-      const response = await fetch('/api/admin/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageId, folderId }), // folderId is the statue_id as string
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to approve image');
+        // Update local state with new metadata
+        setImages((prev) =>
+          prev.map((img) => (img?.internal_reference_number === internalReferenceNumber ? { ...img, metadata } : img))
+        );
+      } catch (error) {
+        console.error('Failed to save metadata:', error);
+        setError('Failed to save metadata');
       }
+    },
+    []
+  );
 
-      // Remove from local state after successful approval
-      setImages((prev) => prev.filter((img) => img.image_id !== imageId));
-    } catch (error) {
-      console.error('Failed to approve image:', error);
-      setError(error instanceof Error ? error.message : 'Failed to approve image');
-    }
-  }, []);
+  const handleApprove = useCallback(
+    async (internalReferenceNumber: string, folderId: string, metadata: PendingImage['metadata']) => {
+      console.log(`Approving ${internalReferenceNumber} and moving to statue ${folderId}`, metadata);
 
-  const handleAddToNew = useCallback(async (imageId: string, metadata: PendingImage['metadata']) => {
-    console.log(`Creating new statue and adding ${imageId}`, metadata);
+      try {
+        const response = await fetch('/api/admin/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageId: internalReferenceNumber, folderId }), // folderId is the statue_id as string
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to approve image');
+        }
+
+        // Remove from local state after successful approval
+        setImages((prev) => prev.filter((img) => img?.internal_reference_number !== internalReferenceNumber));
+      } catch (error) {
+        console.error('Failed to approve image:', error);
+        setError(error instanceof Error ? error.message : 'Failed to approve image');
+      }
+    },
+    []
+  );
+
+  const handleAddToNew = useCallback(async (internalReferenceNumber: string, metadata: PendingImage['metadata']) => {
+    console.log(`Creating new statue and adding ${internalReferenceNumber}`, metadata);
 
     try {
       // First, create a new statue
@@ -134,7 +142,7 @@ export default function AdminReviewPage() {
       const approveResponse = await fetch('/api/admin/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageId, folderId: createData.statue.id }),
+        body: JSON.stringify({ imageId: internalReferenceNumber, folderId: createData.statue.id }),
       });
 
       const approveData = await approveResponse.json();
@@ -144,21 +152,21 @@ export default function AdminReviewPage() {
       }
 
       // Remove from local state after successful addition
-      setImages((prev) => prev.filter((img) => img.image_id !== imageId));
+      setImages((prev) => prev.filter((img) => img?.internal_reference_number !== internalReferenceNumber));
     } catch (error) {
       console.error('Failed to add image to new statue:', error);
       setError(error instanceof Error ? error.message : 'Failed to add image to new statue');
     }
   }, []);
 
-  const handleDeny = useCallback(async (imageId: string) => {
-    console.log(`Denying ${imageId}`);
+  const handleDeny = useCallback(async (internalReferenceNumber: string) => {
+    console.log(`Denying ${internalReferenceNumber}`);
 
     try {
       const response = await fetch('/api/admin/deny', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageId }),
+        body: JSON.stringify({ imageId: internalReferenceNumber }),
       });
 
       const data = await response.json();
@@ -168,7 +176,7 @@ export default function AdminReviewPage() {
       }
 
       // Remove from local state after successful denial
-      setImages((prev) => prev.filter((img) => img.image_id !== imageId));
+      setImages((prev) => prev.filter((img) => img?.internal_reference_number !== internalReferenceNumber));
     } catch (error) {
       console.error('Failed to deny image:', error);
       setError(error instanceof Error ? error.message : 'Failed to deny image');
@@ -226,9 +234,9 @@ export default function AdminReviewPage() {
                 }
                 return (
                   <PendingImageCard
-                    key={image.image_id || `image-${index}`}
+                    key={image.internal_reference_number || image.image_id || `image-${index}`}
                     image={image}
-                    downloadInFlight={downloadInFlight === image.image_id}
+                    downloadInFlight={downloadInFlight === image.internal_reference_number}
                     onDownload={handleDownload}
                     onSaveMetadata={handleSaveMetadata}
                     onApprove={handleApprove}

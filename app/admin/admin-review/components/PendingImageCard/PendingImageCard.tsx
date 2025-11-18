@@ -28,11 +28,11 @@ import ApprovalDrawer from '../ApprovalDrawer';
 type PendingImageCardProps = {
   image: PendingImage;
   downloadInFlight: boolean;
-  onDownload: (imageId: string) => void;
-  onSaveMetadata: (imageId: string, metadata: PendingImage['metadata']) => void;
-  onApprove: (imageId: string, folderId: string, metadata: PendingImage['metadata']) => void;
-  onAddToNew: (imageId: string, metadata: PendingImage['metadata']) => void;
-  onDeny: (imageId: string) => void;
+  onDownload: (internalReferenceNumber: string) => void;
+  onSaveMetadata: (internalReferenceNumber: string, metadata: PendingImage['metadata']) => void;
+  onApprove: (internalReferenceNumber: string, folderId: string, metadata: PendingImage['metadata']) => void;
+  onAddToNew: (internalReferenceNumber: string, metadata: PendingImage['metadata']) => void;
+  onDeny: (internalReferenceNumber: string) => void;
 };
 
 export default function PendingImageCard({
@@ -64,17 +64,17 @@ export default function PendingImageCard({
     setDrawerOpen(false);
   };
 
-  const handleSaveMetadata = (imageId: string, metadata: PendingImage['metadata']) => {
-    onSaveMetadata(imageId, metadata);
+  const handleSaveMetadata = (internalReferenceNumber: string, metadata: PendingImage['metadata']) => {
+    onSaveMetadata(internalReferenceNumber, metadata);
   };
 
-  const handleApprove = (imageId: string, folderId: string, metadata: PendingImage['metadata']) => {
-    onApprove(imageId, folderId, metadata);
+  const handleApprove = (internalReferenceNumber: string, folderId: string, metadata: PendingImage['metadata']) => {
+    onApprove(internalReferenceNumber, folderId, metadata);
     setDrawerOpen(false);
   };
 
-  const handleAddToNew = (imageId: string, metadata: PendingImage['metadata']) => {
-    onAddToNew(imageId, metadata);
+  const handleAddToNew = (internalReferenceNumber: string, metadata: PendingImage['metadata']) => {
+    onAddToNew(internalReferenceNumber, metadata);
     setDrawerOpen(false);
   };
 
