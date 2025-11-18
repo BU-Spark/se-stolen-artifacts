@@ -11,13 +11,32 @@ export const STATUE_SEARCH_STATUS_CODES = {
   EXCEED_Limit: 'exceed_limit',
 } as const;
 
-export type StatueSearchStatusCode = (typeof STATUE_SEARCH_STATUS_CODES)[keyof typeof STATUE_SEARCH_STATUS_CODES];
+export const STATUE_SEARCH_STATUS_NUMERIC_CODES = {
+  NORMAL: 0,
+  EMPTY_RESULT: 1,
+  CONNECTION_ERROR: 2,
+  EXCEED_Limit: 3,
+} as const;
+
+export type StatueSearchStatusKey = keyof typeof STATUE_SEARCH_STATUS_CODES;
+
+export type StatueSearchStatusCode = (typeof STATUE_SEARCH_STATUS_CODES)[StatueSearchStatusKey];
+
+export type StatueSearchStatusNumericCode = (typeof STATUE_SEARCH_STATUS_NUMERIC_CODES)[StatueSearchStatusKey];
 
 export interface StatueSearchResponsePayload {
   status: StatueSearchStatusCode;
+  statusCode: StatueSearchStatusNumericCode;
   results: StatueSearchRow[];
   error?: string;
 }
+
+const getStatusMeta = (
+  key: StatueSearchStatusKey
+): { status: StatueSearchStatusCode; statusCode: StatueSearchStatusNumericCode } => ({
+  status: STATUE_SEARCH_STATUS_CODES[key],
+  statusCode: STATUE_SEARCH_STATUS_NUMERIC_CODES[key],
+});
 
 const parseFiltersJson = (filtersJson: string): StatueSearchFilters => {
   if (!filtersJson) return {};
@@ -38,17 +57,22 @@ export const searchStatuesFromJson = async (
     const filters = parseFiltersJson(filtersJson);
     const results = await executeStatueSearch(filters, client);
 
-    const status = results.length === 0 ? STATUE_SEARCH_STATUS_CODES.EMPTY_RESULT : STATUE_SEARCH_STATUS_CODES.NORMAL;
+    const statusKey: StatueSearchStatusKey = results.length === 0 ? 'EMPTY_RESULT' : 'NORMAL';
+    const statusMeta = getStatusMeta(statusKey);
 
     const payload: StatueSearchResponsePayload = {
-      status,
+      status: statusMeta.status,
+      statusCode: statusMeta.statusCode,
       results,
     };
 
     return JSON.stringify(payload);
   } catch (error) {
+    const statusMeta = getStatusMeta('CONNECTION_ERROR');
+
     const payload: StatueSearchResponsePayload = {
-      status: STATUE_SEARCH_STATUS_CODES.CONNECTION_ERROR,
+      status: statusMeta.status,
+      statusCode: statusMeta.statusCode,
       results: [],
       error: error instanceof Error ? error.message : 'Unknown error',
     };

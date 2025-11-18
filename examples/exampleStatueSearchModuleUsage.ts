@@ -20,16 +20,16 @@ const run = async (): Promise<void> => {
 
   switch (payload.status) {
     case STATUE_SEARCH_STATUS_CODES.NORMAL:
-      console.log(`Found ${payload.results.length} statues`);
+      console.log(`[${payload.statusCode}] Found ${payload.results.length} statues`);
       break;
     case STATUE_SEARCH_STATUS_CODES.EMPTY_RESULT:
-      console.log('Search completed but no statues matched the filters');
+      console.log(`[${payload.statusCode}] Search completed but no statues matched the filters`);
       break;
     case STATUE_SEARCH_STATUS_CODES.CONNECTION_ERROR:
-      console.error('The search failed due to a database connectivity issue', payload.error);
+      console.error(`[${payload.statusCode}] The search failed due to a database connectivity issue`, payload.error);
       break;
     default:
-      console.warn('Unexpected status code', payload.status);
+      console.warn(`[${payload.statusCode}] Unexpected status code`, payload.status);
   }
 
   console.dir(payload.results, { depth: null });
