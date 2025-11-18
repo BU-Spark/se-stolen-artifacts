@@ -12,6 +12,7 @@ export async function handleUploadImage({ file }: { file: File }) {
   }
 
   const newImageId = crypto.randomUUID();
+  const internalReferenceNumber = `IRN-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
   const fileExtension = file.name.split('.').pop();
   const filePath = `uploads/${newImageId}.${fileExtension}`;
 
@@ -23,27 +24,15 @@ export async function handleUploadImage({ file }: { file: File }) {
     }
 
     const { data: urlData } = supabase.storage.from('spark').getPublicUrl(uploadData.path);
-
     const publicUrl = urlData.publicUrl;
     const gcsPath = uploadData.path;
 
-    // RPC defined in /supabase/migrations/20251026005531_handle_new_image_upload.sql
-    const { data: newImageId, error: rpcError } = await supabase.rpc('handle_new_image_upload', {
-      image_url_input: publicUrl,
-      image_gcs_input: gcsPath,
-    });
-
-    // Rollback
-    if (rpcError) {
-      await supabase.storage.from('spark').remove([gcsPath]);
-      throw rpcError;
-    }
-
     console.log('Upload successful. New image ID:', newImageId);
     return {
-      status: 'pending',
       id: newImageId,
-      url: publicUrl,
+      internalReferenceNumber: internalReferenceNumber, // Include the internal reference number in the return object
+      publicUrl: publicUrl,
+      gcsPath: gcsPath,
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

@@ -7,20 +7,20 @@ import { insertArtifactMetadata } from '@/lib/llm/insertArtifactMetadata';
 
 export async function POST(request: NextRequest) {
   try {
-    // COMMENT THIS OUT IF YOU WANT TO TEST THE ENDPOINT DIRECTLY (postman)
-    // --------------------------------------------------------------------
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    // --------------------------------------------------------------------
 
     const body = (await request.json()) as ProcessMetadataRequest;
-    const { imageId, shortDescription } = body;
+    const { imageId, gcsPath, shortDescription, internalReferenceNumber } = body; // Destructure internalReferenceNumber
 
     // validate common fields
-    if (!imageId || !shortDescription) {
-      return NextResponse.json({ error: 'Missing required fields: imageId and shortDescription' }, { status: 400 });
+    if (!imageId || !gcsPath || !shortDescription || !internalReferenceNumber) {
+      return NextResponse.json(
+        { error: 'Missing required fields: imageId, gcsPath, shortDescription, and internalReferenceNumber' },
+        { status: 400 }
+      );
     }
 
     // Validate processWithAI flag
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert into database (works for both success and fallback)
-    await insertArtifactMetadata(imageId, metadata);
+    await insertArtifactMetadata(imageId, gcsPath, internalReferenceNumber, metadata); // Pass internalReferenceNumber
 
     const response: ProcessMetadataResponse = {
       success: true,

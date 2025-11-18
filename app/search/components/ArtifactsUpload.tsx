@@ -278,18 +278,22 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
             metadataMode === 'ai'
               ? {
                   imageId: result.id,
+                  gcsPath: result.gcsPath,
                   shortDescription: shortDescription.trim(),
                   processWithAI: true,
                   longDescription: longDescription.trim(),
+                  internalReferenceNumber: result.internalReferenceNumber,
                 }
               : {
                   imageId: result.id,
+                  gcsPath: result.gcsPath,
                   shortDescription: shortDescription.trim(),
                   processWithAI: false,
                   manualMetadata: {
                     basicSearchMetadata: manualBasic,
                     advancedSearchMetadata: manualAdvanced,
                   },
+                  internalReferenceNumber: result.internalReferenceNumber,
                   ...(longDescription.trim() && { longDescription: longDescription.trim() }),
                 };
 

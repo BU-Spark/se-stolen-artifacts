@@ -12,11 +12,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Update approval status to 'admin_rejected'
-    const { error } = await supabase.from('approval').update({ status: 'admin_rejected' }).eq('image_id', imageId);
+    const { data, error } = await supabase
+      .from('artifact_metadata_upload_log')
+      .update({ status: 'admin_rejected' })
+      .eq('internal_reference_number', imageId)
+      .select('internal_reference_number');
 
     if (error) {
       console.error('Error updating approval status:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('Deny endpoint was called but no matching image was found for internal_reference_number:', imageId);
+      return NextResponse.json(
+        { success: false, message: `No pending image found for reference ${imageId}` },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true, message: 'Image rejected' });
