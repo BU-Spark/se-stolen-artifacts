@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // validate common fields
     if (!imageId || !gcsPath || !shortDescription || !internalReferenceNumber) {
       return NextResponse.json(
-        { error: 'Missing required fields: imageId, shortDescription, or internalReferenceNumber' },
+        { error: 'Missing required fields: imageId, gcsPath, shortDescription, and internalReferenceNumber' },
         { status: 400 }
       );
     }
@@ -95,11 +95,6 @@ export async function POST(request: NextRequest) {
         longDescription,
         aiGenerated: false, // Mark as manually entered
       };
-    }
-
-    if (!metadata) {
-      console.error('Metadata is undefined. Cannot insert into database.');
-      return NextResponse.json({ error: 'Metadata is required but was not provided.' }, { status: 400 });
     }
 
     // Insert into database (works for both success and fallback)

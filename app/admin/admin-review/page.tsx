@@ -83,7 +83,7 @@ export default function AdminReviewPage() {
       // });
 
       // Update local state with new metadata
-      setImages((prev) => prev.map((img) => (img.internal_reference_number === imageId ? { ...img, metadata } : img)));
+      setImages((prev) => prev.map((img) => (img.image_id === imageId ? { ...img, metadata } : img)));
     } catch (error) {
       console.error('Failed to save metadata:', error);
       setError('Failed to save metadata');
@@ -107,7 +107,7 @@ export default function AdminReviewPage() {
       }
 
       // Remove from local state after successful approval
-      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+      setImages((prev) => prev.filter((img) => img.image_id !== imageId));
     } catch (error) {
       console.error('Failed to approve image:', error);
       setError(error instanceof Error ? error.message : 'Failed to approve image');
@@ -144,7 +144,7 @@ export default function AdminReviewPage() {
       }
 
       // Remove from local state after successful addition
-      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+      setImages((prev) => prev.filter((img) => img.image_id !== imageId));
     } catch (error) {
       console.error('Failed to add image to new statue:', error);
       setError(error instanceof Error ? error.message : 'Failed to add image to new statue');
@@ -168,7 +168,7 @@ export default function AdminReviewPage() {
       }
 
       // Remove from local state after successful denial
-      setImages((prev) => prev.filter((img) => img.internal_reference_number !== imageId));
+      setImages((prev) => prev.filter((img) => img.image_id !== imageId));
     } catch (error) {
       console.error('Failed to deny image:', error);
       setError(error instanceof Error ? error.message : 'Failed to deny image');

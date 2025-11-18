@@ -23,7 +23,7 @@ export async function handleGetPendingImages() {
 
     const { data: pendingData, error: queryError } = await supabase
       .from('artifact_metadata_upload_log')
-      .select('internal_reference_number, gcs_path, short_description, ai_generated')
+      .select('image_id, internal_reference_number, gcs_path, short_description, ai_generated')
       .eq('status', 'pending_review');
 
     if (queryError) return { images: [], error: queryError.message };
@@ -49,7 +49,7 @@ export async function handleGetPendingImages() {
             : signedUrlData.signedUrl;
 
         return {
-          image_id: approval.internal_reference_number,
+          image_id: approval.image_id,
           internal_reference_number: approval.internal_reference_number,
           image_url: resolvedUrl,
           short_description: approval.short_description,
