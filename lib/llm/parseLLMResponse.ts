@@ -62,6 +62,10 @@ export function parseLLMResponse(llmResponse: string): ArtifactSearchMetadata {
         fragmentedAtAnkle: parsedResponse.advancedSearchMetadata.fragmentedAtAnkle || false,
       },
       rawLlmResponse: llmResponse, // Store the raw response for debugging/audit purposes
+      miscInformation:
+        typeof parsedResponse.miscInformation === 'string' && parsedResponse.miscInformation.trim().length > 0
+          ? parsedResponse.miscInformation.trim()
+          : undefined,
     };
 
     return metadata;

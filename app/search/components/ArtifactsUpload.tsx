@@ -56,6 +56,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [isDragging, setIsDragging] = useState(false);
   const [shortDescription, setShortDescription] = useState<string>('');
   const [longDescription, setLongDescription] = useState<string>('');
+  const [miscInformation, setMiscInformation] = useState<string>('');
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   // metadata mode: 'ai' means use descriptions + LLM, 'manual' means user fills structured metadata
   const [metadataMode, setMetadataMode] = useState<'ai' | 'manual'>('ai');
@@ -296,6 +297,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                   },
                   internalReferenceNumber: result.internalReferenceNumber,
                   ...(longDescription.trim() && { longDescription: longDescription.trim() }),
+                  ...(miscInformation.trim() && { miscInformation: miscInformation.trim() }),
                 };
 
           const llmResponse = await fetch('/api/process-metadata', {
@@ -350,6 +352,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     setIsLoadingPreview(false);
     setShortDescription('');
     setLongDescription('');
+    setMiscInformation('');
     setDescriptionError(null);
     if (preview?.previewUrl) {
       URL.revokeObjectURL(preview.previewUrl);
@@ -532,6 +535,8 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                   setShortDescription={setShortDescription}
                   longDescription={longDescription}
                   setLongDescription={setLongDescription}
+                  miscInformation={miscInformation}
+                  setMiscInformation={setMiscInformation}
                   descriptionError={descriptionError}
                   setDescriptionError={setDescriptionError}
                   manualBasic={manualBasic}
