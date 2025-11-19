@@ -47,7 +47,14 @@ type ArtifactsUploadProps = {
   onUploadComplete?: () => void;
 };
 
-const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp', '.csv', '.json'];
+const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
+
+type UploadedArtifact = {
+  id: string;
+  gcsPath: string;
+  internalReferenceNumber: string;
+  publicUrl?: string;
+};
 
 export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -64,6 +71,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   // metadata mode: 'ai' means use descriptions + LLM, 'manual' means user fills structured metadata
   const [metadataMode, setMetadataMode] = useState<'ai' | 'manual'>('ai');
+  const [uploadedArtifact, setUploadedArtifact] = useState<UploadedArtifact | null>(null);
 
   // Manual metadata state (partial, mirrors ManualArtifactMetadata)
   const [manualBasic, setManualBasic] = useState<Partial<BasicSearchMetadata>>({
@@ -161,6 +169,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       setUploadComplete(false);
       setProgress(0);
       setIsLoadingPreview(true);
+      setUploadedArtifact(null);
 
       const validationError = validateFile(file);
       if (validationError) {
@@ -259,47 +268,63 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
 
     try {
       // Create FormData to send the file and descriptions
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('shortDescription', shortDescription.trim());
-      if (longDescription.trim()) formData.append('longDescription', longDescription.trim());
+      let uploadResult = uploadedArtifact;
 
-      // Call the upload API
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      if (!uploadResult) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('shortDescription', shortDescription.trim());
+        if (longDescription.trim()) formData.append('longDescription', longDescription.trim());
 
-      const result = await response.json();
+        // Call the upload API
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Upload failed');
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Upload failed');
+        }
+
+        uploadResult = {
+          id: result.id,
+          gcsPath: result.gcsPath,
+          internalReferenceNumber: result.internalReferenceNumber,
+          publicUrl: result.publicUrl,
+        };
+        setUploadedArtifact(uploadResult);
+
+        console.log('Upload successful:', result);
+      } else {
+        console.log('Reusing existing upload for metadata retry:', uploadResult);
       }
 
       // If we have an image ID, send the descriptions to the metadata processing endpoint
-      if (result.id) {
+      if (uploadResult?.id) {
         try {
           // Build metadata processing payload depending on mode
           const payload: ProcessMetadataRequest =
             metadataMode === 'ai'
               ? {
-                  imageId: result.id,
-                  gcsPath: result.gcsPath,
+                  imageId: uploadResult.id,
+                  gcsPath: uploadResult.gcsPath,
                   shortDescription: shortDescription.trim(),
                   processWithAI: true,
                   longDescription: longDescription.trim(),
-                  internalReferenceNumber: result.internalReferenceNumber,
+                  internalReferenceNumber: uploadResult.internalReferenceNumber,
                 }
               : {
-                  imageId: result.id,
-                  gcsPath: result.gcsPath,
+                  imageId: uploadResult.id,
+                  gcsPath: uploadResult.gcsPath,
                   shortDescription: shortDescription.trim(),
                   processWithAI: false,
                   manualMetadata: {
                     basicSearchMetadata: manualBasic,
                     advancedSearchMetadata: manualAdvanced,
                   },
-                  internalReferenceNumber: result.internalReferenceNumber,
+                  internalReferenceNumber: uploadResult.internalReferenceNumber,
                   ...(longDescription.trim() && { longDescription: longDescription.trim() }),
                 };
 
@@ -334,6 +359,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           }
 
           console.log('Metadata processing successful:', llmResult);
+          setUploadedArtifact(null); // metadata stored; no need to reuse upload artifact
         } catch (llmErr) {
           const metadataError = llmErr instanceof Error ? llmErr.message : 'Metadata processing failed.';
           clearInterval(progressInterval);
@@ -354,8 +380,6 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         setUploadComplete(true);
         onUploadComplete?.();
       }, 300);
-
-      console.log('Upload successful:', result);
     } catch (err) {
       console.error('Upload error:', err);
       clearInterval(progressInterval);
@@ -377,6 +401,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     setShortDescription('');
     setLongDescription('');
     setDescriptionError(null);
+    setUploadedArtifact(null);
     if (preview?.previewUrl) {
       URL.revokeObjectURL(preview.previewUrl);
     }
@@ -396,7 +421,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 Upload Artifacts
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Upload images or data files (CSV, JSON) for artifact analysis
+                Upload image (CSV) followed by additional relevant metadata.
               </Typography>
             </Box>
             {selectedFile && (
