@@ -30,6 +30,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import CheckIcon from '@mui/icons-material/Check';
+import CancelIcon from '@mui/icons-material/Cancel';
 import InfoIcon from '@mui/icons-material/Info';
 import CategoryIcon from '@mui/icons-material/Category';
 import PersonIcon from '@mui/icons-material/Person';
@@ -46,6 +47,9 @@ export default function ApprovalDrawer({
   selectedFolderName,
   onClose,
   onSaveMetadata,
+  onApprove,
+  onAddToNew,
+  onDeny,
   onFolderSelected,
 }: ApprovalDrawerProps) {
   const [view, setView] = useState<DrawerView>('metadata');
@@ -60,6 +64,9 @@ export default function ApprovalDrawer({
   const [loadingFolderImages, setLoadingFolderImages] = useState(false);
   const drawerContentRef = useRef<HTMLDivElement>(null);
   const prevOpenRef = useRef(open);
+  // Track if admin has saved metadata for each image (persists across drawer sessions)
+  const adminHasSavedRef = useRef<Set<string>>(new Set());
+  const [hasAdminMadeEdits, setHasAdminMadeEdits] = useState(false);
 
   // Fetch statues from API
   const fetchStatues = useCallback(async () => {
@@ -93,6 +100,11 @@ export default function ApprovalDrawer({
       setFolderImages([]);
       setFormData(metadata || {});
       setHasUnsavedChanges(false);
+
+      // Check if admin has saved metadata for this image before
+      const adminHasSaved = adminHasSavedRef.current.has(imageId);
+      setHasAdminMadeEdits(adminHasSaved);
+
       // If metadata already exists and has content, consider it saved (user can proceed without re-saving)
       const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
       setMetadataSaved(hasMetadata);
@@ -104,7 +116,7 @@ export default function ApprovalDrawer({
       fetchStatues();
     }
     prevOpenRef.current = open;
-  }, [open, metadata, fetchStatues]);
+  }, [open, metadata, fetchStatues, imageId]);
 
   // Sync formData when metadata prop changes (after save)
   useEffect(() => {
@@ -197,6 +209,9 @@ export default function ApprovalDrawer({
     setHasUnsavedChanges(false);
     setMetadataExpanded(false); // Collapse after saving
     setMetadataSaved(true); // Mark metadata as saved
+    // Mark that admin has saved metadata for this image
+    adminHasSavedRef.current.add(imageId);
+    setHasAdminMadeEdits(true);
   };
 
   // Handle selecting an existing folder
@@ -209,6 +224,16 @@ export default function ApprovalDrawer({
       const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
       setMetadataExpanded(!hasMetadata);
     }
+  };
+
+  // Handle selecting a new folder
+  const handleSelectNewFolder = () => {
+    // Pass null to indicate new folder selection
+    onFolderSelected?.(null, null);
+    // Navigate back to metadata view (summary collapsed if metadata is saved)
+    setView('metadata');
+    const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
+    setMetadataExpanded(!hasMetadata);
   };
 
   // Helper to get fragmentation points that are true
@@ -243,6 +268,7 @@ export default function ApprovalDrawer({
   const getPhysicalCharacteristics = () => {
     const characteristics: string[] = [];
     if (formData.repatriated) characteristics.push('Repatriated');
+    if (formData.has_inscription) characteristics.push('Has inscription');
     if (formData.multiple_heads) characteristics.push('Multiple Heads');
     if (formData.four_arms) characteristics.push('Four Arms');
     if (formData.eight_arms) characteristics.push('Eight Arms');
@@ -363,7 +389,7 @@ export default function ApprovalDrawer({
                       <WarningIcon sx={{ fontSize: 16 }} />
                       Metadata must be saved before selecting folder
                     </Typography>
-                  ) : metadataSaved ? (
+                  ) : metadataSaved && hasAdminMadeEdits ? (
                     <Typography
                       variant="body2"
                       color="success.main"
@@ -450,9 +476,9 @@ export default function ApprovalDrawer({
                                 <strong>Title:</strong> {formData.title_of_object}
                               </Typography>
                             )}
-                            {formData.material_subject && (
+                            {formData.suspected_current_location && (
                               <Typography variant="body2" color="text.secondary">
-                                <strong>Material:</strong> {formData.material_subject}
+                                <strong>Location:</strong> {formData.suspected_current_location}
                               </Typography>
                             )}
                             {(formData.year_first_appearance || formData.year_first_appearance_outside_cambodia) && (
@@ -470,14 +496,24 @@ export default function ApprovalDrawer({
                                 )}
                               </Typography>
                             )}
-                            {formData.suspected_current_location && (
-                              <Typography variant="body2" color="text.secondary">
-                                <strong>Location:</strong> {formData.suspected_current_location}
-                              </Typography>
-                            )}
                             {formData.image_source && (
                               <Typography variant="body2" color="text.secondary">
                                 <strong>Source:</strong> {formData.image_source}
+                              </Typography>
+                            )}
+                            {formData.photograph_location && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Photograph Location:</strong> {formData.photograph_location}
+                              </Typography>
+                            )}
+                            {formData.dealer_gallery_collector_name && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Dealer/Gallery/Collector:</strong> {formData.dealer_gallery_collector_name}
+                              </Typography>
+                            )}
+                            {formData.material_subject && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Material:</strong> {formData.material_subject}
                               </Typography>
                             )}
                           </Stack>
@@ -688,6 +724,18 @@ export default function ApprovalDrawer({
                               />
                             }
                             label="Repatriated"
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, sm: 4 }}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={formData.has_inscription || false}
+                                onChange={handleCheckboxChange('has_inscription')}
+                                size="small"
+                              />
+                            }
+                            label="Has inscription"
                           />
                         </Grid>
                         <Grid size={{ xs: 6, sm: 4 }}>
@@ -1166,18 +1214,53 @@ export default function ApprovalDrawer({
           }}
         >
           {view === 'metadata' ? (
-            <Button
-              variant="contained"
-              color="secondary"
-              size="large"
-              fullWidth
-              endIcon={<ArrowForwardIcon />}
-              onClick={handleNavigateToFolders}
-              disabled={!metadataSaved || hasUnsavedChanges}
-              sx={{ whiteSpace: 'nowrap' }}
-            >
-              Next: Select Folder
-            </Button>
+            // Show Approve/Deny buttons if folder is selected, otherwise show Next button
+            selectedFolderId !== undefined ? (
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="large"
+                  fullWidth
+                  startIcon={<CheckIcon />}
+                  onClick={() => {
+                    if (selectedFolderId && typeof selectedFolderId === 'string') {
+                      onApprove(imageId, selectedFolderId, formData);
+                    } else {
+                      onAddToNew(imageId, formData);
+                    }
+                  }}
+                  disabled={!metadataSaved || hasUnsavedChanges}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  fullWidth
+                  startIcon={<CancelIcon />}
+                  onClick={onDeny}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  Deny
+                </Button>
+              </Stack>
+            ) : (
+              <Button
+                variant="contained"
+                color="secondary"
+                size="large"
+                fullWidth
+                endIcon={<ArrowForwardIcon />}
+                onClick={handleNavigateToFolders}
+                disabled={!metadataSaved || hasUnsavedChanges}
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                Next: Select Folder
+              </Button>
+            )
           ) : (
             <Stack direction="row" spacing={2}>
               <Button
@@ -1185,7 +1268,7 @@ export default function ApprovalDrawer({
                 size="large"
                 fullWidth
                 startIcon={<CreateNewFolderIcon />}
-                onClick={() => {}}
+                onClick={handleSelectNewFolder}
                 sx={{ whiteSpace: 'nowrap' }}
               >
                 Select New Folder

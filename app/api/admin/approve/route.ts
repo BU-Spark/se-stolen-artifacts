@@ -21,18 +21,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid folderId' }, { status: 400 });
     }
 
-    // Verify the image exists
-    const { data: image, error: imageError } = await supabase
-      .from('images')
-      .select('*')
+    // Get the pending image from artifact_metadata_upload_log
+    const { data: pendingImage, error: pendingError } = await supabase
+      .from('artifact_metadata_upload_log')
+      .select('internal_reference_number, gcs_path, image_id')
       .eq('internal_reference_number', imageId)
+      .eq('status', 'pending_review')
       .single();
 
-    if (imageError || !image) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+    if (pendingError || !pendingImage) {
+      return NextResponse.json({ error: 'Pending image not found' }, { status: 404 });
     }
 
-    // Verify the statue exists (optional but good practice)
+    // Verify the statue exists
     const { data: statue, error: statueError } = await supabase
       .from('statues')
       .select('statue_id')
@@ -43,26 +44,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Statue not found' }, { status: 404 });
     }
 
-    // Update approval status to 'admin_approved'
-    const { error: approvalError } = await supabase
-      .from('approval')
-      .update({ status: 'admin_approved' })
-      .eq('image_id', imageId);
+    // Construct the public URL for the image
+    const storageBucket = 'spark';
+    const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${storageBucket}/${pendingImage.gcs_path}`;
 
-    if (approvalError) {
-      console.error('Error updating approval status:', approvalError);
-      return NextResponse.json({ error: approvalError.message }, { status: 500 });
+    // Check if image already exists in images table
+    const { data: existingImage } = await supabase
+      .from('images')
+      .select('internal_reference_number')
+      .eq('internal_reference_number', imageId)
+      .single();
+
+    if (existingImage) {
+      // Update existing image with gcs_path and statue_id
+      const { error: updateError } = await supabase
+        .from('images')
+        .update({
+          image_gcs: pendingImage.gcs_path,
+          image_url: imageUrl,
+          statue_id: statueId,
+        })
+        .eq('internal_reference_number', imageId);
+
+      if (updateError) {
+        console.error('Error updating image:', updateError);
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+    } else {
+      // Insert new image into images table
+      const { error: insertError } = await supabase.from('images').insert({
+        internal_reference_number: pendingImage.internal_reference_number,
+        image_gcs: pendingImage.gcs_path,
+        image_url: imageUrl,
+        statue_id: statueId,
+      });
+
+      if (insertError) {
+        console.error('Error inserting image:', insertError);
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
+      }
     }
 
-    // Update the image's statue_id to assign it to the correct folder
-    const { error: updateError } = await supabase
-      .from('images')
-      .update({ statue_id: statueId })
+    // Update status in artifact_metadata_upload_log to 'admin_approved'
+    const { error: statusError } = await supabase
+      .from('artifact_metadata_upload_log')
+      .update({ status: 'admin_approved' })
       .eq('internal_reference_number', imageId);
 
-    if (updateError) {
-      console.error('Error updating image statue_id:', updateError);
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (statusError) {
+      console.error('Error updating approval status:', statusError);
+      return NextResponse.json({ error: statusError.message }, { status: 500 });
     }
 
     return NextResponse.json({

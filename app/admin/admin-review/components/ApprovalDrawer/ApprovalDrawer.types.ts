@@ -25,6 +25,7 @@ export type ApprovalDrawerProps = {
   onSaveMetadata: (imageId: string, metadata: PendingImageMetadata) => void;
   onApprove: (imageId: string, folderId: string, metadata: PendingImageMetadata) => void;
   onAddToNew: (imageId: string, metadata: PendingImageMetadata) => void;
+  onDeny: () => void;
   onFolderSelected?: (folderId: string | null, folderName?: string | null) => void; // null = new folder
 };
 

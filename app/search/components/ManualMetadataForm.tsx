@@ -1,6 +1,10 @@
 'use client';
 
 import { Box, TextField, FormControlLabel, Checkbox, Grid, Divider, Typography, Stack } from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
+import CategoryIcon from '@mui/icons-material/Category';
+import PersonIcon from '@mui/icons-material/Person';
+import WarningIcon from '@mui/icons-material/Warning';
 import type { BasicSearchMetadata, AdvancedSearchMetadata } from '@/app/types/metadata.types';
 
 type ManualMetadataFormProps = {
@@ -18,98 +22,115 @@ export default function ManualMetadataForm({
 }: ManualMetadataFormProps) {
   return (
     <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
-      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-        Basic metadata
-      </Typography>
-      <Stack spacing={2}>
-        <TextField
-          label="Subject"
-          value={manualBasic.subject}
-          onChange={(e) => setManualBasic((s) => ({ ...s, subject: e.target.value }))}
-          size="small"
-          fullWidth
-        />
-        <TextField
-          label="Dealer / Gallery / Collector"
-          value={manualBasic.dealerName}
-          onChange={(e) => setManualBasic((s) => ({ ...s, dealerName: e.target.value }))}
-          size="small"
-          fullWidth
-        />
-        <TextField
-          label="Suspected Current Location"
-          value={manualBasic.suspectedCurrentLocation}
-          onChange={(e) => setManualBasic((s) => ({ ...s, suspectedCurrentLocation: e.target.value }))}
-          size="small"
-          fullWidth
-        />
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 6 }}>
-            <TextField
-              label="Year of First Appearance"
-              type="number"
-              value={manualBasic.firstAppearanceYear || ''}
-              onChange={(e) =>
-                setManualBasic((s) => ({
-                  ...s,
-                  firstAppearanceYear: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                }))
+      {/* Basic Information */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <InfoIcon sx={{ fontSize: 18 }} />
+          <Typography variant="subtitle2" fontWeight={600}>
+            Basic Information
+          </Typography>
+        </Box>
+        <Stack spacing={2} sx={{ mt: 2 }}>
+          <TextField
+            label="Title of Object"
+            value={manualBasic.artifactTitle || ''}
+            onChange={(e) => setManualBasic((s) => ({ ...s, artifactTitle: e.target.value }))}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Suspected Current Location"
+            value={manualBasic.suspectedCurrentLocation || ''}
+            onChange={(e) => setManualBasic((s) => ({ ...s, suspectedCurrentLocation: e.target.value }))}
+            size="small"
+            fullWidth
+          />
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 6 }}>
+              <TextField
+                label="Year of First Appearance"
+                type="number"
+                value={manualBasic.firstAppearanceYear || ''}
+                onChange={(e) =>
+                  setManualBasic((s) => ({
+                    ...s,
+                    firstAppearanceYear: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                  }))
+                }
+                size="small"
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 6 }}>
+              <TextField
+                label="Year Outside Cambodia"
+                type="number"
+                value={manualBasic.firstAppearanceYearOutsideCambodia || ''}
+                onChange={(e) =>
+                  setManualBasic((s) => ({
+                    ...s,
+                    firstAppearanceYearOutsideCambodia: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                  }))
+                }
+                size="small"
+                fullWidth
+              />
+            </Grid>
+          </Grid>
+          <TextField
+            label="Image Source"
+            value={manualAdvanced.imageSource || ''}
+            onChange={(e) => setManualAdvanced((s) => ({ ...s, imageSource: e.target.value }))}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Photograph Location"
+            value={manualBasic.photographLocation || ''}
+            onChange={(e) => setManualBasic((s) => ({ ...s, photographLocation: e.target.value }))}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Dealer/Gallery/Collector's Name"
+            value={manualBasic.dealerName || ''}
+            onChange={(e) => setManualBasic((s) => ({ ...s, dealerName: e.target.value }))}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Material Subject"
+            value={manualAdvanced.material || ''}
+            onChange={(e) => setManualAdvanced((s) => ({ ...s, material: e.target.value }))}
+            size="small"
+            fullWidth
+          />
+        </Stack>
+      </Box>
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* Physical Characteristics */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <CategoryIcon sx={{ fontSize: 18 }} />
+          <Typography variant="subtitle2" fontWeight={600}>
+            Physical Characteristics
+          </Typography>
+        </Box>
+        <Grid container spacing={1} sx={{ mt: 1 }}>
+          <Grid size={{ xs: 6, sm: 4 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!manualBasic.repatriated}
+                  onChange={(e) => setManualBasic((s) => ({ ...s, repatriated: e.target.checked }))}
+                  size="small"
+                />
               }
-              size="small"
-              fullWidth
+              label="Repatriated"
             />
           </Grid>
-          <Grid size={{ xs: 6 }}>
-            <TextField
-              label="Year First Appearance Outside Cambodia"
-              type="number"
-              value={manualBasic.firstAppearanceYearOutsideCambodia || ''}
-              onChange={(e) =>
-                setManualBasic((s) => ({
-                  ...s,
-                  firstAppearanceYearOutsideCambodia: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                }))
-              }
-              size="small"
-              fullWidth
-            />
-          </Grid>
-        </Grid>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!manualBasic.repatriated}
-              onChange={(e) => setManualBasic((s) => ({ ...s, repatriated: e.target.checked }))}
-              size="small"
-            />
-          }
-          label="Repatriated"
-        />
-
-        <Divider />
-
-        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-          Advanced metadata
-        </Typography>
-        <TextField
-          label="Image Source"
-          value={manualAdvanced.imageSource}
-          onChange={(e) => setManualAdvanced((s) => ({ ...s, imageSource: e.target.value }))}
-          size="small"
-          fullWidth
-        />
-        <TextField
-          label="Material"
-          value={manualAdvanced.material}
-          onChange={(e) => setManualAdvanced((s) => ({ ...s, material: e.target.value }))}
-          size="small"
-          fullWidth
-        />
-        {/* Advanced boolean fields grouped similarly to admin form */}
-        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-          Physical characteristics
-        </Typography>
-        <Grid container spacing={1} sx={{ mb: 1 }}>
           <Grid size={{ xs: 6, sm: 4 }}>
             <FormControlLabel
               control={
@@ -207,13 +228,19 @@ export default function ManualMetadataForm({
             />
           </Grid>
         </Grid>
+      </Box>
 
-        <Divider />
+      <Divider sx={{ my: 3 }} />
 
-        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-          Body Parts Present
-        </Typography>
-        <Grid container spacing={1} sx={{ mb: 1 }}>
+      {/* Body Parts Present */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <PersonIcon sx={{ fontSize: 18 }} />
+          <Typography variant="subtitle2" fontWeight={600}>
+            Body Parts Present
+          </Typography>
+        </Box>
+        <Grid container spacing={1} sx={{ mt: 1 }}>
           <Grid size={{ xs: 6, sm: 4 }}>
             <FormControlLabel
               control={
@@ -266,6 +293,18 @@ export default function ManualMetadataForm({
             <FormControlLabel
               control={
                 <Checkbox
+                  checked={!!manualAdvanced.handPresent}
+                  onChange={(e) => setManualAdvanced((s) => ({ ...s, handPresent: e.target.checked }))}
+                  size="small"
+                />
+              }
+              label="Hand"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
                   checked={!!manualAdvanced.hipKneePresent}
                   onChange={(e) => setManualAdvanced((s) => ({ ...s, hipKneePresent: e.target.checked }))}
                   size="small"
@@ -311,13 +350,19 @@ export default function ManualMetadataForm({
             />
           </Grid>
         </Grid>
+      </Box>
 
-        <Divider />
+      <Divider sx={{ my: 3 }} />
 
-        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-          Fragmentation Points
-        </Typography>
-        <Grid container spacing={1} sx={{ mb: 1 }}>
+      {/* Fragmentation Points */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <WarningIcon sx={{ fontSize: 18 }} />
+          <Typography variant="subtitle2" fontWeight={600}>
+            Fragmentation Points
+          </Typography>
+        </Box>
+        <Grid container spacing={1} sx={{ mt: 1 }}>
           <Grid size={{ xs: 6, sm: 4 }}>
             <FormControlLabel
               control={
@@ -403,7 +448,7 @@ export default function ManualMetadataForm({
             />
           </Grid>
         </Grid>
-      </Stack>
+      </Box>
     </Box>
   );
 }

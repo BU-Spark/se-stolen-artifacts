@@ -47,6 +47,7 @@ export function parseLLMResponse(llmResponse: string): ArtifactSearchMetadata {
         torsoPresent: parsedResponse.advancedSearchMetadata.torsoPresent || false,
         shoulderElbowPresent: parsedResponse.advancedSearchMetadata.shoulderElbowPresent || false,
         elbowWristPresent: parsedResponse.advancedSearchMetadata.elbowWristPresent || false,
+        handPresent: parsedResponse.advancedSearchMetadata.handPresent || false,
         hipKneePresent: parsedResponse.advancedSearchMetadata.hipKneePresent || false,
         kneeAnklePresent: parsedResponse.advancedSearchMetadata.kneeAnklePresent || false,
         footPresent: parsedResponse.advancedSearchMetadata.footPresent || false,

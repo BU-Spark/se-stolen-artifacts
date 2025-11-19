@@ -14,8 +14,8 @@ import {
   IconButton,
   Toolbar,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import EditIcon from '@mui/icons-material/Edit';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
@@ -215,31 +215,17 @@ export default function PendingImageCard({
               </Typography>
             )}
           </Stack>
-
-          {/* Edit Metadata Button */}
-          <Box sx={{ mt: 2 }}>
-            <Button onClick={handleEditMetadataClick} variant="outlined" fullWidth size="small">
-              Edit Metadata
-            </Button>
-          </Box>
         </CardContent>
 
         <CardActions sx={{ px: 3, pb: 3 }}>
           <Button
             variant="contained"
             color="success"
-            startIcon={<CheckCircleIcon />}
-            onClick={() => {
-              // If a folder is selected, approve to that folder; otherwise create new folder
-              if (selectedFolderId && typeof selectedFolderId === 'string') {
-                onApprove(internal_reference_number, selectedFolderId, metadata || {});
-              } else {
-                onAddToNew(internal_reference_number, metadata || {});
-              }
-            }}
+            startIcon={<EditIcon />}
+            onClick={handleEditMetadataClick}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            Approve
+            Edit & Approve
           </Button>
           <Button
             variant="contained"
@@ -266,6 +252,10 @@ export default function PendingImageCard({
         onSaveMetadata={handleSaveMetadata}
         onApprove={handleApprove}
         onAddToNew={handleAddToNew}
+        onDeny={() => {
+          onDeny(internal_reference_number);
+          setDrawerOpen(false);
+        }}
         onFolderSelected={handleFolderSelected}
       />
 

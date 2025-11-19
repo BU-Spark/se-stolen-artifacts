@@ -93,6 +93,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     torsoPresent: false,
     shoulderElbowPresent: false,
     elbowWristPresent: false,
+    handPresent: false,
     hipKneePresent: false,
     kneeAnklePresent: false,
     footPresent: false,
