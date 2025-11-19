@@ -41,6 +41,7 @@ export async function handleGetPendingImages() {
         dealer_name,
         material,
         repatriated,
+        has_inscription,
         multiple_heads,
         four_arms,
         eight_arms,
@@ -108,6 +109,7 @@ export async function handleGetPendingImages() {
 
         // Boolean fields - only include if true (to keep metadata object clean)
         if (approval.repatriated === true) metadata.repatriated = true;
+        if (approval.has_inscription === true) metadata.has_inscription = true;
         if (approval.multiple_heads === true) metadata.multiple_heads = true;
         if (approval.four_arms === true) metadata.four_arms = true;
         if (approval.eight_arms === true) metadata.eight_arms = true;

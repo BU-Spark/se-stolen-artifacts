@@ -268,6 +268,7 @@ export default function ApprovalDrawer({
   const getPhysicalCharacteristics = () => {
     const characteristics: string[] = [];
     if (formData.repatriated) characteristics.push('Repatriated');
+    if (formData.has_inscription) characteristics.push('Has inscription');
     if (formData.multiple_heads) characteristics.push('Multiple Heads');
     if (formData.four_arms) characteristics.push('Four Arms');
     if (formData.eight_arms) characteristics.push('Eight Arms');
@@ -475,9 +476,9 @@ export default function ApprovalDrawer({
                                 <strong>Title:</strong> {formData.title_of_object}
                               </Typography>
                             )}
-                            {formData.material_subject && (
+                            {formData.suspected_current_location && (
                               <Typography variant="body2" color="text.secondary">
-                                <strong>Material:</strong> {formData.material_subject}
+                                <strong>Location:</strong> {formData.suspected_current_location}
                               </Typography>
                             )}
                             {(formData.year_first_appearance || formData.year_first_appearance_outside_cambodia) && (
@@ -495,14 +496,24 @@ export default function ApprovalDrawer({
                                 )}
                               </Typography>
                             )}
-                            {formData.suspected_current_location && (
-                              <Typography variant="body2" color="text.secondary">
-                                <strong>Location:</strong> {formData.suspected_current_location}
-                              </Typography>
-                            )}
                             {formData.image_source && (
                               <Typography variant="body2" color="text.secondary">
                                 <strong>Source:</strong> {formData.image_source}
+                              </Typography>
+                            )}
+                            {formData.photograph_location && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Photograph Location:</strong> {formData.photograph_location}
+                              </Typography>
+                            )}
+                            {formData.dealer_gallery_collector_name && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Dealer/Gallery/Collector:</strong> {formData.dealer_gallery_collector_name}
+                              </Typography>
+                            )}
+                            {formData.material_subject && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Material:</strong> {formData.material_subject}
                               </Typography>
                             )}
                           </Stack>
@@ -713,6 +724,18 @@ export default function ApprovalDrawer({
                               />
                             }
                             label="Repatriated"
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, sm: 4 }}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={formData.has_inscription || false}
+                                onChange={handleCheckboxChange('has_inscription')}
+                                size="small"
+                              />
+                            }
+                            label="Has inscription"
                           />
                         </Grid>
                         <Grid size={{ xs: 6, sm: 4 }}>

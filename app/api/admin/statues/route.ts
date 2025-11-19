@@ -5,61 +5,34 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function GET() {
   try {
-    // Fetch all statues ordered by statue_id
-    const { data: statues, error: statuesError } = await supabase
-      .from('statues')
+    // Get distinct statue_ids from images table and count images per statue
+    const { data: images, error: imagesError } = await supabase
+      .from('images')
       .select('statue_id')
-      .order('statue_id', { ascending: true });
+      .not('statue_id', 'is', null);
 
-    if (statuesError) {
-      return NextResponse.json({ error: statuesError.message }, { status: 500 });
+    if (imagesError) {
+      return NextResponse.json({ error: imagesError.message }, { status: 500 });
     }
 
-    // For each statue, count only APPROVED images (exclude pending_review and admin_rejected)
-    const statuesWithCounts = await Promise.all(
-      (statues || []).map(async (statue) => {
-        // Get all images for this statue
-        const { data: images, error: imagesError } = await supabase
-          .from('images')
-          .select('internal_reference_number')
-          .eq('statue_id', statue.statue_id);
+    // Group by statue_id and count images
+    const statueCounts = new Map<number, number>();
+    (images || []).forEach((image) => {
+      const statueId = image.statue_id;
+      if (statueId !== null) {
+        statueCounts.set(statueId, (statueCounts.get(statueId) || 0) + 1);
+      }
+    });
 
-        if (imagesError || !images || images.length === 0) {
-          return {
-            id: statue.statue_id.toString(),
-            name: `Statue ${statue.statue_id}`,
-            statueId: statue.statue_id,
-            imageCount: 0,
-          };
-        }
-
-        // Get approval statuses for these images
-        const imageIds = images.map((img) => img.internal_reference_number);
-        const { data: approvals, error: approvalsError } = await supabase
-          .from('approval')
-          .select('image_id, status')
-          .in('image_id', imageIds);
-
-        if (approvalsError || !approvals) {
-          return {
-            id: statue.statue_id.toString(),
-            name: `Statue ${statue.statue_id}`,
-            statueId: statue.statue_id,
-            imageCount: 0,
-          };
-        }
-
-        // Count only approved images (status === 'admin_approved')
-        const approvedCount = approvals.filter((a) => a.status === 'admin_approved').length;
-
-        return {
-          id: statue.statue_id.toString(),
-          name: `Statue ${statue.statue_id}`,
-          statueId: statue.statue_id,
-          imageCount: approvedCount,
-        };
-      })
-    );
+    // Convert to array format and sort by statue_id
+    const statuesWithCounts = Array.from(statueCounts.entries())
+      .map(([statueId, imageCount]) => ({
+        id: statueId.toString(),
+        name: `Statue ${statueId}`,
+        statueId: statueId,
+        imageCount: imageCount,
+      }))
+      .sort((a, b) => a.statueId - b.statueId);
 
     return NextResponse.json({ statues: statuesWithCounts }, { status: 200 });
   } catch (error: unknown) {

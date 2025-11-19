@@ -11,6 +11,7 @@ export type PendingImageMetadata = {
 
   // Boolean fields
   repatriated?: boolean;
+  has_inscription?: boolean;
   multiple_heads?: boolean;
   four_arms?: boolean;
   eight_arms?: boolean;
