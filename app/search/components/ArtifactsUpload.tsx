@@ -421,7 +421,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                 Upload Artifacts
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Upload image (CSV) followed by additional relevant metadata.
+                Upload image (JPG, JPEG, PNG, WEBP) followed by additional relevant metadata.
               </Typography>
             </Box>
             {selectedFile && (
