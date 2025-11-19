@@ -35,6 +35,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import CategoryIcon from '@mui/icons-material/Category';
 import PersonIcon from '@mui/icons-material/Person';
 import WarningIcon from '@mui/icons-material/Warning';
+import NotesIcon from '@mui/icons-material/Notes';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { ApprovalDrawerProps, Folder, FolderImage, DrawerView } from './ApprovalDrawer.types';
 import { PendingImageMetadata } from '../PendingImageCard/PendingImageCard.types';
@@ -621,6 +622,25 @@ export default function ApprovalDrawer({
                           </Box>
                         </Box>
                       )}
+
+                      {/* Additional Comments */}
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                          <NotesIcon sx={{ fontSize: 18 }} />
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Additional User Comments
+                          </Typography>
+                        </Box>
+                        {formData.misc_information ? (
+                          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {formData.misc_information}
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                            No additional comments provided.
+                          </Typography>
+                        )}
+                      </Box>
                     </Stack>
                   </Box>
                 )}
@@ -1043,6 +1063,28 @@ export default function ApprovalDrawer({
                           />
                         </Grid>
                       </Grid>
+                    </Box>
+
+                    <Divider sx={{ my: 3 }} />
+
+                    {/* Additional Comments */}
+                    <Box sx={{ mb: 3 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <NotesIcon sx={{ fontSize: 18 }} />
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Additional User Comments
+                        </Typography>
+                      </Box>
+                      <TextField
+                        label="Uploader Notes"
+                        value={formData.misc_information || ''}
+                        placeholder="No additional comments provided."
+                        fullWidth
+                        multiline
+                        minRows={3}
+                        InputProps={{ readOnly: true }}
+                        sx={{ '& .MuiInputBase-input': { whiteSpace: 'pre-wrap' } }}
+                      />
                     </Box>
 
                     {/* Save Metadata Button */}
