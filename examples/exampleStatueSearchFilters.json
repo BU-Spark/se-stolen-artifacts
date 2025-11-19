@@ -1,0 +1,29 @@
+{
+  "main": {
+    "subject": "Brahma",
+    "dealer": "",
+    "suspectedCurrentLocation": "",
+    "titleOfObject": "",
+    "photographLocation": "",
+    "yearFirstKnownAppearance": {
+      "start": 1900,
+      "end": 2000
+    },
+    "yearFirstKnownAppearanceOutsideCambodia": {
+      "start": 1900,
+      "end": 2000
+    },
+    "repatriated": false
+  },
+  "advanced": {
+    "imageSource": "",
+    "material": "",
+    "basePresent": null,
+    "inscription": null,
+    "multipleHeads": null,
+    "fragmentary": null,
+    "numberOfArms": 4,
+    "limbsPresent": [],
+    "partsFragmented": []
+  }
+}

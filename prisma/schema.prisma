@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://spark_sql_user:Klsc1HojiCf9ohgidI4QnD2cpWcH0tfm@dpg-d3h5ueqli9vc73dsa0c0-a.virginia-postgres.render.com/spark_sql"
+}
+
+model Names {
+  id          Int       @id @default(autoincrement())
+  statuesName String?   @unique @map("statues_name")
+  statues     Statues[]
+
+  @@map("names")
+}
+
+model Locations {
+  id               Int                @id @default(autoincrement())
+  locationName     String?            @unique @map("location_name")
+  country          String?
+  originalStatues  Statues[]          @relation("OriginalLocation")
+  currentEntries   StatueCurrentLoc[] @relation("CurrentLocation")
+  photographImages Images[]           @relation("PhotoLocation")
+
+  @@map("locations")
+}
+
+model Materials {
+  id           Int       @id @default(autoincrement())
+  materialName String?   @unique @map("material_name")
+  statues      Statues[]
+
+  @@map("materials")
+}
+
+model Subjects {
+  id          Int            @id @default(autoincrement())
+  subjectName String         @unique @map("subject_name")
+  statues     StatueSubject[]
+
+  @@map("subjects")
+}
+
+model Attributes {
+  id            Int               @id @default(autoincrement())
+  attributeName String            @unique @map("attribute_name")
+  statues       StatueAttributes[]
+
+  @@map("attributes")
+}
+
+model Statues {
+  statueId                                Int                 @id @default(autoincrement()) @map("statue_id")
+  description                             String?
+  provenanceHistory                       String?             @map("provenance_history")
+  firstKnownAppearanceYear                Int?                @map("first_known_appearance_year")
+  firstKnownAppearanceOutsideCambodiaYear Int?                @map("first_known_appearance_outside_cambodia_year")
+  materialId                              Int?                @map("material")
+  inventoryNumber                         String?             @map("inventory_number")
+  collectionMission                       String?             @map("collection_mission")
+  statuesNameId                           Int?                @map("statues_name")
+  originalLocationId                      Int?                @map("original_location_id")
+  armNumber                               Int?                @map("arm_number")
+
+  material        Materials?        @relation(fields: [materialId], references: [id])
+  statueName      Names?            @relation(fields: [statuesNameId], references: [id])
+  originalLocation Locations?       @relation("OriginalLocation", fields: [originalLocationId], references: [id])
+  auctionEvents    AuctionEvents[]
+  statueSubjects   StatueSubject[]
+  statueAttributes StatueAttributes[]
+  currentLocations StatueCurrentLoc[]
+  images           Images[]
+
+  @@map("statues")
+}
+
+model AuctionInstitutions {
+  id          Int             @id @default(autoincrement())
+  name        String?
+  address     String?
+  contactInfo String?         @map("contact_info")
+  auctions    AuctionEvents[]
+
+  @@map("auction_institutions")
+}
+
+model AuctionEvents {
+  id             Int                  @id @default(autoincrement())
+  statueId       Int                  @map("statue_id")
+  auctionHouseId Int?                 @map("auction_house_id")
+  auctionName    String?              @map("auction_name")
+  auctionDate    DateTime?            @map("auction_date")
+  lotNumber      String?              @map("lot_number")
+
+  statue       Statues              @relation(fields: [statueId], references: [statueId])
+  auctionHouse AuctionInstitutions? @relation(fields: [auctionHouseId], references: [id])
+
+  @@map("auction_events")
+}
+
+model StatueSubject {
+  statueId  Int @map("statue_id")
+  subjectId Int @map("subject_id")
+
+  statue  Statues @relation(fields: [statueId], references: [statueId])
+  subject Subjects @relation(fields: [subjectId], references: [id])
+
+  @@id([statueId, subjectId])
+  @@map("statue_subject")
+}
+
+model StatueAttributes {
+  statueId    Int @map("statue_id")
+  attributeId Int @map("attribute_id")
+
+  statue    Statues    @relation(fields: [statueId], references: [statueId])
+  attribute Attributes @relation(fields: [attributeId], references: [id])
+
+  @@id([statueId, attributeId])
+  @@map("statue_attributes")
+}
+
+model StatueCurrentLoc {
+  id                Int       @id @default(autoincrement())
+  statueId          Int       @map("statue_id")
+  locationId        Int       @map("location_id")
+  lastMentionedDate DateTime? @map("last_mentioned_date")
+  link              String?
+
+  statue   Statues   @relation(fields: [statueId], references: [statueId])
+  location Locations @relation("CurrentLocation", fields: [locationId], references: [id])
+
+  @@map("statue_current_loc")
+}
+
+model Photographers {
+  id               Int      @id @default(autoincrement())
+  photographerName String?  @map("photographer_name")
+  images           Images[]
+
+  @@map("photographers")
+}
+
+model Images {
+  internalReferenceNumber String    @id @map("internal_reference_number")
+  statueId                Int       @map("statue_id")
+  imageUrl                String?   @map("image_url")
+  imageGcs                String?   @map("image_gcs")
+  imageSource             String?   @map("image_source")
+  photographLocationId    Int?      @map("photograph_location")
+  dateOfPhotograph        DateTime? @map("date_of_photograph")
+  photographerId          Int?      @map("photographer")
+  observationsComments    String?   @map("observations_comments")
+
+  statue             Statues        @relation(fields: [statueId], references: [statueId])
+  photographLocation Locations?     @relation("PhotoLocation", fields: [photographLocationId], references: [id])
+  photographer       Photographers? @relation(fields: [photographerId], references: [id])
+
+  @@map("images")
+}
