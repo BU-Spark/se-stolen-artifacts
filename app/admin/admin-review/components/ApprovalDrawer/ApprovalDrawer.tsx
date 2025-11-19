@@ -64,6 +64,9 @@ export default function ApprovalDrawer({
   const [loadingFolderImages, setLoadingFolderImages] = useState(false);
   const drawerContentRef = useRef<HTMLDivElement>(null);
   const prevOpenRef = useRef(open);
+  // Store original metadata per imageId to compare if admin has made edits
+  const originalMetadataRef = useRef<Map<string, PendingImageMetadata | undefined>>(new Map());
+  const [hasAdminMadeEdits, setHasAdminMadeEdits] = useState(false);
 
   // Fetch statues from API
   const fetchStatues = useCallback(async () => {
@@ -97,6 +100,20 @@ export default function ApprovalDrawer({
       setFolderImages([]);
       setFormData(metadata || {});
       setHasUnsavedChanges(false);
+
+      // Store original metadata if this is the first time opening for this image
+      // or if we don't have a stored original yet
+      const storedOriginal = originalMetadataRef.current.get(imageId);
+      if (storedOriginal === undefined) {
+        // First time opening this image - store original metadata
+        originalMetadataRef.current.set(imageId, metadata ? JSON.parse(JSON.stringify(metadata)) : undefined);
+        setHasAdminMadeEdits(false); // First time opening - no edits yet
+      } else {
+        // Compare current metadata with original to see if admin has edited
+        const metadataChanged = JSON.stringify(storedOriginal) !== JSON.stringify(metadata);
+        setHasAdminMadeEdits(metadataChanged);
+      }
+
       // If metadata already exists and has content, consider it saved (user can proceed without re-saving)
       const hasMetadata = metadata ? Object.keys(metadata).length > 0 : false;
       setMetadataSaved(hasMetadata);
@@ -108,7 +125,10 @@ export default function ApprovalDrawer({
       fetchStatues();
     }
     prevOpenRef.current = open;
-  }, [open, metadata, fetchStatues]);
+  }, [open, metadata, fetchStatues, imageId]);
+
+  // Note: We don't reset the originalMetadataRef when drawer closes
+  // This allows us to persist the "admin has edited" state across drawer opens/closes for the same image
 
   // Sync formData when metadata prop changes (after save)
   useEffect(() => {
@@ -184,6 +204,7 @@ export default function ApprovalDrawer({
         [field]: field.includes('year') ? (value ? parseInt(value, 10) : undefined) : value,
       };
       setHasUnsavedChanges(true);
+      setHasAdminMadeEdits(true); // Admin has made an edit
       return updated;
     });
   };
@@ -192,6 +213,7 @@ export default function ApprovalDrawer({
     setFormData((prev) => {
       const updated = { ...prev, [field]: e.target.checked };
       setHasUnsavedChanges(true);
+      setHasAdminMadeEdits(true); // Admin has made an edit
       return updated;
     });
   };
@@ -377,7 +399,7 @@ export default function ApprovalDrawer({
                       <WarningIcon sx={{ fontSize: 16 }} />
                       Metadata must be saved before selecting folder
                     </Typography>
-                  ) : metadataSaved ? (
+                  ) : metadataSaved && hasAdminMadeEdits ? (
                     <Typography
                       variant="body2"
                       color="success.main"
@@ -385,6 +407,15 @@ export default function ApprovalDrawer({
                     >
                       <CheckIcon sx={{ fontSize: 16 }} />
                       All changes saved
+                    </Typography>
+                  ) : metadataSaved && !hasAdminMadeEdits ? (
+                    <Typography
+                      variant="body2"
+                      color="info.main"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      <InfoIcon sx={{ fontSize: 16 }} />
+                      Metadata from upload - ready to review
                     </Typography>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
