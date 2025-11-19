@@ -20,7 +20,12 @@ import { CloudUpload, Clear, CheckCircle } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 
 // major metadata types
-import type { BasicSearchMetadata, AdvancedSearchMetadata, ProcessMetadataRequest } from '@/app/types/metadata.types';
+import type {
+  BasicSearchMetadata,
+  AdvancedSearchMetadata,
+  ProcessMetadataRequest,
+  ProcessMetadataResponse,
+} from '@/app/types/metadata.types';
 
 // local components
 import DropZone from './DropZone';
@@ -306,15 +311,36 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
             body: JSON.stringify(payload),
           });
 
-          const llmResult = await llmResponse.json();
-
-          if (!llmResponse.ok) {
-            console.error('Metadata processing failed:', llmResult.error);
-          } else {
-            console.log('Metadata processing successful:', llmResult);
+          let llmResult: ProcessMetadataResponse | null = null;
+          try {
+            llmResult = await llmResponse.json();
+          } catch (parseErr) {
+            console.error('Failed to parse metadata response JSON:', parseErr);
           }
+
+          if (!llmResponse.ok || !llmResult?.success) {
+            const requiresManualEntry = Boolean(llmResult?.requiresManualEntry);
+            const defaultMessage = requiresManualEntry
+              ? 'AI metadata extraction failed. Please provide metadata manually.'
+              : 'Metadata processing failed. Please try again.';
+            const errorMessage = typeof llmResult?.error === 'string' ? llmResult.error : defaultMessage;
+
+            if (requiresManualEntry) {
+              setMetadataMode('manual');
+              setDescriptionError('AI processing was unable to extract metadata. Please complete the manual fields.');
+            }
+
+            throw new Error(errorMessage);
+          }
+
+          console.log('Metadata processing successful:', llmResult);
         } catch (llmErr) {
-          console.error('Error processing metadata:', llmErr);
+          const metadataError = llmErr instanceof Error ? llmErr.message : 'Metadata processing failed.';
+          clearInterval(progressInterval);
+          setIsUploading(false);
+          setProgress(0);
+          setError(metadataError);
+          return;
         }
       }
 
