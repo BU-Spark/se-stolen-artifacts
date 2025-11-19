@@ -107,6 +107,7 @@ export interface AdvancedSearchMetadata {
   torsoPresent?: boolean;
   shoulderElbowPresent?: boolean;
   elbowWristPresent?: boolean;
+  handPresent?: boolean;
   hipKneePresent?: boolean;
   kneeAnklePresent?: boolean;
   footPresent?: boolean;

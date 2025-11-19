@@ -266,6 +266,18 @@ export default function ManualMetadataForm({
             <FormControlLabel
               control={
                 <Checkbox
+                  checked={!!manualAdvanced.handPresent}
+                  onChange={(e) => setManualAdvanced((s) => ({ ...s, handPresent: e.target.checked }))}
+                  size="small"
+                />
+              }
+              label="Hand"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
                   checked={!!manualAdvanced.hipKneePresent}
                   onChange={(e) => setManualAdvanced((s) => ({ ...s, hipKneePresent: e.target.checked }))}
                   size="small"
