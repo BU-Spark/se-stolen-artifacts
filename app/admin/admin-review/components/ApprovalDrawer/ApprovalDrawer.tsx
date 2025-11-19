@@ -1078,11 +1078,11 @@ export default function ApprovalDrawer({
                       <TextField
                         label="Uploader Notes"
                         value={formData.misc_information || ''}
-                        placeholder="No additional comments provided."
+                        placeholder="Add or edit any additional context for reviewers."
                         fullWidth
                         multiline
                         minRows={3}
-                        InputProps={{ readOnly: true }}
+                        onChange={handleTextChange('misc_information')}
                         sx={{ '& .MuiInputBase-input': { whiteSpace: 'pre-wrap' } }}
                       />
                     </Box>
