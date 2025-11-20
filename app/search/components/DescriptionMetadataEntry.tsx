@@ -18,6 +18,14 @@ type DescriptionMetadataEntryProps = {
   setManualBasic: React.Dispatch<React.SetStateAction<Partial<BasicSearchMetadata>>>;
   manualAdvanced: Partial<AdvancedSearchMetadata>;
   setManualAdvanced: React.Dispatch<React.SetStateAction<Partial<AdvancedSearchMetadata>>>;
+  aiMetadataAvailable?: boolean;
+  rateLimitStatus?: {
+    current: number;
+    max: number;
+    remaining: number;
+    resetAt: number;
+    isLimited: boolean;
+  } | null;
 };
 
 export default function DescriptionMetadataEntry({
@@ -33,6 +41,8 @@ export default function DescriptionMetadataEntry({
   setManualBasic,
   manualAdvanced,
   setManualAdvanced,
+  aiMetadataAvailable = true,
+  rateLimitStatus,
 }: DescriptionMetadataEntryProps) {
   return (
     <Stack spacing={2} sx={{ mt: 2 }}>
@@ -43,13 +53,33 @@ export default function DescriptionMetadataEntry({
       )}
       <Tabs
         value={metadataMode}
-        onChange={(_, v) => setMetadataMode(v as 'ai' | 'manual')}
+        onChange={(_, v) => {
+          // Prevent switching to AI if it's not available
+          if (v === 'ai' && !aiMetadataAvailable) {
+            return;
+          }
+          setMetadataMode(v as 'ai' | 'manual');
+        }}
         aria-label="Metadata mode tabs"
         sx={{ mb: 1 }}
       >
-        <Tab value="ai" label="Long Description Metadata Entry" />
+        <Tab value="ai" label="Long Description Metadata Entry" disabled={!aiMetadataAvailable} />
         <Tab value="manual" label="Manual Metadata Entry" />
       </Tabs>
+      {!aiMetadataAvailable && rateLimitStatus && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          AI metadata generation is temporarily unavailable due to rate limits.
+          {rateLimitStatus.remaining === 0 && <> The upload limit has been reached. </>}
+          {rateLimitStatus.remaining > 0 && (
+            <>
+              {' '}
+              {rateLimitStatus.remaining} upload{rateLimitStatus.remaining !== 1 ? 's' : ''} remaining.{' '}
+            </>
+          )}
+          Please use manual metadata entry instead. The limit will reset at{' '}
+          {new Date(rateLimitStatus.resetAt).toLocaleTimeString()}.
+        </Alert>
+      )}
       <TextField
         label="Short Description"
         value={shortDescription}
