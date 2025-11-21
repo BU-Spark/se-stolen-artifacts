@@ -16,6 +16,8 @@ interface BaseProcessMetadataRequest {
   shortDescription: string;
   /** User-provided detailed description of the artifact */
   longDescription?: string;
+  /** Additional free-form context supplied by the uploader */
+  miscInformation?: string;
   /** Internal reference number for tracking */
   internalReferenceNumber: string;
 }
@@ -147,6 +149,8 @@ export interface ArtifactSearchMetadata {
   // Request information
   shortDescription?: string;
   longDescription?: string;
+  /** Optional free-form context from the uploader */
+  miscInformation?: string;
   /** Whether the metadata was AI-generated (true) or manually entered (false) */
   aiGenerated?: boolean;
 }

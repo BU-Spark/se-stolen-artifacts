@@ -61,7 +61,7 @@ export default function DropZone({
             {isDragging ? 'Drop your file here' : 'Drop your file here or click to browse'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Accepted formats: JPG, PNG, WEBP, CSV, JSON (max 10MB)
+            Accepted formats: JPG, JPEG, PNG, WEBP (max 10MB)
           </Typography>
         </Box>
       </Stack>

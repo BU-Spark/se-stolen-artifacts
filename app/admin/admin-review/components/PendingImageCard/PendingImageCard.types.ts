@@ -39,6 +39,9 @@ export type PendingImageMetadata = {
   fragmented_upper_leg?: boolean;
   fragmented_at_knee?: boolean;
   fragmented_at_ankle?: boolean;
+
+  // Additional uploader context
+  misc_information?: string;
 };
 
 export type PendingImage = {

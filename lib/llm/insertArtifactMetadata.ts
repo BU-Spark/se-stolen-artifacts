@@ -14,7 +14,14 @@ export async function insertArtifactMetadata(
     throw new Error('Metadata is undefined. Cannot destructure properties.');
   }
 
-  const { basicSearchMetadata, advancedSearchMetadata, shortDescription, longDescription, aiGenerated } = metadata;
+  const {
+    basicSearchMetadata,
+    advancedSearchMetadata,
+    shortDescription,
+    longDescription,
+    miscInformation,
+    aiGenerated,
+  } = metadata;
 
   console.log('Inserting metadata for image:', imageId);
   console.log('Internal Reference Number:', internalReferenceNumber); // Log the internal reference number
@@ -23,6 +30,7 @@ export async function insertArtifactMetadata(
   console.log('Advanced metadata:', JSON.stringify(advancedSearchMetadata, null, 2));
   console.log('Short description:', shortDescription);
   console.log('Long description:', longDescription);
+  console.log('Misc information:', miscInformation);
   console.log('AI generated:', aiGenerated);
 
   const { data, error } = await supabase.rpc('insert_llm_artifact_metadata_withgcs', {
@@ -33,6 +41,7 @@ export async function insertArtifactMetadata(
     advanced_search_metadata_input: advancedSearchMetadata,
     short_description_input: shortDescription ?? null,
     long_description_input: longDescription ?? null,
+    misc_information_input: miscInformation ?? null,
     ai_generated_input: aiGenerated ?? true, // Default to true if not specified
   });
 

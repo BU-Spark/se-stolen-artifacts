@@ -16,6 +16,7 @@ export function createDefaultArtifactSearchMetadata(
     rawLlmResponse: 'FALLBACK_DEFAULTS',
     shortDescription,
     longDescription,
+    miscInformation: undefined,
     aiGenerated: false, // Not AI-generated, just defaults
   };
 }
