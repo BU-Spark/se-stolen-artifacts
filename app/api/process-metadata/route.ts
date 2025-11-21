@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as ProcessMetadataRequest;
-    const { imageId, gcsPath, shortDescription, internalReferenceNumber } = body; // Destructure internalReferenceNumber
+    const { imageId, gcsPath, shortDescription, internalReferenceNumber, miscInformation } = body; // Destructure internalReferenceNumber
+    const miscInformationTrimmed = miscInformation?.trim() || undefined;
 
     // validate common fields
     if (!imageId || !gcsPath || !shortDescription || !internalReferenceNumber) {
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
         advancedSearchMetadata: manualMetadata.advancedSearchMetadata,
         shortDescription,
         longDescription,
+        miscInformation: miscInformationTrimmed,
         aiGenerated: false, // Mark as manually entered
       };
     }

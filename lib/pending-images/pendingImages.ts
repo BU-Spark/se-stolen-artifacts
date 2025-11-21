@@ -64,7 +64,8 @@ export async function handleGetPendingImages() {
         fragmented_at_wrist,
         fragmented_at_upper_leg,
         fragmented_at_knee,
-        fragmented_at_ankle
+        fragmented_at_ankle,
+        misc_information
       `
       )
       .eq('status', 'pending_review');
@@ -137,6 +138,11 @@ export async function handleGetPendingImages() {
         if (approval.fragmented_at_upper_leg === true) metadata.fragmented_upper_leg = true; // Note: "fragmented_upper_leg" not "fragmented_at_upper_leg"
         if (approval.fragmented_at_knee === true) metadata.fragmented_at_knee = true;
         if (approval.fragmented_at_ankle === true) metadata.fragmented_at_ankle = true;
+
+        const miscInfo = typeof approval.misc_information === 'string' ? approval.misc_information.trim() : '';
+        if (miscInfo) {
+          metadata.misc_information = miscInfo;
+        }
 
         return {
           image_id: approval.image_id,

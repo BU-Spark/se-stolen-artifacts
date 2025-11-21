@@ -1,4 +1,5 @@
-const currentYear = new Date().getFullYear();
+// Use UTC to avoid server/client timezone differences causing hydration drift
+const currentYear = new Date().getUTCFullYear();
 const YEAR_SLIDER_MIN = 1900;
 
 export const BASIC_FIELDS = [

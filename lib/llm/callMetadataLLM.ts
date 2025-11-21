@@ -56,6 +56,7 @@ const ARTIFACT_SCHEMA = {
         fragmentedAtAnkle: { type: ['boolean', 'null'] },
       },
     },
+    miscInformation: { type: ['string', 'null'] },
   },
   required: ['basicSearchMetadata', 'advancedSearchMetadata'],
 };
@@ -122,6 +123,9 @@ FRAGMENTATION POINTS (set true if broken AT this location):
 - fragmentedAtUpperLeg: broken at the upper leg/thigh
 - fragmentedAtKnee: broken at the knee
 - fragmentedAtAnkle: broken at the ankle
+
+MISCELLANEOUS INFORMATION:
+- miscInformation: capture any relevant notes, external links, provenance leads, contact details, or other context that doesn't map neatly into the fields above. Leave null if nothing extra is provided.
 
 RULES:
 1. Extract information directly from the text when available

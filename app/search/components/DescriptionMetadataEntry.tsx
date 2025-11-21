@@ -12,6 +12,8 @@ type DescriptionMetadataEntryProps = {
   setShortDescription: (desc: string) => void;
   longDescription: string;
   setLongDescription: (desc: string) => void;
+  miscInformation: string;
+  setMiscInformation: (value: string) => void;
   descriptionError: string | null;
   setDescriptionError: (err: string | null) => void;
   manualBasic: Partial<BasicSearchMetadata>;
@@ -27,6 +29,8 @@ export default function DescriptionMetadataEntry({
   setShortDescription,
   longDescription,
   setLongDescription,
+  miscInformation,
+  setMiscInformation,
   descriptionError,
   setDescriptionError,
   manualBasic,
@@ -136,12 +140,24 @@ export default function DescriptionMetadataEntry({
         />
       )}
       {metadataMode === 'manual' && (
-        <ManualMetadataForm
-          manualBasic={manualBasic}
-          setManualBasic={setManualBasic}
-          manualAdvanced={manualAdvanced}
-          setManualAdvanced={setManualAdvanced}
-        />
+        <>
+          <ManualMetadataForm
+            manualBasic={manualBasic}
+            setManualBasic={setManualBasic}
+            manualAdvanced={manualAdvanced}
+            setManualAdvanced={setManualAdvanced}
+          />
+          <TextField
+            label="Additional Information for Reviewers"
+            value={miscInformation}
+            onChange={(e) => setMiscInformation(e.target.value)}
+            placeholder="Optional notes that might help admins (e.g., provenance leads, contact info, storage details)"
+            fullWidth
+            multiline
+            minRows={3}
+            variant="outlined"
+          />
+        </>
       )}
     </Stack>
   );
