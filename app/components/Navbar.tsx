@@ -18,6 +18,7 @@ export default function Navbar() {
   let isAdmin = false;
   if (
     pathname === '/search' ||
+    pathname === '/upload' ||
     pathname === '/admin/admin-review' ||
     pathname === '/signin' ||
     pathname === '/signup'
