@@ -16,11 +16,11 @@ export default function SearchPage() {
         marginRight: '-50vw',
         width: '100vw',
         px: 4,
-        py: 6,
+        py: 3,
       }}
     >
       <Stack spacing={3} sx={{ maxWidth: '100%' }}>
-        <Stack direction="row" spacing={2} sx={{ height: 'calc(100vh - 180px)', minHeight: 600, width: '100%' }}>
+        <Stack direction="row" spacing={2} sx={{ height: 'calc(100vh - 140px)', minHeight: 700, width: '100%' }}>
           <Box
             sx={{
               flex: '0 0 40%',

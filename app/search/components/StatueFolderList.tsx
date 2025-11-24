@@ -1,7 +1,7 @@
 'use client';
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Box, Collapse, IconButton, Stack, Typography } from '@mui/material';
+import { Box, Collapse, Divider, IconButton, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 
 type StatueFolder = {
@@ -101,9 +101,15 @@ export default function StatueFolderList() {
 
   return (
     <Stack sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Typography component="h1" variant="h4" fontWeight={600} sx={{ mb: 2, flexShrink: 0 }}>
-        Potential Matches
-      </Typography>
+      <Stack spacing={0.5} sx={{ flexShrink: 0, mb: 2 }}>
+        <Typography component="h1" variant="h4" fontWeight={600}>
+          Potential Matches
+        </Typography>
+        <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
+          View similar artifacts based on your search criteria or uploaded image.
+        </Typography>
+        <Divider />
+      </Stack>
       <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0, pr: 1 }}>
         <Stack spacing={2} sx={{ pb: 2 }}>
           {sampleFolders.map((folder) => (

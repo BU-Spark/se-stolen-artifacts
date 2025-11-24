@@ -282,22 +282,21 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
 
   return (
     <Stack component="form" onSubmit={handleSubmit} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Stack spacing={3} sx={{ flex: '0 0 auto', pb: 2 }}>
-        <Grid container alignItems="center" justifyContent="space-between">
-          <Grid size={4}>
-            <Typography component="h1" variant="h4" fontWeight={600} gutterBottom>
+      <Stack spacing={0} sx={{ flex: '0 0 auto', pb: 2 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+          <Stack spacing={0.5}>
+            <Typography component="h1" variant="h4" fontWeight={600}>
               Artifact Search
             </Typography>
-            <Typography color="text.secondary">
+            <Typography color="text.secondary" variant="body2">
               Look up stolen artifacts by name, collection, or tailor your search with advanced filters.
             </Typography>
-          </Grid>
-          <Grid>
-            <Button type="submit" variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>
-              Search
-            </Button>
-          </Grid>
-        </Grid>
+          </Stack>
+          <Button type="submit" variant="contained" size="large" sx={{ px: 4, py: 1.5, flexShrink: 0, ml: 2 }}>
+            Search
+          </Button>
+        </Stack>
+        <Divider />
       </Stack>
 
       <Stack
@@ -308,6 +307,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           overflow: 'auto',
           minHeight: 0,
           pr: 1,
+          pt: 3,
           '&::-webkit-scrollbar': {
             width: '8px',
           },
@@ -323,8 +323,6 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           },
         }}
       >
-        <Divider />
-
         <Stack spacing={3}>
           <Typography variant="h6" fontWeight={600}>
             Main Parameters
