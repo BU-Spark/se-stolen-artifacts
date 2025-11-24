@@ -83,7 +83,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           top: scrollContainerRef.current.scrollHeight,
           behavior: 'smooth',
         });
-      }, 200);
+      }, 300);
     }
   }, [isAdvancedOpen, advancedSelections]);
 
@@ -468,7 +468,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           </Stack>
 
           <Collapse in={isAdvancedOpen} timeout={250} unmountOnExit>
-            <Stack spacing={3} sx={{ mt: 1 }}>
+            <Stack spacing={3} sx={{ mt: 1, pl: 0.5 }}>
               <Autocomplete<AdvancedSelection | AdvancedParamDef, true, false, true>
                 multiple
                 freeSolo
@@ -502,6 +502,11 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
                     }
                     inputRef={autocompleteInputRef}
                     onKeyDown={handleAdvancedInputKeyDown}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        boxShadow: 'none',
+                      },
+                    }}
                   />
                 )}
               />

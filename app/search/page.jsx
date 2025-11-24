@@ -20,7 +20,11 @@ export default function SearchPage() {
       }}
     >
       <Stack spacing={3} sx={{ maxWidth: '100%' }}>
-        <Stack direction="row" spacing={2} sx={{ height: 'calc(100vh - 140px)', minHeight: 700, width: '100%' }}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ height: 'calc(100vh - 140px)', minHeight: { xs: 500, md: 600, lg: 700 }, width: '100%' }}
+        >
           <Box
             sx={{
               flex: '0 0 40%',
