@@ -24,9 +24,16 @@ export default function Navbar() {
     pathname === '/signup'
   ) {
     rightContent = (
-      <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
-        Back to Home
-      </Button>
+      <Stack direction="row" spacing={2}>
+        {pathname === '/search' && (
+          <Button variant="outlined" component={Link} href="/upload">
+            Upload Another Image
+          </Button>
+        )}
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
+          Back to Home
+        </Button>
+      </Stack>
     );
   } else if (pathname === '/' || pathname === '/landing-page') {
     if (isLoaded && isSignedIn) {

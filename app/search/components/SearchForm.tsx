@@ -8,14 +8,13 @@ import {
   Divider,
   FormControlLabel,
   Grid,
-  Paper,
   Slider,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import CustomTag from '@/app/search/components/CustomTag';
 import { BASIC_FIELDS, ADVANCED_PARAMS } from '@/app/search/constants';
 import { getInitialBasicState, normalizeLimbList } from '@/app/search/utils';
@@ -54,6 +53,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
   const [activeParamId, setActiveParamId] = useState<string | null>(null);
   const [advancedInputValue, setAdvancedInputValue] = useState('');
   const autocompleteInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const activeParam = useMemo(
     () => advancedSelections.find((selection) => selection.id === activeParamId) ?? null,
@@ -74,6 +74,18 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
   const toggleAdvanced = () => {
     setIsAdvancedOpen((prev) => !prev);
   };
+
+  // Auto-scroll to bottom when advanced section opens or selections change
+  useEffect(() => {
+    if (isAdvancedOpen && scrollContainerRef.current) {
+      setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }, 200);
+    }
+  }, [isAdvancedOpen, advancedSelections]);
 
   const handleBasicChange = (fieldId: string, value: string | number | boolean | number[]) => {
     setBasicValues((prev) => ({
@@ -269,8 +281,8 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
   if (!show) return null;
 
   return (
-    <Paper component="form" elevation={3} onSubmit={handleSubmit} sx={{ p: { xs: 3, md: 4 } }}>
-      <Stack spacing={4}>
+    <Stack component="form" onSubmit={handleSubmit} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Stack spacing={3} sx={{ flex: '0 0 auto', pb: 2 }}>
         <Grid container alignItems="center" justifyContent="space-between">
           <Grid size={4}>
             <Typography component="h1" variant="h4" fontWeight={600} gutterBottom>
@@ -286,7 +298,31 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
             </Button>
           </Grid>
         </Grid>
+      </Stack>
 
+      <Stack
+        ref={scrollContainerRef}
+        spacing={3}
+        sx={{
+          flex: '1 1 auto',
+          overflow: 'auto',
+          minHeight: 0,
+          pr: 1,
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            },
+          },
+        }}
+      >
         <Divider />
 
         <Stack spacing={3}>
@@ -295,7 +331,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           </Typography>
           <Grid container spacing={2} alignItems="start">
             <Grid size={{ xs: 12, md: 9 }}>
-              <Stack spacing={3}>
+              <Stack spacing={3} sx={{ pl: 0.5 }}>
                 {subjectField ? (
                   <TextField
                     fullWidth
@@ -487,6 +523,6 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           </Collapse>
         </Stack>
       </Stack>
-    </Paper>
+    </Stack>
   );
 }
