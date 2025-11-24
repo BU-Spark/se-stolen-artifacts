@@ -286,10 +286,10 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
           <Stack spacing={0.5}>
             <Typography component="h1" variant="h4" fontWeight={600}>
-              Artifact Search
+              Refine Artifact Search
             </Typography>
             <Typography color="text.secondary" variant="body2">
-              Look up stolen artifacts by name, collection, or tailor your search with advanced filters.
+              Further tailor your statue match results by adding metadata filters.
             </Typography>
           </Stack>
           <Button type="submit" variant="contained" size="large" sx={{ px: 4, py: 1.5, flexShrink: 0, ml: 2 }}>

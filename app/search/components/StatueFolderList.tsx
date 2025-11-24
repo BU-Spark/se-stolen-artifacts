@@ -101,13 +101,15 @@ export default function StatueFolderList() {
 
   return (
     <Stack sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Stack spacing={0.5} sx={{ flexShrink: 0, mb: 2 }}>
-        <Typography component="h1" variant="h4" fontWeight={600}>
-          Potential Matches
-        </Typography>
-        <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
-          View similar artifacts based on your search criteria or uploaded image.
-        </Typography>
+      <Stack spacing={0} sx={{ flexShrink: 0, pb: 2 }}>
+        <Stack spacing={0.5} sx={{ mb: 2 }}>
+          <Typography component="h1" variant="h4" fontWeight={600}>
+            Potential Matches
+          </Typography>
+          <Typography color="text.secondary" variant="body2">
+            Click on statue folders to expand and view their associated images.
+          </Typography>
+        </Stack>
         <Divider />
       </Stack>
       <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0, pr: 1 }}>
