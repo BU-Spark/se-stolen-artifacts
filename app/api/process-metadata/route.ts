@@ -4,6 +4,7 @@ import type { ProcessMetadataRequest, ProcessMetadataResponse, ArtifactSearchMet
 import { callLLM } from '@/lib/llm/callMetadataLLM';
 import { parseLLMResponse } from '@/lib/llm/parseLLMResponse';
 import { insertArtifactMetadata } from '@/lib/llm/insertArtifactMetadata';
+import { getRateLimitStatus } from '@/lib/rate-limit/uploadRateLimit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,24 @@ export async function POST(request: NextRequest) {
     // Validate processWithAI flag
     if (typeof body.processWithAI !== 'boolean') {
       return NextResponse.json({ error: 'processWithAI must be a boolean value' }, { status: 400 });
+    }
+
+    // Check rate limit if AI processing is requested
+    if (body.processWithAI) {
+      const rateLimitStatus = getRateLimitStatus();
+      if (rateLimitStatus.isLimited) {
+        return NextResponse.json(
+          {
+            success: false,
+            imageId,
+            error:
+              'AI metadata generation is temporarily unavailable due to rate limits. Please use manual metadata entry.',
+            requiresManualEntry: true,
+            rateLimitStatus,
+          },
+          { status: 429 }
+        );
+      }
     }
 
     console.log(`Processing metadata for image ${imageId}... (AI: ${body.processWithAI})`);

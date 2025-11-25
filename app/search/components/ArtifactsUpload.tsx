@@ -1,7 +1,7 @@
 'use client';
 
 import { themeTokens } from '@/app/theme';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 // MUI
 import {
@@ -72,6 +72,15 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   // metadata mode: 'ai' means use descriptions + LLM, 'manual' means user fills structured metadata
   const [metadataMode, setMetadataMode] = useState<'ai' | 'manual'>('ai');
+  // Rate limit status
+  const [aiMetadataAvailable, setAiMetadataAvailable] = useState<boolean>(true);
+  const [rateLimitStatus, setRateLimitStatus] = useState<{
+    current: number;
+    max: number;
+    remaining: number;
+    resetAt: number;
+    isLimited: boolean;
+  } | null>(null);
   const [uploadedArtifact, setUploadedArtifact] = useState<UploadedArtifact | null>(null);
 
   // Manual metadata state (partial, mirrors ManualArtifactMetadata)
@@ -123,6 +132,31 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     fragmentedAtAnkle: false,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check rate limit status on mount
+  useEffect(() => {
+    const checkRateLimit = async () => {
+      try {
+        const response = await fetch('/api/rate-limit-status');
+        if (response.ok) {
+          const data = await response.json();
+          setAiMetadataAvailable(data.aiMetadataAvailable);
+          setRateLimitStatus(data.rateLimitStatus);
+
+          // If AI is not available, switch to manual mode
+          if (!data.aiMetadataAvailable && metadataMode === 'ai') {
+            setMetadataMode('manual');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to check rate limit status:', err);
+        // On error, assume AI is available to avoid blocking users
+      }
+    };
+
+    checkRateLimit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   const generatePreview = async (file: File): Promise<LocalPreview> => {
     const kind = getFileKind(file);
@@ -289,6 +323,16 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           throw new Error(result.error || 'Upload failed');
         }
 
+      if (!response.ok) {
+        // If rate limit exceeded, update status
+        if (response.status === 429 && result.rateLimitStatus) {
+          setRateLimitStatus(result.rateLimitStatus);
+          setAiMetadataAvailable(false);
+          if (metadataMode === 'ai') {
+            setMetadataMode('manual');
+          }
+        }
+        throw new Error(result.error || 'Upload failed');
         uploadResult = {
           id: result.id,
           gcsPath: result.gcsPath,
@@ -300,6 +344,17 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         console.log('Upload successful:', result);
       } else {
         console.log('Reusing existing upload for metadata retry:', uploadResult);
+      }
+
+      // Update rate limit status from response
+      if (result.rateLimitStatus) {
+        setRateLimitStatus(result.rateLimitStatus);
+        setAiMetadataAvailable(!result.rateLimitStatus.isLimited);
+
+        // If AI became unavailable, switch to manual mode
+        if (result.rateLimitStatus.isLimited && metadataMode === 'ai') {
+          setMetadataMode('manual');
+        }
       }
 
       // If we have an image ID, send the descriptions to the metadata processing endpoint
@@ -594,6 +649,8 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                   setManualBasic={setManualBasic}
                   manualAdvanced={manualAdvanced}
                   setManualAdvanced={setManualAdvanced}
+                  aiMetadataAvailable={aiMetadataAvailable}
+                  rateLimitStatus={rateLimitStatus}
                 />
               )}
 
