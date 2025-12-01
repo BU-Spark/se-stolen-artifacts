@@ -51,13 +51,7 @@ export default function Navbar() {
           <Typography variant="body1">Welcome, {user?.firstName || 'User'}</Typography>
           {isAdmin && (
             <>
-              <Button
-                variant="contained"
-                color="primary"
-                onMouseEnter={handleAdminMenuOpen}
-                onClick={handleAdminMenuOpen}
-                sx={{ position: 'relative' }}
-              >
+              <Button variant="contained" color="primary" onClick={handleAdminMenuOpen} sx={{ position: 'relative' }}>
                 Admin
               </Button>
               <Menu
@@ -65,7 +59,6 @@ export default function Navbar() {
                 open={Boolean(adminMenuAnchor)}
                 onClose={handleAdminMenuClose}
                 MenuListProps={{
-                  onMouseLeave: handleAdminMenuClose,
                   'aria-labelledby': 'admin-button',
                 }}
                 anchorOrigin={{

@@ -304,6 +304,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     try {
       // Create FormData to send the file and descriptions
       let uploadResult = uploadedArtifact;
+      let uploadResponseResult: { rateLimitStatus?: unknown } | null = null;
 
       if (!uploadResult) {
         const formData = new FormData();
@@ -318,21 +319,20 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         });
 
         const result = await response.json();
+        uploadResponseResult = result;
 
         if (!response.ok) {
+          // If rate limit exceeded, update status
+          if (response.status === 429 && result.rateLimitStatus) {
+            setRateLimitStatus(result.rateLimitStatus);
+            setAiMetadataAvailable(false);
+            if (metadataMode === 'ai') {
+              setMetadataMode('manual');
+            }
+          }
           throw new Error(result.error || 'Upload failed');
         }
 
-      if (!response.ok) {
-        // If rate limit exceeded, update status
-        if (response.status === 429 && result.rateLimitStatus) {
-          setRateLimitStatus(result.rateLimitStatus);
-          setAiMetadataAvailable(false);
-          if (metadataMode === 'ai') {
-            setMetadataMode('manual');
-          }
-        }
-        throw new Error(result.error || 'Upload failed');
         uploadResult = {
           id: result.id,
           gcsPath: result.gcsPath,
@@ -342,17 +342,15 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         setUploadedArtifact(uploadResult);
 
         console.log('Upload successful:', result);
-      } else {
-        console.log('Reusing existing upload for metadata retry:', uploadResult);
       }
 
       // Update rate limit status from response
-      if (result.rateLimitStatus) {
-        setRateLimitStatus(result.rateLimitStatus);
-        setAiMetadataAvailable(!result.rateLimitStatus.isLimited);
+      if (uploadResponseResult?.rateLimitStatus) {
+        setRateLimitStatus(uploadResponseResult.rateLimitStatus);
+        setAiMetadataAvailable(!uploadResponseResult.rateLimitStatus.isLimited);
 
         // If AI became unavailable, switch to manual mode
-        if (result.rateLimitStatus.isLimited && metadataMode === 'ai') {
+        if (uploadResponseResult.rateLimitStatus.isLimited && metadataMode === 'ai') {
           setMetadataMode('manual');
         }
       }
