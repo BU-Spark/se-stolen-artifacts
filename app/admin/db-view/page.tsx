@@ -122,6 +122,7 @@ export default function AdminDbViewPage() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<RowData | null>(null);
+  const [statueIdFilter, setStatueIdFilter] = useState<string>('');
   const editDialogContentRef = useRef<HTMLDivElement>(null);
   const addDialogContentRef = useRef<HTMLDivElement>(null);
 
@@ -202,6 +203,7 @@ export default function AdminDbViewPage() {
     setSelectedTable(newTable);
     setData([]);
     setForeignKeyData({});
+    setStatueIdFilter(''); // Reset filter when switching tables
   };
 
   const handleEdit = (row: RowData) => {
@@ -357,6 +359,8 @@ export default function AdminDbViewPage() {
       setError(message);
       setDeleteDialogOpen(false);
       setRowToDelete(null);
+      // Scroll to top of page to show error message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -417,6 +421,15 @@ export default function AdminDbViewPage() {
   const getPrimaryKey = () => {
     return selectedTable === 'statues' ? 'statue_id' : selectedTable === 'images' ? 'internal_reference_number' : 'id';
   };
+
+  // Filter data based on statue_id filter for images table
+  const filteredData =
+    selectedTable === 'images' && statueIdFilter
+      ? data.filter((row) => {
+          const statueId = String(row.statue_id ?? '');
+          return statueId === statueIdFilter || statueId.includes(statueIdFilter);
+        })
+      : data;
 
   // Helper function to get image URL - tries public URL first, falls back to API for signed URL
   const getImageUrl = useCallback(async (row: RowData): Promise<string | null> => {
@@ -563,7 +576,7 @@ export default function AdminDbViewPage() {
               View and manage database records. Select a table to view its data.
             </Typography>
 
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
               <FormControl sx={{ minWidth: 200 }}>
                 <InputLabel>Select Table</InputLabel>
                 <Select value={selectedTable} label="Select Table" onChange={(e) => handleTableChange(e.target.value)}>
@@ -574,6 +587,17 @@ export default function AdminDbViewPage() {
                   ))}
                 </Select>
               </FormControl>
+
+              {selectedTable === 'images' && (
+                <TextField
+                  label="Filter by Statue ID"
+                  value={statueIdFilter}
+                  onChange={(e) => setStatueIdFilter(e.target.value)}
+                  placeholder="Enter statue ID"
+                  sx={{ minWidth: 200 }}
+                  size="small"
+                />
+              )}
 
               <Button variant="contained" startIcon={<Add />} onClick={handleAdd} disabled={!selectedTable}>
                 Add Record
@@ -614,16 +638,20 @@ export default function AdminDbViewPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {data.length === 0 ? (
+                  {filteredData.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={columns.length + (selectedTable === 'images' ? 2 : 1)} align="center">
                         <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>
-                          No data available
+                          {data.length === 0
+                            ? 'No data available'
+                            : selectedTable === 'images' && statueIdFilter
+                              ? `No images found for statue ID: ${statueIdFilter}`
+                              : 'No data available'}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    data.map((row, index) => {
+                    filteredData.map((row, index) => {
                       const primaryKey = getPrimaryKey();
                       const rowKey = row[primaryKey] ?? index;
                       const imageId = selectedTable === 'images' ? String(row.internal_reference_number) : null;
