@@ -120,6 +120,8 @@ export default function AdminDbViewPage() {
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState<RowData | null>(null);
   const editDialogContentRef = useRef<HTMLDivElement>(null);
   const addDialogContentRef = useRef<HTMLDivElement>(null);
 
@@ -214,13 +216,18 @@ export default function AdminDbViewPage() {
     setAddDialogOpen(true);
   };
 
-  const handleDelete = async (row: RowData) => {
-    if (!confirm(`Are you sure you want to delete this record?`)) return;
+  const handleDeleteClick = (row: RowData) => {
+    setRowToDelete(row);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!rowToDelete) return;
 
     try {
       const primaryKey =
         selectedTable === 'statues' ? 'statue_id' : selectedTable === 'images' ? 'internal_reference_number' : 'id';
-      const id = row[primaryKey];
+      const id = rowToDelete[primaryKey];
 
       const response = await fetch(`/api/admin/db-view/${selectedTable}?id=${encodeURIComponent(String(id))}`, {
         method: 'DELETE',
@@ -229,14 +236,133 @@ export default function AdminDbViewPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete record');
+        // Parse foreign key constraint errors to provide better messages
+        const errorMessage = result.error || 'Failed to delete record';
+        let userFriendlyMessage = errorMessage;
+
+        if (errorMessage.includes('foreign key constraint')) {
+          const constraintName = errorMessage.match(/constraint "([^"]+)"/)?.[1] || '';
+
+          // Images table constraints
+          if (constraintName.includes('approval_image_id_fkey') || errorMessage.includes('approval')) {
+            userFriendlyMessage = `Cannot delete this image because it is referenced by approval records. Please delete the related approval records first, or use the admin review page to handle this image.`;
+          }
+          // Statues table constraints
+          else if (
+            constraintName.includes('images_statue_id_fkey') ||
+            (errorMessage.includes('images') && selectedTable === 'statues')
+          ) {
+            userFriendlyMessage = `Cannot delete this statue because it has associated images. Please delete the related images first.`;
+          } else if (
+            constraintName.includes('auction_events_statue_id_fkey') ||
+            errorMessage.includes('auction_events')
+          ) {
+            userFriendlyMessage = `Cannot delete this statue because it has associated auction events. Please delete the related auction events first.`;
+          } else if (
+            constraintName.includes('statue_subject_statue_id_fkey') ||
+            errorMessage.includes('statue_subject')
+          ) {
+            userFriendlyMessage = `Cannot delete this statue because it has associated subjects. Please delete the related statue-subject relationships first.`;
+          } else if (
+            constraintName.includes('statue_attributes_statue_id_fkey') ||
+            errorMessage.includes('statue_attributes')
+          ) {
+            userFriendlyMessage = `Cannot delete this statue because it has associated attributes. Please delete the related statue-attribute relationships first.`;
+          } else if (
+            constraintName.includes('statue_current_loc_statue_id_fkey') ||
+            errorMessage.includes('statue_current_loc')
+          ) {
+            userFriendlyMessage = `Cannot delete this statue because it has associated current location records. Please delete the related current location records first.`;
+          }
+          // Locations table constraints
+          else if (
+            constraintName.includes('statues_original_location_id_fkey') ||
+            (errorMessage.includes('statues') && errorMessage.includes('original_location'))
+          ) {
+            userFriendlyMessage = `Cannot delete this location because it is used as an original location for statues. Please update or delete the related statues first.`;
+          } else if (
+            constraintName.includes('statue_current_loc_location_id_fkey') ||
+            (errorMessage.includes('statue_current_loc') && errorMessage.includes('location'))
+          ) {
+            userFriendlyMessage = `Cannot delete this location because it is used in current location records. Please delete the related current location records first.`;
+          } else if (
+            constraintName.includes('images_photograph_location_fkey') ||
+            (errorMessage.includes('images') && errorMessage.includes('photograph_location'))
+          ) {
+            userFriendlyMessage = `Cannot delete this location because it is used as a photograph location for images. Please update or delete the related images first.`;
+          }
+          // Materials table constraints
+          else if (
+            constraintName.includes('statues_material_fkey') ||
+            (errorMessage.includes('statues') && errorMessage.includes('material'))
+          ) {
+            userFriendlyMessage = `Cannot delete this material because it is used by statues. Please update or delete the related statues first.`;
+          }
+          // Names table constraints
+          else if (
+            constraintName.includes('statues_statues_name_fkey') ||
+            (errorMessage.includes('statues') && errorMessage.includes('statues_name'))
+          ) {
+            userFriendlyMessage = `Cannot delete this name because it is used by statues. Please update or delete the related statues first.`;
+          }
+          // Subjects table constraints
+          else if (
+            constraintName.includes('statue_subject_subject_id_fkey') ||
+            (errorMessage.includes('statue_subject') && errorMessage.includes('subject'))
+          ) {
+            userFriendlyMessage = `Cannot delete this subject because it is used in statue-subject relationships. Please delete the related statue-subject records first.`;
+          }
+          // Attributes table constraints
+          else if (
+            constraintName.includes('statue_attributes_attribute_id_fkey') ||
+            (errorMessage.includes('statue_attributes') && errorMessage.includes('attribute'))
+          ) {
+            userFriendlyMessage = `Cannot delete this attribute because it is used in statue-attribute relationships. Please delete the related statue-attribute records first.`;
+          }
+          // Photographers table constraints
+          else if (
+            constraintName.includes('images_photographer_fkey') ||
+            (errorMessage.includes('images') && errorMessage.includes('photographer'))
+          ) {
+            userFriendlyMessage = `Cannot delete this photographer because they have associated images. Please update or delete the related images first.`;
+          }
+          // AuctionInstitutions table constraints
+          else if (
+            constraintName.includes('auction_events_auction_house_id_fkey') ||
+            (errorMessage.includes('auction_events') && errorMessage.includes('auction_house'))
+          ) {
+            userFriendlyMessage = `Cannot delete this auction institution because it has associated auction events. Please delete the related auction events first.`;
+          }
+          // Images table constraints (statue_id)
+          else if (
+            constraintName.includes('images_statue_id_fkey') ||
+            (errorMessage.includes('images') && errorMessage.includes('statue_id'))
+          ) {
+            userFriendlyMessage = `Cannot delete this statue because it has associated images. Please delete the related images first.`;
+          }
+          // Generic fallback
+          else {
+            userFriendlyMessage = `Cannot delete this record because it is referenced by other records in the database. Please delete the related records first.`;
+          }
+        }
+
+        throw new Error(userFriendlyMessage);
       }
 
+      setDeleteDialogOpen(false);
+      setRowToDelete(null);
       await fetchData();
     } catch (deleteError: unknown) {
       const message = deleteError instanceof Error ? deleteError.message : 'Failed to delete record';
       setError(message);
+      setDeleteDialogOpen(false);
+      setRowToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setRowToDelete(null);
   };
 
   const handleSave = async (isEdit: boolean) => {
@@ -645,7 +771,7 @@ export default function AdminDbViewPage() {
                               <IconButton size="small" color="primary" onClick={() => handleEdit(row)}>
                                 <Edit fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteClick(row)}>
                                 <Delete fontSize="small" />
                               </IconButton>
                             </Stack>
@@ -795,6 +921,34 @@ export default function AdminDbViewPage() {
             </>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel} maxWidth="sm" fullWidth>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete{' '}
+            {rowToDelete && (
+              <strong>
+                {selectedTable === 'statues'
+                  ? `statue ${rowToDelete.statue_id}`
+                  : selectedTable === 'images'
+                    ? `image ${rowToDelete.internal_reference_number}`
+                    : `record ${rowToDelete[getPrimaryKey()]}`}
+              </strong>
+            )}
+            ?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="inherit">
+            No
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Yes
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

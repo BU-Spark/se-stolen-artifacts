@@ -56,6 +56,14 @@ type UploadedArtifact = {
   publicUrl?: string;
 };
 
+type RateLimitStatus = {
+  current: number;
+  max: number;
+  remaining: number;
+  resetAt: number;
+  isLimited: boolean;
+};
+
 export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<LocalPreview | null>(null);
@@ -74,13 +82,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [metadataMode, setMetadataMode] = useState<'ai' | 'manual'>('ai');
   // Rate limit status
   const [aiMetadataAvailable, setAiMetadataAvailable] = useState<boolean>(true);
-  const [rateLimitStatus, setRateLimitStatus] = useState<{
-    current: number;
-    max: number;
-    remaining: number;
-    resetAt: number;
-    isLimited: boolean;
-  } | null>(null);
+  const [rateLimitStatus, setRateLimitStatus] = useState<RateLimitStatus | null>(null);
   const [uploadedArtifact, setUploadedArtifact] = useState<UploadedArtifact | null>(null);
 
   // Manual metadata state (partial, mirrors ManualArtifactMetadata)
@@ -304,7 +306,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     try {
       // Create FormData to send the file and descriptions
       let uploadResult = uploadedArtifact;
-      let uploadResponseResult: { rateLimitStatus?: unknown } | null = null;
+      let uploadResponseResult: { rateLimitStatus?: RateLimitStatus } | null = null;
 
       if (!uploadResult) {
         const formData = new FormData();
