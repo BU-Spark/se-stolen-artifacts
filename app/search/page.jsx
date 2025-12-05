@@ -1,22 +1,72 @@
 'use client';
 
-// hooks
-import { useState } from 'react';
+import { Box, Stack } from '@mui/material';
 
-// components
-import { Container } from '@mui/material';
-
-// custom components
-import ArtifactsUpload from '@/app/search/components/ArtifactsUpload';
 import SearchForm from '@/app/search/components/SearchForm';
+import StatueFolderList from '@/app/search/components/StatueFolderList';
 
 export default function SearchPage() {
-  const [showSearch, setShowSearch] = useState(false);
-
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: 6 }}>
-      <ArtifactsUpload onUploadComplete={() => setShowSearch(true)} />
-      <SearchForm show={showSearch} />
-    </Container>
+    <Box
+      sx={{
+        position: 'relative',
+        left: '50%',
+        right: '50%',
+        marginLeft: '-50vw',
+        marginRight: '-50vw',
+        width: '100vw',
+        px: 4,
+        py: 3,
+      }}
+    >
+      <Stack spacing={3} sx={{ maxWidth: '100%' }}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ height: 'calc(100vh - 140px)', minHeight: { xs: 500, md: 600, lg: 700 }, width: '100%' }}
+        >
+          <Box
+            sx={{
+              flex: '0 0 40%',
+              minWidth: 0,
+              backgroundColor: 'background.paper',
+              borderRadius: 2,
+              p: 3,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <SearchForm show />
+          </Box>
+          <Box
+            sx={{
+              flex: '0 0 60%',
+              minWidth: 0,
+              backgroundColor: 'background.paper',
+              borderRadius: 2,
+              p: 3,
+              height: '100%',
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                },
+              },
+            }}
+          >
+            <StatueFolderList />
+          </Box>
+        </Stack>
+      </Stack>
+    </Box>
   );
 }

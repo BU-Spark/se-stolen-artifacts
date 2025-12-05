@@ -8,17 +8,17 @@ import {
   Divider,
   FormControlLabel,
   Grid,
-  Paper,
   Slider,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import CustomTag from '@/app/search/components/CustomTag';
 import { BASIC_FIELDS, ADVANCED_PARAMS } from '@/app/search/constants';
 import { getInitialBasicState, normalizeLimbList } from '@/app/search/utils';
+import type { AdvancedSearchFilters, MainSearchFilters, StatueSearchFilters } from '@/lib/db/statueSearchQueryBuilder';
 
 type AdvancedParamDef = {
   id: string;
@@ -32,28 +32,35 @@ type AdvancedSelection = AdvancedParamDef & {
   value: string | number | boolean;
 };
 
-type SearchPayload = {
-  query: string;
-  basics: Record<string, unknown>;
-  advanced: Array<{
-    id: string;
-    value: string | number | boolean | string[];
-  }>;
+const BASIC_TO_MAIN_FIELD_MAP: Partial<Record<string, keyof MainSearchFilters>> = {
+  subject: 'subject',
+  dealerName: 'dealer',
+  suspectedCurrentLocation: 'suspectedCurrentLocation',
+  artifactTitle: 'titleOfObject',
+  photographLocation: 'photographLocation',
 };
+
+const YEAR_FIELD_MAP: Record<string, keyof MainSearchFilters> = {
+  firstAppearanceYear: 'yearFirstKnownAppearance',
+  firstAppearanceYearOutsideCambodia: 'yearFirstKnownAppearanceOutsideCambodia',
+};
+
+const PRE_1900_END_YEAR = 1899;
+type YearRangeFilter = { start?: number; end?: number };
 
 type SearchFormProps = {
   show: boolean;
-  onSubmit?: (payload: SearchPayload) => void;
+  onSubmit?: (payload: StatueSearchFilters) => void;
 };
 
 export default function SearchForm({ show, onSubmit }: SearchFormProps) {
-  const [query] = useState('');
   const [basicValues, setBasicValues] = useState(getInitialBasicState);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [advancedSelections, setAdvancedSelections] = useState<AdvancedSelection[]>([]);
   const [activeParamId, setActiveParamId] = useState<string | null>(null);
   const [advancedInputValue, setAdvancedInputValue] = useState('');
   const autocompleteInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const activeParam = useMemo(
     () => advancedSelections.find((selection) => selection.id === activeParamId) ?? null,
@@ -74,6 +81,18 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
   const toggleAdvanced = () => {
     setIsAdvancedOpen((prev) => !prev);
   };
+
+  // Auto-scroll to bottom when advanced section opens or selections change
+  useEffect(() => {
+    if (isAdvancedOpen && scrollContainerRef.current) {
+      setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }, 300);
+    }
+  }, [isAdvancedOpen, advancedSelections]);
 
   const handleBasicChange = (fieldId: string, value: string | number | boolean | number[]) => {
     setBasicValues((prev) => ({
@@ -215,87 +234,201 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
     focusAdvancedInput();
   };
 
+  const buildMainFilters = (): MainSearchFilters => {
+    const main: MainSearchFilters = {};
+
+    Object.entries(BASIC_TO_MAIN_FIELD_MAP).forEach(([fieldId, targetKey]) => {
+      if (!targetKey) return;
+      const rawValue = basicValues[fieldId];
+      if (typeof rawValue !== 'string') return;
+      const trimmed = rawValue.trim();
+      if (trimmed.length === 0) return;
+      (main[targetKey as keyof MainSearchFilters] as string | null | undefined) = trimmed;
+    });
+
+    const repatriatedValue = basicValues.repatriated;
+    if (typeof repatriatedValue === 'boolean' && repatriatedValue) {
+      main.repatriated = true;
+    }
+
+    Object.entries(YEAR_FIELD_MAP).forEach(([fieldId, targetKey]) => {
+      const sliderField = BASIC_FIELDS.find((field) => field.id === fieldId);
+      if (!sliderField) return;
+
+      if (pre1900[fieldId]) {
+        (main[targetKey] as { end?: number }) = { end: PRE_1900_END_YEAR };
+        return;
+      }
+
+      const rawValue = basicValues[fieldId];
+      if (!Array.isArray(rawValue)) {
+        return;
+      }
+
+      const [start, end] = rawValue as number[];
+      const defaultRange = Array.isArray(sliderField.defaultValue)
+        ? sliderField.defaultValue
+        : [sliderField.min ?? 0, sliderField.max ?? 0];
+      const [defaultStart, defaultEnd] = defaultRange as number[];
+
+      if (start === defaultStart && end === defaultEnd) {
+        return;
+      }
+
+      const range: YearRangeFilter = {};
+      if (start !== defaultStart) {
+        range.start = start;
+      }
+      if (end !== defaultEnd) {
+        range.end = end;
+      }
+
+      if (Object.keys(range).length > 0) {
+        (main[targetKey as keyof MainSearchFilters] as YearRangeFilter | undefined) = range;
+      }
+    });
+
+    return main;
+  };
+
+  const buildAdvancedFilters = (): AdvancedSearchFilters => {
+    const advanced: AdvancedSearchFilters = {};
+
+    advancedSelections.forEach((selection) => {
+      switch (selection.id) {
+        case 'imageSource': {
+          if (typeof selection.value !== 'string') return;
+          const trimmed = selection.value.trim();
+          if (trimmed.length === 0) return;
+          advanced.imageSource = trimmed;
+          break;
+        }
+        case 'material': {
+          if (typeof selection.value !== 'string') return;
+          const trimmed = selection.value.trim();
+          if (trimmed.length === 0) return;
+          advanced.material = trimmed;
+          break;
+        }
+        case 'basePresent':
+          advanced.basePresent = Boolean(selection.value);
+          break;
+        case 'hasInscription':
+          advanced.inscription = Boolean(selection.value);
+          break;
+        case 'hasMultipleHeads':
+          advanced.multipleHeads = Boolean(selection.value);
+          break;
+        case 'fragmentary':
+          advanced.fragmentary = Boolean(selection.value);
+          break;
+        case 'armNumber': {
+          const numericValue =
+            typeof selection.value === 'number' ? selection.value : Number(String(selection.value).trim());
+          if (!Number.isNaN(numericValue)) {
+            advanced.numberOfArms = numericValue;
+          }
+          break;
+        }
+        case 'limbsPresent': {
+          const normalized = normalizeLimbList(String(selection.value ?? ''));
+          if (normalized.length > 0) {
+            advanced.limbsPresent = normalized;
+          }
+          break;
+        }
+        case 'partsFragmented': {
+          const normalized = normalizeLimbList(String(selection.value ?? ''));
+          if (normalized.length > 0) {
+            advanced.partsFragmented = normalized;
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    });
+
+    return advanced;
+  };
+
+  const hasFilterEntries = (obj: object) => Object.keys(obj).length > 0;
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // prevents page reload
 
-    const hasBasic =
-      Object.values(pre1900).some((val) => val) ||
-      Object.entries(basicValues).some(([key, value]) => {
-        const field = BASIC_FIELDS.find((f) => f.id === key);
-        if (!field) return false;
-        if (field.type === 'checkbox') return Boolean(value);
-        if (field.type === 'slider') {
-          const sliderValue = Array.isArray(value) ? value : field.defaultValue || [];
-          return (sliderValue as number[])[0] !== field.min || (sliderValue as number[])[1] !== field.max;
-        }
-        return String(value ?? '').trim() !== '';
-      });
+    const mainFilters = buildMainFilters();
+    const advancedFilters = buildAdvancedFilters();
+    const filters: StatueSearchFilters = {};
 
-    if (!hasBasic) {
-      alert('Must fill out at least one parameter before searching!');
-      return;
+    if (hasFilterEntries(mainFilters)) {
+      filters.main = mainFilters;
     }
 
-    const payload = {
-      query,
-      basics: {
-        ...basicValues,
-        pre1900,
-      },
-      advanced: advancedSelections.map((selection) => {
-        if (selection.id === 'limbsPresent') {
-          return { id: selection.id, value: normalizeLimbList(String(selection.value)) };
-        }
-
-        return {
-          id: selection.id,
-          value:
-            selection.type === 'binary'
-              ? Boolean(selection.value)
-              : typeof selection.value === 'string'
-                ? selection.value
-                : '',
-        };
-      }),
-    };
+    if (hasFilterEntries(advancedFilters)) {
+      filters.advanced = advancedFilters;
+    }
 
     if (onSubmit) {
-      onSubmit(payload);
+      onSubmit(filters);
     } else {
-      console.log('Search payload', payload);
+      console.log('Search payload', filters);
     }
   };
 
   if (!show) return null;
 
   return (
-    <Paper component="form" elevation={3} onSubmit={handleSubmit} sx={{ p: { xs: 3, md: 4 } }}>
-      <Stack spacing={4}>
-        <Grid container alignItems="center" justifyContent="space-between">
-          <Grid size={4}>
-            <Typography component="h1" variant="h4" fontWeight={600} gutterBottom>
-              Artifact Search
+    <Stack component="form" onSubmit={handleSubmit} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Stack spacing={0} sx={{ flex: '0 0 auto', pb: 2 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+          <Stack spacing={0.5}>
+            <Typography component="h1" variant="h4" fontWeight={600}>
+              Refine Artifact Search
             </Typography>
-            <Typography color="text.secondary">
-              Look up stolen artifacts by name, collection, or tailor your search with advanced filters.
+            <Typography color="text.secondary" variant="body2">
+              Further tailor your statue match results by adding metadata filters.
             </Typography>
-          </Grid>
-          <Grid>
-            <Button type="submit" variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>
-              Search
-            </Button>
-          </Grid>
-        </Grid>
+          </Stack>
+          <Button type="submit" variant="contained" size="large" sx={{ px: 4, py: 1.5, flexShrink: 0, ml: 2 }}>
+            Search
+          </Button>
+        </Stack>
+      </Stack>
+      <Divider />
 
-        <Divider />
-
+      <Stack
+        ref={scrollContainerRef}
+        spacing={3}
+        divider={<Divider flexItem />}
+        sx={{
+          flex: '1 1 auto',
+          overflow: 'auto',
+          minHeight: 0,
+          pr: 1,
+          pt: 3,
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            },
+          },
+        }}
+      >
         <Stack spacing={3}>
           <Typography variant="h6" fontWeight={600}>
             Main Parameters
           </Typography>
           <Grid container spacing={2} alignItems="start">
             <Grid size={{ xs: 12, md: 9 }}>
-              <Stack spacing={3}>
+              <Stack spacing={3} sx={{ pl: 0.5 }}>
                 {subjectField ? (
                   <TextField
                     fullWidth
@@ -410,8 +543,6 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           </Grid>
         </Stack>
 
-        <Divider />
-
         <Stack spacing={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="h6" fontWeight={600}>
@@ -434,7 +565,7 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           </Stack>
 
           <Collapse in={isAdvancedOpen} timeout={250} unmountOnExit>
-            <Stack spacing={3} sx={{ mt: 1 }}>
+            <Stack spacing={3} sx={{ mt: 1, pl: 0.5 }}>
               <Autocomplete<AdvancedSelection | AdvancedParamDef, true, false, true>
                 multiple
                 freeSolo
@@ -468,6 +599,11 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
                     }
                     inputRef={autocompleteInputRef}
                     onKeyDown={handleAdvancedInputKeyDown}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        boxShadow: 'none',
+                      },
+                    }}
                   />
                 )}
               />
@@ -487,6 +623,6 @@ export default function SearchForm({ show, onSubmit }: SearchFormProps) {
           </Collapse>
         </Stack>
       </Stack>
-    </Paper>
+    </Stack>
   );
 }

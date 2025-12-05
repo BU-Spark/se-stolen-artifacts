@@ -694,7 +694,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
 
               {/* Success Message and Upload Another Button */}
               {uploadComplete && (
-                <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+                <Stack spacing={1.25}>
                   <Typography
                     variant="body2"
                     color="success.main"
@@ -703,9 +703,9 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                     <CheckCircle fontSize="small" />
                     Image uploaded successfully and sent for review
                   </Typography>
-                  <Button variant="outlined" onClick={handleClear}>
-                    Upload Another
-                  </Button>
+                  <Typography variant="body2" color="text.secondary">
+                    Redirecting to search to upload related images...
+                  </Typography>
                 </Stack>
               )}
             </Stack>
