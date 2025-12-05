@@ -49,6 +49,14 @@ type ArtifactsUploadProps = {
 
 const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 
+type RateLimitStatus = {
+  current: number;
+  max: number;
+  remaining: number;
+  resetAt: number;
+  isLimited: boolean;
+};
+
 type UploadedArtifact = {
   id: string;
   gcsPath: string;
@@ -74,13 +82,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
   const [metadataMode, setMetadataMode] = useState<'ai' | 'manual'>('ai');
   // Rate limit status
   const [aiMetadataAvailable, setAiMetadataAvailable] = useState<boolean>(true);
-  const [rateLimitStatus, setRateLimitStatus] = useState<{
-    current: number;
-    max: number;
-    remaining: number;
-    resetAt: number;
-    isLimited: boolean;
-  } | null>(null);
+  const [rateLimitStatus, setRateLimitStatus] = useState<RateLimitStatus | null>(null);
   const [uploadedArtifact, setUploadedArtifact] = useState<UploadedArtifact | null>(null);
 
   // Manual metadata state (partial, mirrors ManualArtifactMetadata)
@@ -304,6 +306,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     try {
       // Create FormData to send the file and descriptions
       let uploadResult = uploadedArtifact;
+      let uploadResponseData: (UploadedArtifact & { rateLimitStatus?: RateLimitStatus | null }) | null = null;
 
       if (!uploadResult) {
         const formData = new FormData();
@@ -320,19 +323,18 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         const result = await response.json();
 
         if (!response.ok) {
+          // If rate limit exceeded, update status before throwing
+          if (response.status === 429 && result.rateLimitStatus) {
+            setRateLimitStatus(result.rateLimitStatus);
+            setAiMetadataAvailable(false);
+            if (metadataMode === 'ai') {
+              setMetadataMode('manual');
+            }
+          }
           throw new Error(result.error || 'Upload failed');
         }
 
-      if (!response.ok) {
-        // If rate limit exceeded, update status
-        if (response.status === 429 && result.rateLimitStatus) {
-          setRateLimitStatus(result.rateLimitStatus);
-          setAiMetadataAvailable(false);
-          if (metadataMode === 'ai') {
-            setMetadataMode('manual');
-          }
-        }
-        throw new Error(result.error || 'Upload failed');
+        uploadResponseData = result;
         uploadResult = {
           id: result.id,
           gcsPath: result.gcsPath,
@@ -346,13 +348,13 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         console.log('Reusing existing upload for metadata retry:', uploadResult);
       }
 
-      // Update rate limit status from response
-      if (result.rateLimitStatus) {
-        setRateLimitStatus(result.rateLimitStatus);
-        setAiMetadataAvailable(!result.rateLimitStatus.isLimited);
+      // Update rate limit status from the latest API response
+      if (uploadResponseData?.rateLimitStatus) {
+        setRateLimitStatus(uploadResponseData.rateLimitStatus);
+        setAiMetadataAvailable(!uploadResponseData.rateLimitStatus.isLimited);
 
         // If AI became unavailable, switch to manual mode
-        if (result.rateLimitStatus.isLimited && metadataMode === 'ai') {
+        if (uploadResponseData.rateLimitStatus.isLimited && metadataMode === 'ai') {
           setMetadataMode('manual');
         }
       }
