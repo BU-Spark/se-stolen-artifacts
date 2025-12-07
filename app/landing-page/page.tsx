@@ -3,7 +3,7 @@
 import type { NextPage } from 'next';
 import Link from 'next/link';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { Search } from '@mui/icons-material';
+import { CloudUpload } from '@mui/icons-material';
 import MuiLink from '@mui/material/Link';
 import { alpha } from '@mui/material/styles';
 
@@ -119,8 +119,8 @@ const LandingPage: NextPage = () => {
                 to read more about the design of this tool, the project&apos;s aims and objectives, and the problem of
                 looting and how we hope to address it.
               </Typography>
-              <Button variant="contained" size="large" component={Link} href="/search" endIcon={<Search />}>
-                Explore the Database
+              <Button variant="contained" size="large" component={Link} href="/upload" endIcon={<CloudUpload />}>
+                Contribute to the Database
               </Button>
             </Stack>
           </Box>

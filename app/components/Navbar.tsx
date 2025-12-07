@@ -20,15 +20,23 @@ export default function Navbar() {
   let isAdmin = false;
   if (
     pathname === '/search' ||
+    pathname === '/upload' ||
     pathname === '/admin/admin-review' ||
     pathname === '/admin/db-view' ||
     pathname === '/signin' ||
     pathname === '/signup'
   ) {
     rightContent = (
-      <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
-        Back to Home
-      </Button>
+      <Stack direction="row" spacing={2}>
+        {pathname === '/search' && (
+          <Button variant="outlined" component={Link} href="/upload">
+            Upload Another Image
+          </Button>
+        )}
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} component={Link} href="/">
+          Back to Home
+        </Button>
+      </Stack>
     );
   } else if (pathname === '/' || pathname === '/landing-page') {
     if (isLoaded && isSignedIn) {
