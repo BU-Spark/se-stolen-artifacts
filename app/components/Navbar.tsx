@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
+import { useState } from 'react';
+import { AppBar, Toolbar, Typography, Button, Stack, Menu, MenuItem } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -12,6 +13,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Determine which buttons to show based on the current path and auth state
   let rightContent = null;
@@ -20,6 +22,7 @@ export default function Navbar() {
     pathname === '/search' ||
     pathname === '/upload' ||
     pathname === '/admin/admin-review' ||
+    pathname === '/admin/db-view' ||
     pathname === '/signin' ||
     pathname === '/signup'
   ) {
@@ -43,13 +46,46 @@ export default function Navbar() {
     if (!isLoaded) {
       rightContent = null;
     } else if (isSignedIn) {
+      const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setAdminMenuAnchor(event.currentTarget);
+      };
+
+      const handleAdminMenuClose = () => {
+        setAdminMenuAnchor(null);
+      };
+
       rightContent = (
         <Stack direction="row" spacing={2} alignItems="center">
           <Typography variant="body1">Welcome, {user?.firstName || 'User'}</Typography>
           {isAdmin && (
-            <Button variant="contained" color="primary" component={Link} href="/admin/admin-review">
-              Pending Images
-            </Button>
+            <>
+              <Button variant="contained" color="primary" onClick={handleAdminMenuOpen} sx={{ position: 'relative' }}>
+                Admin
+              </Button>
+              <Menu
+                anchorEl={adminMenuAnchor}
+                open={Boolean(adminMenuAnchor)}
+                onClose={handleAdminMenuClose}
+                MenuListProps={{
+                  'aria-labelledby': 'admin-button',
+                }}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'left',
+                }}
+              >
+                <MenuItem component={Link} href="/admin/admin-review" onClick={handleAdminMenuClose}>
+                  Pending Images
+                </MenuItem>
+                <MenuItem component={Link} href="/admin/db-view" onClick={handleAdminMenuClose}>
+                  Admin DB View
+                </MenuItem>
+              </Menu>
+            </>
           )}
           <Button variant="outlined" onClick={() => signOut({ redirectUrl: '/' })}>
             Log out

@@ -1,8 +1,8 @@
-type AllowedAction = 'read' | 'create' | 'update' | 'delete';
-type DeleteRule = 'hard-delete' | 'soft-delete' | 'set-null' | 'cascade';
-type CompositeKey = string[];
+export type AllowedAction = 'read' | 'create' | 'update' | 'delete';
+export type DeleteRule = 'hard-delete' | 'soft-delete' | 'set-null' | 'cascade';
+export type CompositeKey = string[];
 
-interface TableConfig {
+export interface TableConfig {
   primaryKey: string | CompositeKey; // The column identifying rows (e.g., "id") or a composite key (e.g., "")
   allowedActions: AllowedAction[]; // Whitelist of what the API can do
   deleteRule: DeleteRule; // Strategy for handling deletions
