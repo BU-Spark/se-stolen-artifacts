@@ -113,6 +113,10 @@ type EnsureStatueParams = {
   summary: string | null;
 };
 
+/**
+ * Promotes a pending upload into the normalized statues/images schema and moves
+ * its asset from the pending bucket to the approved bucket.
+ */
 export async function POST(request: NextRequest) {
   try {
     const { imageId, folderId } = (await request.json()) as {
@@ -189,6 +193,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * Loads the temp_artifact_metadata row for a given Supabase image_id.
+ * Throws when the record is missing or the query errors out.
+ */
 async function fetchTempRecord(imageId: string): Promise<TempArtifactRow> {
   const { data, error } = await supabase.from(TEMP_TABLE).select('*').eq('image_id', imageId).maybeSingle();
 
@@ -203,6 +211,10 @@ async function fetchTempRecord(imageId: string): Promise<TempArtifactRow> {
   return data as TempArtifactRow;
 }
 
+/**
+ * Retrieves auxiliary upload details (gcs path, descriptions, etc.) for an
+ * image, preferring image_id lookups and falling back to internal references.
+ */
 async function fetchUploadRecord(imageId: string): Promise<UploadLogRow | null> {
   const columns =
     'internal_reference_number, gcs_path, short_description, long_description, misc_information, ai_generated, image_source';
@@ -235,6 +247,10 @@ async function fetchUploadRecord(imageId: string): Promise<UploadLogRow | null> 
   return (byInternalReference.data as UploadLogRow) ?? null;
 }
 
+/**
+ * Ensures there is a destination statue. Updates the provided folder when
+ * folderId exists, otherwise creates a new statue from pending metadata.
+ */
 async function ensureStatue(params: EnsureStatueParams): Promise<number> {
   const { folderId, tempRecord, nameId, materialId, description, summary } = params;
 
@@ -270,6 +286,7 @@ async function ensureStatue(params: EnsureStatueParams): Promise<number> {
   return primaryKey;
 }
 
+/** Adds the statue_subject link when it does not already exist. */
 async function ensureStatueSubject(statueId: number, subjectId: number) {
   const { data, error } = await supabase
     .from('statue_subject')
@@ -290,6 +307,7 @@ async function ensureStatueSubject(statueId: number, subjectId: number) {
   }
 }
 
+/** Ensures the statue_current_loc relation exists for the provided location. */
 async function ensureCurrentLocation(statueId: number, locationId: number) {
   const { data, error } = await supabase
     .from('statue_current_loc')
@@ -310,6 +328,10 @@ async function ensureCurrentLocation(statueId: number, locationId: number) {
   }
 }
 
+/**
+ * Mirrors boolean attribute flags from the temp record into statue_attributes,
+ * creating lookup rows when a label does not yet exist.
+ */
 async function syncAttributes(statueId: number, tempRecord: TempArtifactRow) {
   for (const [field, label] of Object.entries(ATTRIBUTE_FIELD_MAP) as Array<[AttributeFlagKey, string]>) {
     const flagValue = tempRecord[field];
@@ -342,6 +364,10 @@ async function syncAttributes(statueId: number, tempRecord: TempArtifactRow) {
   }
 }
 
+/**
+ * Upserts the image row for the statue, copying the asset into the approved
+ * bucket when necessary and returning the persisted record plus gcs path.
+ */
 async function upsertImage(params: {
   statueId: number;
   referenceNumber: string;
@@ -390,28 +416,27 @@ async function upsertImage(params: {
   return { record, gcsPath: approvedPath ?? null };
 }
 
+/**
+ * Updates the temp row status to admin_approved, stores the approved gcs path,
+ * and keeps the metadata row for future auditing instead of deleting it.
+ */
 async function markUploadComplete(referenceNumber: string, tempRowId: string, approvedPath: string | null) {
   const updatePayload: Record<string, unknown> = { status: 'admin_approved' };
   if (approvedPath) {
     updatePayload.gcs_path = approvedPath;
   }
 
-  const { error: statusError } = await supabase
-    .from(UPLOAD_LOG_TABLE)
-    .update(updatePayload)
-    .eq('internal_reference_number', referenceNumber);
+  const { error: statusError } = await supabase.from(UPLOAD_LOG_TABLE).update(updatePayload).eq('id', tempRowId);
 
   if (statusError) {
     throw new Error(`Failed to update approval status for ${referenceNumber}: ${statusError.message}`);
   }
-
-  const { error: deleteError } = await supabase.from(TEMP_TABLE).delete().eq('id', tempRowId);
-
-  if (deleteError) {
-    throw new Error(`Failed to remove temporary metadata for ${referenceNumber}: ${deleteError.message}`);
-  }
 }
 
+/**
+ * Returns the ID for a lookup-table value, creating the row if it does not
+ * exist. Blank strings short-circuit to null.
+ */
 async function ensureLookup(table: LookupTable, column: string, value?: string | null): Promise<number | null> {
   if (!value) {
     return null;
@@ -452,6 +477,7 @@ async function ensureLookup(table: LookupTable, column: string, value?: string |
   return Number.isNaN(numericId) ? null : numericId;
 }
 
+/** Sanitizes payloads and forwards them to the shared create handler. */
 async function crudCreate<T extends CrudTable>(table: T, data: Record<string, unknown>) {
   const payload = cleansePayload(data);
   if (Object.keys(payload).length === 0) {
@@ -467,6 +493,7 @@ async function crudCreate<T extends CrudTable>(table: T, data: Record<string, un
   return result.record;
 }
 
+/** Runs updates via handleUpdate, returning null when nothing needs to change. */
 async function crudUpdate<T extends CrudTable>(table: T, id: string | number, data: Record<string, unknown>) {
   const payload = cleansePayload(data);
   if (Object.keys(payload).length === 0) {
@@ -483,10 +510,12 @@ async function crudUpdate<T extends CrudTable>(table: T, id: string | number, da
   return result.record;
 }
 
+/** Strips undefined values to avoid accidentally overwriting columns with nulls. */
 function cleansePayload(payload: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
 }
 
+/** Guards update paths by verifying the target statue exists. */
 async function assertStatueExists(statueId: number) {
   const { data, error } = await supabase.from('statues').select('statue_id').eq('statue_id', statueId).maybeSingle();
 
@@ -499,6 +528,7 @@ async function assertStatueExists(statueId: number) {
   }
 }
 
+/** Converts folderId input into a numeric statue_id, throwing on invalid values. */
 function parseStatueId(value: string | number): number {
   const parsed = typeof value === 'string' ? Number.parseInt(value, 10) : value;
   if (!Number.isFinite(parsed)) {
@@ -507,6 +537,7 @@ function parseStatueId(value: string | number): number {
   return parsed;
 }
 
+/** Pulls the configured primary key field out of a CRUD handler response. */
 function extractPrimaryKeyValue(table: CrudTable, record: Record<string, unknown>) {
   const config = TABLE_REGISTRY[table];
   if (Array.isArray(config.primaryKey)) {
@@ -515,6 +546,7 @@ function extractPrimaryKeyValue(table: CrudTable, record: Record<string, unknown
   return record?.[config.primaryKey as string];
 }
 
+/** Converts an approved storage path into a publicly accessible URL. */
 function buildPublicImageUrl(gcsPath: string | null) {
   if (!gcsPath) {
     return undefined;
@@ -529,6 +561,10 @@ function buildPublicImageUrl(gcsPath: string | null) {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketName}/${path}`;
 }
 
+/**
+ * Copies the asset into the approved bucket (deleting the pending copy when
+ * possible) and returns the canonical approved path.
+ */
 async function ensureApprovedStoragePath(referenceNumber: string, rawPath: string | null) {
   if (!rawPath) {
     return null;
@@ -575,6 +611,7 @@ async function ensureApprovedStoragePath(referenceNumber: string, rawPath: strin
   return `${APPROVED_STORAGE_BUCKET}/${targetKey}`;
 }
 
+/** Splits a raw storage path into { bucket, path } while tolerating prefixes. */
 function parseStoragePath(rawPath: string): { bucket: string | null; path: string } {
   const trimmed = rawPath.trim().replace(/^\/+/, '');
   const parts = trimmed.split('/').filter(Boolean);
@@ -593,6 +630,10 @@ function parseStoragePath(rawPath: string): { bucket: string | null; path: strin
   };
 }
 
+/**
+ * Generates a deterministic object key under the approved bucket using the
+ * internal reference number and original filename.
+ */
 function buildApprovedStorageKey(referenceNumber: string, originalPath: string) {
   const sanitizedRef = referenceNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
   const fileName = originalPath.split('/').filter(Boolean).pop() ?? `${sanitizedRef}.jpg`;
