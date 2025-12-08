@@ -15,3 +15,17 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export type { PrismaClient } from '@prisma/client';
+
+async function testConnection() {
+  try {
+    await prisma.$connect();
+    console.log('Successfully connected to the database.');
+  } catch (error) {
+    console.error('Failed to connect to the database:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// Test the connection when this file is loaded
+testConnection();

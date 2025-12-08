@@ -39,6 +39,13 @@ export default function ManualMetadataForm({
             fullWidth
           />
           <TextField
+            label="Subject"
+            value={manualBasic.subject || ''}
+            onChange={(e) => setManualBasic((s) => ({ ...s, subject: e.target.value }))}
+            size="small"
+            fullWidth
+          />
+          <TextField
             label="Suspected Current Location"
             value={manualBasic.suspectedCurrentLocation || ''}
             onChange={(e) => setManualBasic((s) => ({ ...s, suspectedCurrentLocation: e.target.value }))}
@@ -99,7 +106,7 @@ export default function ManualMetadataForm({
             fullWidth
           />
           <TextField
-            label="Material Subject"
+            label="Material"
             value={manualAdvanced.material || ''}
             onChange={(e) => setManualAdvanced((s) => ({ ...s, material: e.target.value }))}
             size="small"

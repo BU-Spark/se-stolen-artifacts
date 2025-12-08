@@ -7,7 +7,8 @@ export type PendingImageMetadata = {
   title_of_object?: string;
   photograph_location?: string;
   dealer_gallery_collector_name?: string;
-  material_subject?: string;
+  subject?: string;
+  material?: string;
 
   // Boolean fields
   repatriated?: boolean;
@@ -51,6 +52,8 @@ export type PendingImage = {
   title?: string | null;
   description?: string | null;
   short_description?: string | null;
+  long_description?: string | null;
+  created_at?: string | null;
   ai_generated?: boolean | null;
   metadata?: PendingImageMetadata;
 };
