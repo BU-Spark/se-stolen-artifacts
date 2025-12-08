@@ -31,7 +31,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Determine primary key for ordering
     const orderBy = table === 'statues' ? 'statue_id' : table === 'images' ? 'internal_reference_number' : 'id';
 
-    const { data, error } = await supabase.from(table).select('*').order(orderBy, { ascending: true });
+    // For images table, only show approved images (those in approved_images bucket)
+    let query = supabase.from(table).select('*');
+
+    if (table === 'images') {
+      const APPROVED_BUCKET = 'approved_images';
+      // Filter to only show images where image_gcs starts with approved_images/
+      query = query.like('image_gcs', `${APPROVED_BUCKET}/%`);
+    }
+
+    const { data, error } = await query.order(orderBy, { ascending: true });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

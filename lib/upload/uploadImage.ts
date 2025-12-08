@@ -20,13 +20,20 @@ export async function handleUploadImage({ file }: { file: File }) {
   const filePath = `uploads/${newImageId}.${fileExtension}`;
 
   try {
+    console.log('Uploading to bucket:', PENDING_STORAGE_BUCKET);
+    console.log('File path:', filePath);
+    console.log('File size:', file.size, 'bytes');
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(PENDING_STORAGE_BUCKET)
       .upload(filePath, file);
 
     if (uploadError) {
+      console.error('Upload error:', uploadError);
       throw uploadError;
     }
+
+    console.log('Upload successful. Upload data:', uploadData);
 
     const { data: urlData } = supabase.storage.from(PENDING_STORAGE_BUCKET).getPublicUrl(uploadData.path);
     const publicUrl = urlData.publicUrl;
