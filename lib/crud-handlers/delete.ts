@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { TableConfig } from './registry';
+import type { TableConfig } from '../registry';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 

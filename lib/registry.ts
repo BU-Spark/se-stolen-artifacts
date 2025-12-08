@@ -1,12 +1,19 @@
 export type AllowedAction = 'read' | 'create' | 'update' | 'delete';
 export type DeleteRule = 'hard-delete' | 'soft-delete' | 'set-null' | 'cascade';
-export type CompositeKey<T = string> = T[];
+export type CompositeKey = string[];
 
 export interface TableConfig {
-  primaryKey: string | CompositeKey;
-  allowedActions: AllowedAction[];
-  deleteRule: DeleteRule;
-  specialBehaviors?: unknown;
+  primaryKey: string | CompositeKey; // The column identifying rows (e.g., "id") or a composite key (e.g., "")
+  allowedActions: AllowedAction[]; // Whitelist of what the API can do
+  deleteRule: DeleteRule; // Strategy for handling deletions
+  specialBehaviors?: unknown; // Optional custom logic (source: 13)
+}
+
+export interface CrudRequest {
+  table: keyof typeof TABLE_REGISTRY; // Restrict to valid table names
+  action: 'read' | 'create' | 'update' | 'delete';
+  id?: number | string | Record<string, unknown>;
+  data?: Record<string, unknown>;
 }
 
 export const TABLE_REGISTRY: Record<string, TableConfig> = {
