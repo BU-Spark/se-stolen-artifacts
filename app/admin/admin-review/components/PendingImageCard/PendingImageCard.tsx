@@ -29,10 +29,10 @@ type PendingImageCardProps = {
   image: PendingImage;
   downloadInFlight: boolean;
   onDownload: (internalReferenceNumber: string) => void;
-  onSaveMetadata: (internalReferenceNumber: string, metadata: PendingImage['metadata']) => void;
-  onApprove: (internalReferenceNumber: string, folderId: string, metadata: PendingImage['metadata']) => void;
-  onAddToNew: (internalReferenceNumber: string, metadata: PendingImage['metadata']) => void;
-  onDeny: (internalReferenceNumber: string) => void;
+  onSaveMetadata: (imageId: string, metadata: PendingImage['metadata']) => void;
+  onApprove: (imageId: string, folderId: string, metadata: PendingImage['metadata']) => void;
+  onAddToNew: (imageId: string, metadata: PendingImage['metadata']) => void;
+  onDeny: (imageId: string) => void;
 };
 
 export default function PendingImageCard({
@@ -54,7 +54,23 @@ export default function PendingImageCard({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const { internal_reference_number, image_url, title, description, short_description, ai_generated, metadata } = image;
+  const {
+    image_id,
+    internal_reference_number,
+    image_url,
+    title,
+    description,
+    short_description,
+    long_description,
+    created_at,
+    ai_generated,
+    metadata,
+  } = image;
+
+  const detailedDescription = long_description || description || null;
+  const submittedAtLabel = created_at
+    ? new Date(created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : null;
 
   const handleEditMetadataClick = () => {
     setDrawerOpen(true);
@@ -64,17 +80,17 @@ export default function PendingImageCard({
     setDrawerOpen(false);
   };
 
-  const handleSaveMetadata = (internalReferenceNumber: string, metadata: PendingImage['metadata']) => {
-    onSaveMetadata(internalReferenceNumber, metadata);
+  const handleSaveMetadata = (_imageId: string, metadata: PendingImage['metadata']) => {
+    onSaveMetadata(image_id, metadata);
   };
 
-  const handleApprove = (internalReferenceNumber: string, folderId: string, metadata: PendingImage['metadata']) => {
-    onApprove(internalReferenceNumber, folderId, metadata);
+  const handleApprove = (_imageId: string, folderId: string, metadata: PendingImage['metadata']) => {
+    onApprove(image_id, folderId, metadata);
     setDrawerOpen(false);
   };
 
-  const handleAddToNew = (internalReferenceNumber: string, metadata: PendingImage['metadata']) => {
-    onAddToNew(internalReferenceNumber, metadata);
+  const handleAddToNew = (_imageId: string, metadata: PendingImage['metadata']) => {
+    onAddToNew(image_id, metadata);
     setDrawerOpen(false);
   };
 
@@ -209,9 +225,14 @@ export default function PendingImageCard({
             <Typography variant="body2" color="text.secondary">
               Reference ID: {internal_reference_number}
             </Typography>
-            {description && (
-              <Typography variant="body2" color="text.secondary">
-                {description}
+            {submittedAtLabel && (
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
+                Submitted {submittedAtLabel}
+              </Typography>
+            )}
+            {detailedDescription && (
+              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                {detailedDescription}
               </Typography>
             )}
           </Stack>
@@ -231,7 +252,7 @@ export default function PendingImageCard({
             variant="contained"
             color="primary"
             startIcon={<CancelIcon />}
-            onClick={() => onDeny(internal_reference_number)}
+            onClick={() => onDeny(image_id)}
             sx={{ whiteSpace: 'nowrap' }}
           >
             Deny
@@ -242,10 +263,13 @@ export default function PendingImageCard({
       {/* Approval Drawer */}
       <ApprovalDrawer
         open={drawerOpen}
-        imageId={internal_reference_number}
+        imageId={image_id}
         imageUrl={image_url ?? null}
         imageTitle={title || `Image ${internal_reference_number}`}
         metadata={metadata}
+        shortDescription={short_description ?? null}
+        longDescription={long_description ?? null}
+        createdAt={created_at ?? null}
         selectedFolderId={selectedFolderId}
         selectedFolderName={selectedFolderName}
         onClose={handleDrawerClose}
@@ -253,7 +277,7 @@ export default function PendingImageCard({
         onApprove={handleApprove}
         onAddToNew={handleAddToNew}
         onDeny={() => {
-          onDeny(internal_reference_number);
+          onDeny(image_id);
           setDrawerOpen(false);
         }}
         onFolderSelected={handleFolderSelected}

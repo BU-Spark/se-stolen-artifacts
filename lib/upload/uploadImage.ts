@@ -1,8 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { supabase } from '@/lib/db/supabase';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 const maxSize = 10 * 1024 * 1024; // 10MB
+const PENDING_STORAGE_BUCKET =
+  process.env.SUPABASE_BUCKET_PENDING_IMAGES ??
+  process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PENDING_IMAGES ??
+  'pending_images';
 
 export async function handleUploadImage({ file }: { file: File }) {
   if (!file) throw new Error('No file uploaded');
@@ -17,15 +20,17 @@ export async function handleUploadImage({ file }: { file: File }) {
   const filePath = `uploads/${newImageId}.${fileExtension}`;
 
   try {
-    const { data: uploadData, error: uploadError } = await supabase.storage.from('spark').upload(filePath, file);
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(PENDING_STORAGE_BUCKET)
+      .upload(filePath, file);
 
     if (uploadError) {
       throw uploadError;
     }
 
-    const { data: urlData } = supabase.storage.from('spark').getPublicUrl(uploadData.path);
+    const { data: urlData } = supabase.storage.from(PENDING_STORAGE_BUCKET).getPublicUrl(uploadData.path);
     const publicUrl = urlData.publicUrl;
-    const gcsPath = uploadData.path;
+    const gcsPath = `${PENDING_STORAGE_BUCKET}/${uploadData.path}`;
 
     console.log('Upload successful. New image ID:', newImageId);
     return {

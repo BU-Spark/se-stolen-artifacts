@@ -27,6 +27,9 @@ export type ApprovalDrawerProps = {
   onAddToNew: (imageId: string, metadata: PendingImageMetadata) => void;
   onDeny: () => void;
   onFolderSelected?: (folderId: string | null, folderName?: string | null) => void; // null = new folder
+  shortDescription?: string | null;
+  longDescription?: string | null;
+  createdAt?: string | null;
 };
 
 export type DrawerView = 'metadata' | 'folder-list' | 'folder-contents';

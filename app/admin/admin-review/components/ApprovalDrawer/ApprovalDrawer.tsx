@@ -52,6 +52,9 @@ export default function ApprovalDrawer({
   onAddToNew,
   onDeny,
   onFolderSelected,
+  shortDescription,
+  longDescription,
+  createdAt,
 }: ApprovalDrawerProps) {
   const [view, setView] = useState<DrawerView>('metadata');
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -68,6 +71,9 @@ export default function ApprovalDrawer({
   // Track if admin has saved metadata for each image (persists across drawer sessions)
   const adminHasSavedRef = useRef<Set<string>>(new Set());
   const [hasAdminMadeEdits, setHasAdminMadeEdits] = useState(false);
+  const submittedAtLabel = createdAt
+    ? new Date(createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : null;
 
   // Fetch statues from API
   const fetchStatues = useCallback(async () => {
@@ -290,7 +296,8 @@ export default function ApprovalDrawer({
       formData.image_source ||
       formData.photograph_location ||
       formData.dealer_gallery_collector_name ||
-      formData.material_subject
+      formData.subject ||
+      formData.material
     );
   };
 
@@ -413,6 +420,43 @@ export default function ApprovalDrawer({
                   </IconButton>
                 </Box>
 
+                {(submittedAtLabel || shortDescription || longDescription) && (
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: 'divider',
+                      mb: 3,
+                      bgcolor: 'background.default',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                      <NotesIcon sx={{ fontSize: 18 }} />
+                      <Typography variant="subtitle2" fontWeight={600}>
+                        Submission Details
+                      </Typography>
+                    </Box>
+                    <Stack spacing={0.5}>
+                      {submittedAtLabel && (
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Submitted:</strong> {submittedAtLabel}
+                        </Typography>
+                      )}
+                      {shortDescription && (
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Short Description:</strong> {shortDescription}
+                        </Typography>
+                      )}
+                      {longDescription && (
+                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                          <strong>Detailed Description:</strong> {longDescription}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                )}
+
                 {/* Collapsed Summary View */}
                 {!metadataExpanded && (
                   <Box sx={{ mt: 1 }}>
@@ -512,9 +556,14 @@ export default function ApprovalDrawer({
                                 <strong>Dealer/Gallery/Collector:</strong> {formData.dealer_gallery_collector_name}
                               </Typography>
                             )}
-                            {formData.material_subject && (
+                            {formData.subject && (
                               <Typography variant="body2" color="text.secondary">
-                                <strong>Material:</strong> {formData.material_subject}
+                                <strong>Subject:</strong> {formData.subject}
+                              </Typography>
+                            )}
+                            {formData.material && (
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Material:</strong> {formData.material}
                               </Typography>
                             )}
                           </Stack>
@@ -664,6 +713,13 @@ export default function ApprovalDrawer({
                           fullWidth
                         />
                         <TextField
+                          label="Subject"
+                          value={formData.subject || ''}
+                          onChange={handleTextChange('subject')}
+                          size="small"
+                          fullWidth
+                        />
+                        <TextField
                           label="Suspected Current Location"
                           value={formData.suspected_current_location || ''}
                           onChange={handleTextChange('suspected_current_location')}
@@ -714,9 +770,9 @@ export default function ApprovalDrawer({
                           fullWidth
                         />
                         <TextField
-                          label="Material Subject"
-                          value={formData.material_subject || ''}
-                          onChange={handleTextChange('material_subject')}
+                          label="Material"
+                          value={formData.material || ''}
+                          onChange={handleTextChange('material')}
                           size="small"
                           fullWidth
                         />

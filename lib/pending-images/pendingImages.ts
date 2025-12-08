@@ -2,7 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import type { PendingImageMetadata } from '@/app/admin/admin-review/components/PendingImageCard/PendingImageCard.types';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-const storageBucket = 'spark';
+const storageBucket =
+  process.env.SUPABASE_BUCKET_PENDING_IMAGES ??
+  process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PENDING_IMAGES ??
+  'pending_images';
 
 function normalizeStoragePath(path: string | null | undefined) {
   if (!path) return null; // Return null if the path is null or undefined
@@ -24,15 +27,17 @@ export async function handleGetPendingImages() {
 
     // Fetch all metadata fields from the database
     const { data: pendingData, error: queryError } = await supabase
-      .from('artifact_metadata_upload_log')
+      .from('temp_artifact_metadata')
       .select(
         `
         image_id,
         internal_reference_number,
         gcs_path,
         short_description,
+        long_description,
         ai_generated,
         artifact_title,
+        subject,
         suspected_current_location,
         first_appearance_year,
         first_appearance_year_outside_cambodia,
@@ -65,7 +70,8 @@ export async function handleGetPendingImages() {
         fragmented_at_upper_leg,
         fragmented_at_knee,
         fragmented_at_ankle,
-        misc_information
+        misc_information,
+        created_at
       `
       )
       .eq('status', 'pending_review');
@@ -98,6 +104,7 @@ export async function handleGetPendingImages() {
 
         // Basic Information - only include if not null/undefined/empty
         if (approval.artifact_title) metadata.title_of_object = approval.artifact_title;
+        if (approval.subject) metadata.subject = approval.subject;
         if (approval.suspected_current_location)
           metadata.suspected_current_location = approval.suspected_current_location;
         if (approval.first_appearance_year != null) metadata.year_first_appearance = approval.first_appearance_year;
@@ -106,7 +113,7 @@ export async function handleGetPendingImages() {
         if (approval.image_source) metadata.image_source = approval.image_source;
         if (approval.photograph_location) metadata.photograph_location = approval.photograph_location;
         if (approval.dealer_name) metadata.dealer_gallery_collector_name = approval.dealer_name;
-        if (approval.material) metadata.material_subject = approval.material;
+        if (approval.material) metadata.material = approval.material;
 
         // Boolean fields - only include if true (to keep metadata object clean)
         if (approval.repatriated === true) metadata.repatriated = true;
@@ -149,6 +156,8 @@ export async function handleGetPendingImages() {
           internal_reference_number: approval.internal_reference_number,
           image_url: resolvedUrl,
           short_description: approval.short_description,
+          long_description: approval.long_description,
+          created_at: approval.created_at,
           ai_generated: approval.ai_generated,
           metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         };
