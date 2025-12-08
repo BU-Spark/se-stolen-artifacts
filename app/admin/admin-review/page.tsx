@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
+import Link from 'next/link';
+import { Box, Button, CircularProgress, Container, Stack, Typography } from '@mui/material';
+import { Storage } from '@mui/icons-material';
 import { useUser } from '@clerk/nextjs';
 import PendingImageCard, { PendingImage } from './components/PendingImageCard';
 
@@ -188,12 +190,21 @@ export default function AdminReviewPage() {
       <Box
         component="main"
         sx={{
-          pt: { xs: 12, md: 14 },
+          pt: { xs: 6, md: 8 },
           pb: 6,
         }}
       >
         <Container maxWidth="lg">
           <Stack spacing={3} mb={4}>
+            <Button
+              variant="outlined"
+              component={Link}
+              href="/admin/db-view"
+              startIcon={<Storage />}
+              sx={{ alignSelf: 'flex-start' }}
+            >
+              Database View
+            </Button>
             <Typography component="h1" variant="h4" fontWeight={700} color="text.primary">
               Pending Image Review
             </Typography>

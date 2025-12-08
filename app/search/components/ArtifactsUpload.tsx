@@ -49,19 +49,19 @@ type ArtifactsUploadProps = {
 
 const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 
+type UploadedArtifact = {
+  id: string;
+  gcsPath: string;
+  internalReferenceNumber: string;
+  publicUrl?: string;
+};
+
 type RateLimitStatus = {
   current: number;
   max: number;
   remaining: number;
   resetAt: number;
   isLimited: boolean;
-};
-
-type UploadedArtifact = {
-  id: string;
-  gcsPath: string;
-  internalReferenceNumber: string;
-  publicUrl?: string;
 };
 
 export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadProps) {
@@ -306,7 +306,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     try {
       // Create FormData to send the file and descriptions
       let uploadResult = uploadedArtifact;
-      let uploadResponseData: (UploadedArtifact & { rateLimitStatus?: RateLimitStatus | null }) | null = null;
+      let uploadResponseResult: { rateLimitStatus?: RateLimitStatus } | null = null;
 
       if (!uploadResult) {
         const formData = new FormData();
@@ -321,9 +321,10 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         });
 
         const result = await response.json();
+        uploadResponseResult = result;
 
         if (!response.ok) {
-          // If rate limit exceeded, update status before throwing
+          // If rate limit exceeded, update status
           if (response.status === 429 && result.rateLimitStatus) {
             setRateLimitStatus(result.rateLimitStatus);
             setAiMetadataAvailable(false);
@@ -334,7 +335,6 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           throw new Error(result.error || 'Upload failed');
         }
 
-        uploadResponseData = result;
         uploadResult = {
           id: result.id,
           gcsPath: result.gcsPath,
@@ -346,13 +346,13 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
         console.log('Upload successful:', result);
       }
 
-      // Update rate limit status from the latest API response
-      if (uploadResponseData?.rateLimitStatus) {
-        setRateLimitStatus(uploadResponseData.rateLimitStatus);
-        setAiMetadataAvailable(!uploadResponseData.rateLimitStatus.isLimited);
+      // Update rate limit status from response
+      if (uploadResponseResult?.rateLimitStatus) {
+        setRateLimitStatus(uploadResponseResult.rateLimitStatus);
+        setAiMetadataAvailable(!uploadResponseResult.rateLimitStatus.isLimited);
 
         // If AI became unavailable, switch to manual mode
-        if (uploadResponseData.rateLimitStatus.isLimited && metadataMode === 'ai') {
+        if (uploadResponseResult.rateLimitStatus.isLimited && metadataMode === 'ai') {
           setMetadataMode('manual');
         }
       }
@@ -694,7 +694,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
 
               {/* Success Message and Upload Another Button */}
               {uploadComplete && (
-                <Stack spacing={1.25}>
+                <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
                   <Typography
                     variant="body2"
                     color="success.main"
@@ -703,9 +703,9 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
                     <CheckCircle fontSize="small" />
                     Image uploaded successfully and sent for review
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Redirecting to search to upload related images...
-                  </Typography>
+                  <Button variant="outlined" onClick={handleClear}>
+                    Upload Another
+                  </Button>
                 </Stack>
               )}
             </Stack>
