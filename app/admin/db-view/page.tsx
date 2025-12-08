@@ -30,12 +30,22 @@ import {
   Tooltip,
   CardMedia,
 } from '@mui/material';
-import { Add, Edit, Delete, Refresh, ImageSearch, Fullscreen, Close } from '@mui/icons-material';
+import {
+  Add,
+  Edit,
+  Delete,
+  Refresh,
+  ImageSearch,
+  Fullscreen,
+  Close,
+  ExpandMore,
+  ExpandLess,
+} from '@mui/icons-material';
 import { useUser } from '@clerk/nextjs';
 
 const TABLES = [
   { value: 'statues', label: 'Statues' },
-  { value: 'images', label: 'Images' },
+  // Images table removed - images are shown within statues table via expand/collapse
   { value: 'locations', label: 'Locations' },
   { value: 'materials', label: 'Materials' },
   { value: 'names', label: 'Names' },
@@ -123,6 +133,9 @@ export default function AdminDbViewPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<RowData | null>(null);
   const [statueIdFilter, setStatueIdFilter] = useState<string>('');
+  const [expandedStatues, setExpandedStatues] = useState<Set<number>>(new Set());
+  const [statueImages, setStatueImages] = useState<Record<number, RowData[]>>({});
+  const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
   const editDialogContentRef = useRef<HTMLDivElement>(null);
   const addDialogContentRef = useRef<HTMLDivElement>(null);
 
@@ -204,6 +217,9 @@ export default function AdminDbViewPage() {
     setData([]);
     setForeignKeyData({});
     setStatueIdFilter(''); // Reset filter when switching tables
+    setExpandedStatues(new Set()); // Reset expanded statues when switching tables
+    setStatueImages({}); // Clear images for new table
+    setLoadingImages({}); // Clear loading states for new table
   };
 
   const handleEdit = (row: RowData) => {
@@ -414,7 +430,12 @@ export default function AdminDbViewPage() {
 
   const getColumns = (): string[] => {
     if (data.length === 0) return [];
-    return Object.keys(data[0]);
+    const cols = Object.keys(data[0]);
+    // Filter out is_deleted column for statues table (keep it in DB, just hide in UI)
+    if (selectedTable === 'statues') {
+      return cols.filter((col) => col !== 'is_deleted');
+    }
+    return cols;
   };
 
   const columns = getColumns();
@@ -438,21 +459,23 @@ export default function AdminDbViewPage() {
 
     // First, try constructing public URL from image_gcs
     if (row.image_gcs) {
-      const gcsPath = String(row.image_gcs).replace(/^\//, ''); // Remove leading slash
-      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/spark/${gcsPath}`;
+      const gcsPath = String(row.image_gcs).trim().replace(/^\/+/, ''); // Remove leading slashes
+      const parts = gcsPath.split('/').filter(Boolean);
 
-      // Test if public URL works (for public buckets)
-      try {
-        const testResponse = await fetch(publicUrl, { method: 'HEAD' });
-        if (testResponse.ok) {
+      if (parts.length > 0) {
+        // The bucket name is the first part (e.g., 'approved_images' or 'pending_images')
+        const bucketName = parts[0];
+        // The path is everything after the bucket name
+        const path = parts.slice(1).join('/');
+
+        if (bucketName && path) {
+          const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketName}/${path}`;
           return publicUrl;
         }
-      } catch {
-        // Public URL failed, continue to signed URL
       }
     }
 
-    // Fallback: use API endpoint for signed URL (for private buckets)
+    // Fallback: use API endpoint for signed URL (for private buckets or if image_gcs is missing)
     try {
       const response = await fetch(`/api/admin/image-url/${encodeURIComponent(String(imageId))}`);
       const result = await response.json();
@@ -487,6 +510,51 @@ export default function AdminDbViewPage() {
   const handleImageClick = (imageUrl: string) => {
     setSelectedImageUrl(imageUrl);
     setImageDialogOpen(true);
+  };
+
+  const handleStatueToggle = async (statueId: number) => {
+    const newExpanded = new Set(expandedStatues);
+
+    if (newExpanded.has(statueId)) {
+      // Collapse - remove from set
+      newExpanded.delete(statueId);
+      setExpandedStatues(newExpanded);
+    } else {
+      // Expand - fetch images for this statue
+      newExpanded.add(statueId);
+      setExpandedStatues(newExpanded);
+
+      // If images not already loaded, fetch them
+      if (!statueImages[statueId]) {
+        setLoadingImages((prev) => ({ ...prev, [statueId]: true }));
+        try {
+          const response = await fetch(`/api/admin/db-view/images`);
+          const result = await response.json();
+          if (response.ok && result.data) {
+            // Filter images for this statue_id
+            const imagesForStatue = result.data.filter((img: RowData) => img.statue_id === statueId);
+            setStatueImages((prev) => ({ ...prev, [statueId]: imagesForStatue }));
+
+            // Fetch image URLs for these images
+            const urlMap: Record<string, string> = {};
+            await Promise.all(
+              imagesForStatue.map(async (row: RowData) => {
+                const imageId = String(row.internal_reference_number);
+                const url = await getImageUrl(row);
+                if (url) {
+                  urlMap[imageId] = url;
+                }
+              })
+            );
+            setImageUrls((prev) => ({ ...prev, ...urlMap }));
+          }
+        } catch (error) {
+          console.error('Failed to fetch images for statue:', error);
+        } finally {
+          setLoadingImages((prev) => ({ ...prev, [statueId]: false }));
+        }
+      }
+    }
   };
 
   const renderFormField = (col: string, isEdit: boolean) => {
@@ -588,16 +656,7 @@ export default function AdminDbViewPage() {
                 </Select>
               </FormControl>
 
-              {selectedTable === 'images' && (
-                <TextField
-                  label="Filter by Statue ID"
-                  value={statueIdFilter}
-                  onChange={(e) => setStatueIdFilter(e.target.value)}
-                  placeholder="Enter statue ID"
-                  sx={{ minWidth: 200 }}
-                  size="small"
-                />
-              )}
+              {/* Removed images filter since images table is now integrated into statues */}
 
               <Button variant="contained" startIcon={<Add />} onClick={handleAdd} disabled={!selectedTable}>
                 Add Record
@@ -624,6 +683,11 @@ export default function AdminDbViewPage() {
               <Table>
                 <TableHead>
                   <TableRow>
+                    {selectedTable === 'statues' && (
+                      <TableCell key="expand" sx={{ fontWeight: 600, width: '50px' }}>
+                        {/* Empty header for expand column */}
+                      </TableCell>
+                    )}
                     {selectedTable === 'images' && (
                       <TableCell key="preview" sx={{ fontWeight: 600 }}>
                         Preview
@@ -640,7 +704,12 @@ export default function AdminDbViewPage() {
                 <TableBody>
                   {filteredData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={columns.length + (selectedTable === 'images' ? 2 : 1)} align="center">
+                      <TableCell
+                        colSpan={
+                          columns.length + (selectedTable === 'statues' ? 2 : selectedTable === 'images' ? 2 : 1)
+                        }
+                        align="center"
+                      >
                         <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>
                           {data.length === 0
                             ? 'No data available'
@@ -656,155 +725,382 @@ export default function AdminDbViewPage() {
                       const rowKey = row[primaryKey] ?? index;
                       const imageId = selectedTable === 'images' ? String(row.internal_reference_number) : null;
                       const imageUrl = imageId ? imageUrls[imageId] : null;
+                      const isStatueRow = selectedTable === 'statues';
+                      const statueId = isStatueRow ? Number(row.statue_id) : null;
+                      const isExpanded = statueId !== null && expandedStatues.has(statueId);
+                      const imagesForStatue = statueId ? statueImages[statueId] || [] : [];
+                      const isLoadingImages = statueId ? loadingImages[statueId] : false;
 
                       return (
-                        <TableRow key={String(rowKey)} hover>
-                          {selectedTable === 'images' && (
-                            <TableCell key="preview" sx={{ padding: '8px', width: '200px', minWidth: '200px' }}>
-                              {imageUrl ? (
-                                <Box
-                                  sx={{
-                                    position: 'relative',
-                                    width: '100%',
-                                    height: '180px',
-                                    borderRadius: '4px',
-                                    overflow: 'hidden',
-                                    cursor: 'pointer',
-                                    bgcolor: 'grey.100',
-                                    '&:hover': {
-                                      opacity: 0.9,
-                                      '& .expand-button': {
-                                        bgcolor: 'rgba(0, 0, 0, 0.8)',
-                                      },
-                                    },
-                                  }}
-                                  onClick={() => handleImageClick(imageUrl)}
+                        <>
+                          <TableRow key={String(rowKey)} hover>
+                            {isStatueRow && (
+                              <TableCell>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => statueId !== null && handleStatueToggle(statueId)}
+                                  disabled={isLoadingImages}
                                 >
-                                  <CardMedia
-                                    component="img"
-                                    image={imageUrl}
-                                    alt="Preview"
+                                  {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                                </IconButton>
+                              </TableCell>
+                            )}
+                            {selectedTable === 'images' && (
+                              <TableCell key="preview" sx={{ padding: '8px', width: '200px', minWidth: '200px' }}>
+                                {imageUrl ? (
+                                  <Box
+                                    sx={{
+                                      position: 'relative',
+                                      width: '100%',
+                                      height: '180px',
+                                      borderRadius: '4px',
+                                      overflow: 'hidden',
+                                      cursor: 'pointer',
+                                      bgcolor: 'grey.100',
+                                      '&:hover': {
+                                        opacity: 0.9,
+                                        '& .expand-button': {
+                                          bgcolor: 'rgba(0, 0, 0, 0.8)',
+                                        },
+                                      },
+                                    }}
+                                    onClick={() => handleImageClick(imageUrl)}
+                                  >
+                                    <CardMedia
+                                      component="img"
+                                      image={imageUrl}
+                                      alt="Preview"
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'contain',
+                                        bgcolor: 'grey.50',
+                                      }}
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = '/image-404-placeholder.avif';
+                                      }}
+                                    />
+                                    <IconButton
+                                      size="small"
+                                      className="expand-button"
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 4,
+                                        right: 4,
+                                        bgcolor: 'rgba(0, 0, 0, 0.6)',
+                                        color: 'white',
+                                        '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.8)' },
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleImageClick(imageUrl);
+                                      }}
+                                      aria-label="Expand image"
+                                    >
+                                      <Fullscreen fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                ) : (
+                                  <Box
                                     sx={{
                                       width: '100%',
-                                      height: '100%',
-                                      objectFit: 'contain',
-                                      bgcolor: 'grey.50',
-                                    }}
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.src = '/image-404-placeholder.avif';
-                                    }}
-                                  />
-                                  <IconButton
-                                    size="small"
-                                    className="expand-button"
-                                    sx={{
-                                      position: 'absolute',
-                                      top: 4,
-                                      right: 4,
-                                      bgcolor: 'rgba(0, 0, 0, 0.6)',
-                                      color: 'white',
-                                      '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.8)' },
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleImageClick(imageUrl);
-                                    }}
-                                    aria-label="Expand image"
-                                  >
-                                    <Fullscreen fontSize="small" />
-                                  </IconButton>
-                                </Box>
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: '100%',
-                                    height: '180px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: 'grey.100',
-                                    borderRadius: '4px',
-                                  }}
-                                >
-                                  <CircularProgress size={40} sx={{ color: 'error.main' }} />
-                                </Box>
-                              )}
-                            </TableCell>
-                          )}
-                          {columns.map((col) => {
-                            const cellValue = row[col];
-                            const isObject = typeof cellValue === 'object' && cellValue !== null;
-                            const stringValue = isObject ? JSON.stringify(cellValue) : String(cellValue ?? '');
-                            const needsTruncation =
-                              shouldTruncate(selectedTable, col) && stringValue.length > MAX_PREVIEW_LENGTH;
-
-                            const cellContent = needsTruncation ? truncateText(stringValue) : stringValue;
-
-                            return (
-                              <TableCell
-                                key={col}
-                                sx={{
-                                  maxWidth: needsTruncation ? '300px' : 'none',
-                                  overflow: needsTruncation ? 'hidden' : 'visible',
-                                  textOverflow: needsTruncation ? 'ellipsis' : 'clip',
-                                  whiteSpace: needsTruncation ? 'nowrap' : 'normal',
-                                  position: 'relative',
-                                  padding: needsTruncation ? 0 : undefined,
-                                }}
-                              >
-                                {needsTruncation ? (
-                                  <Tooltip
-                                    title={stringValue}
-                                    arrow
-                                    placement="top-start"
-                                    componentsProps={{
-                                      tooltip: {
-                                        sx: {
-                                          maxWidth: '500px',
-                                          whiteSpace: 'normal',
-                                        },
-                                      },
-                                      arrow: {
-                                        sx: {
-                                          color: 'rgba(0, 0, 0, 0.76)',
-                                        },
-                                      },
+                                      height: '180px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      bgcolor: 'grey.100',
+                                      borderRadius: '4px',
                                     }}
                                   >
-                                    <Box
-                                      component="span"
-                                      sx={{
-                                        display: 'block',
-                                        width: '100%',
-                                        minHeight: '100%',
-                                        cursor: 'help',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        padding: '16px',
-                                        boxSizing: 'border-box',
-                                      }}
-                                    >
-                                      {cellContent}
-                                    </Box>
-                                  </Tooltip>
-                                ) : (
-                                  cellContent
+                                    <CircularProgress size={40} sx={{ color: 'error.main' }} />
+                                  </Box>
                                 )}
                               </TableCell>
-                            );
-                          })}
-                          <TableCell>
-                            <Stack direction="row" spacing={1}>
-                              <IconButton size="small" color="primary" onClick={() => handleEdit(row)}>
-                                <Edit fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDeleteClick(row)}>
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
+                            )}
+                            {columns.map((col) => {
+                              const cellValue = row[col];
+                              const isObject = typeof cellValue === 'object' && cellValue !== null;
+                              const stringValue = isObject ? JSON.stringify(cellValue) : String(cellValue ?? '');
+                              const needsTruncation =
+                                shouldTruncate(selectedTable, col) && stringValue.length > MAX_PREVIEW_LENGTH;
+
+                              const cellContent = needsTruncation ? truncateText(stringValue) : stringValue;
+
+                              return (
+                                <TableCell
+                                  key={col}
+                                  sx={{
+                                    maxWidth: needsTruncation ? '300px' : 'none',
+                                    overflow: needsTruncation ? 'hidden' : 'visible',
+                                    textOverflow: needsTruncation ? 'ellipsis' : 'clip',
+                                    whiteSpace: needsTruncation ? 'nowrap' : 'normal',
+                                    position: 'relative',
+                                    padding: needsTruncation ? 0 : undefined,
+                                  }}
+                                >
+                                  {needsTruncation ? (
+                                    <Tooltip
+                                      title={stringValue}
+                                      arrow
+                                      placement="top-start"
+                                      componentsProps={{
+                                        tooltip: {
+                                          sx: {
+                                            maxWidth: '500px',
+                                            whiteSpace: 'normal',
+                                          },
+                                        },
+                                        arrow: {
+                                          sx: {
+                                            color: 'rgba(0, 0, 0, 0.76)',
+                                          },
+                                        },
+                                      }}
+                                    >
+                                      <Box
+                                        component="span"
+                                        sx={{
+                                          display: 'block',
+                                          width: '100%',
+                                          minHeight: '100%',
+                                          cursor: 'help',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          padding: '16px',
+                                          boxSizing: 'border-box',
+                                        }}
+                                      >
+                                        {cellContent}
+                                      </Box>
+                                    </Tooltip>
+                                  ) : (
+                                    cellContent
+                                  )}
+                                </TableCell>
+                              );
+                            })}
+                            <TableCell>
+                              <Stack direction="row" spacing={1}>
+                                <IconButton size="small" color="primary" onClick={() => handleEdit(row)}>
+                                  <Edit fontSize="small" />
+                                </IconButton>
+                                <IconButton size="small" color="error" onClick={() => handleDeleteClick(row)}>
+                                  <Delete fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                          {/* Expanded images rows for statues */}
+                          {isStatueRow && isExpanded && (
+                            <>
+                              {isLoadingImages ? (
+                                <TableRow>
+                                  <TableCell colSpan={columns.length + 2} align="center">
+                                    <CircularProgress size={24} />
+                                  </TableCell>
+                                </TableRow>
+                              ) : imagesForStatue.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={columns.length + 2} align="center" sx={{ bgcolor: 'grey.50' }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                                      No images found for this statue
+                                    </Typography>
+                                  </TableCell>
+                                </TableRow>
+                              ) : (
+                                <>
+                                  {/* Image column headers */}
+                                  {imagesForStatue.length > 0 &&
+                                    (() => {
+                                      const firstImage = imagesForStatue[0];
+                                      const imageColumns = Object.keys(firstImage).filter(
+                                        (col) => col !== 'is_deleted'
+                                      );
+                                      return (
+                                        <TableRow sx={{ bgcolor: 'grey.100' }}>
+                                          <TableCell /> {/* Empty cell for expand column */}
+                                          <TableCell sx={{ fontWeight: 600 }}>Preview</TableCell>
+                                          {imageColumns.map((col) => (
+                                            <TableCell key={`header-${col}`} sx={{ fontWeight: 600 }}>
+                                              {col}
+                                            </TableCell>
+                                          ))}
+                                          {/* Add empty cells if image columns are fewer than statue columns */}
+                                          {imageColumns.length < columns.length &&
+                                            Array.from({ length: columns.length - imageColumns.length }).map(
+                                              (_, idx) => <TableCell key={`empty-header-${idx}`} />
+                                            )}
+                                          <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                                        </TableRow>
+                                      );
+                                    })()}
+                                  {/* Image data rows */}
+                                  {imagesForStatue.map((imageRow) => {
+                                    const imgId = String(imageRow.internal_reference_number);
+                                    const imgUrl = imageUrls[imgId];
+                                    // Get image columns (excluding is_deleted)
+                                    const imageColumns = Object.keys(imageRow).filter((col) => col !== 'is_deleted');
+                                    // Calculate how many columns we need to span
+                                    // Header has: expand (1) + statue columns (columns.length) + actions (1) = columns.length + 2
+                                    // Image row needs: expand (1) + preview (1) + image columns (imageColumns.length) + actions (1)
+                                    // But we need to match the header structure, so we'll show preview + image columns
+                                    // and span the rest to match statue columns
+
+                                    return (
+                                      <TableRow key={`img-${imgId}`} sx={{ bgcolor: 'grey.50' }}>
+                                        <TableCell /> {/* Empty cell for expand column */}
+                                        <TableCell sx={{ padding: '8px', width: '200px', minWidth: '200px' }}>
+                                          {imgUrl ? (
+                                            <Box
+                                              sx={{
+                                                position: 'relative',
+                                                width: '100%',
+                                                height: '180px',
+                                                borderRadius: '4px',
+                                                overflow: 'hidden',
+                                                cursor: 'pointer',
+                                                bgcolor: 'grey.100',
+                                                '&:hover': {
+                                                  opacity: 0.9,
+                                                  '& .expand-button': {
+                                                    bgcolor: 'rgba(0, 0, 0, 0.8)',
+                                                  },
+                                                },
+                                              }}
+                                              onClick={() => handleImageClick(imgUrl)}
+                                            >
+                                              <CardMedia
+                                                component="img"
+                                                image={imgUrl}
+                                                alt="Preview"
+                                                sx={{
+                                                  width: '100%',
+                                                  height: '100%',
+                                                  objectFit: 'contain',
+                                                  bgcolor: 'grey.50',
+                                                }}
+                                                onError={(e) => {
+                                                  const target = e.target as HTMLImageElement;
+                                                  target.src = '/image-404-placeholder.avif';
+                                                }}
+                                              />
+                                              <IconButton
+                                                size="small"
+                                                className="expand-button"
+                                                sx={{
+                                                  position: 'absolute',
+                                                  top: 4,
+                                                  right: 4,
+                                                  bgcolor: 'rgba(0, 0, 0, 0.6)',
+                                                  color: 'white',
+                                                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.8)' },
+                                                }}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleImageClick(imgUrl);
+                                                }}
+                                                aria-label="Expand image"
+                                              >
+                                                <Fullscreen fontSize="small" />
+                                              </IconButton>
+                                            </Box>
+                                          ) : isLoadingImages ? (
+                                            <Box
+                                              sx={{
+                                                width: '100%',
+                                                height: '180px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                bgcolor: 'grey.100',
+                                                borderRadius: '4px',
+                                              }}
+                                            >
+                                              <CircularProgress size={40} />
+                                            </Box>
+                                          ) : (
+                                            <Box
+                                              sx={{
+                                                width: '100%',
+                                                height: '180px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                bgcolor: 'grey.100',
+                                                borderRadius: '4px',
+                                              }}
+                                            >
+                                              <Typography variant="body2" color="text.secondary">
+                                                No preview
+                                              </Typography>
+                                            </Box>
+                                          )}
+                                        </TableCell>
+                                        {/* Render image columns - show all image columns */}
+                                        {imageColumns.map((col) => {
+                                          const cellValue = imageRow[col];
+                                          const isObject = typeof cellValue === 'object' && cellValue !== null;
+                                          const stringValue = isObject
+                                            ? JSON.stringify(cellValue)
+                                            : String(cellValue ?? '');
+                                          const needsTruncation =
+                                            shouldTruncate('images', col) && stringValue.length > MAX_PREVIEW_LENGTH;
+                                          const cellContent = needsTruncation ? truncateText(stringValue) : stringValue;
+
+                                          return (
+                                            <TableCell
+                                              key={col}
+                                              sx={{
+                                                maxWidth: needsTruncation ? '300px' : 'none',
+                                                overflow: needsTruncation ? 'hidden' : 'visible',
+                                                textOverflow: needsTruncation ? 'ellipsis' : 'clip',
+                                                whiteSpace: needsTruncation ? 'nowrap' : 'normal',
+                                              }}
+                                            >
+                                              {needsTruncation ? (
+                                                <Tooltip title={stringValue} arrow placement="top-start">
+                                                  <Box component="span" sx={{ cursor: 'help' }}>
+                                                    {cellContent}
+                                                  </Box>
+                                                </Tooltip>
+                                              ) : (
+                                                cellContent
+                                              )}
+                                            </TableCell>
+                                          );
+                                        })}
+                                        {/* If image columns are fewer than statue columns, add empty cells to match */}
+                                        {imageColumns.length < columns.length &&
+                                          Array.from({ length: columns.length - imageColumns.length }).map((_, idx) => (
+                                            <TableCell key={`empty-${idx}`} />
+                                          ))}
+                                        <TableCell>
+                                          <Stack direction="row" spacing={1}>
+                                            <IconButton
+                                              size="small"
+                                              color="primary"
+                                              onClick={() => handleEdit(imageRow)}
+                                            >
+                                              <Edit fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() => handleDeleteClick(imageRow)}
+                                            >
+                                              <Delete fontSize="small" />
+                                            </IconButton>
+                                          </Stack>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </>
+                              )}
+                            </>
+                          )}
+                        </>
                       );
                     })
                   )}
