@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { handleSoftDelete } from '@/lib/crud-handlers/delete';
+import { TABLE_REGISTRY } from '@/lib/registry';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -31,9 +33,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Determine primary key for ordering
     const orderBy = table === 'statues' ? 'statue_id' : table === 'images' ? 'internal_reference_number' : 'id';
 
-    // For images table, only show approved images (those in approved_images bucket)
+    // Get table configuration from registry
+    const config = TABLE_REGISTRY[table];
+    if (!config) {
+      return NextResponse.json({ error: `Table "${table}" is not registered` }, { status: 400 });
+    }
+
+    // Build query
     let query = supabase.from(table).select('*');
 
+    // Filter out soft-deleted records if table supports soft delete
+    if (config.deleteRule === 'soft-delete') {
+      query = query.eq('is_deleted', false);
+    }
+
+    // For images table, only show approved images (those in approved_images bucket)
     if (table === 'images') {
       const APPROVED_BUCKET = 'approved_images';
       // Filter to only show images where image_gcs starts with approved_images/
@@ -132,16 +146,57 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: 'ID is required for deletion' }, { status: 400 });
     }
 
-    // Determine primary key based on table
-    const primaryKey = table === 'statues' ? 'statue_id' : table === 'images' ? 'internal_reference_number' : 'id';
-
-    const { error } = await supabase.from(table).delete().eq(primaryKey, id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Get table configuration from registry
+    const config = TABLE_REGISTRY[table];
+    if (!config) {
+      return NextResponse.json({ error: `Table "${table}" is not registered` }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    // Check if delete action is allowed
+    if (!config.allowedActions.includes('delete')) {
+      return NextResponse.json({ error: `Delete action is not allowed for table "${table}"` }, { status: 403 });
+    }
+
+    // Parse ID based on primary key type
+    let parsedId: string | number | Record<string, unknown>;
+    if (Array.isArray(config.primaryKey)) {
+      // Composite key - would need multiple IDs, not supported in current API
+      return NextResponse.json({ error: 'Composite key deletion not supported via this endpoint' }, { status: 400 });
+    } else {
+      // Single primary key - parse as number if primary key is statue_id, otherwise string
+      parsedId = table === 'statues' ? Number.parseInt(id, 10) : id;
+      if (table === 'statues' && Number.isNaN(parsedId)) {
+        return NextResponse.json({ error: 'Invalid statue_id' }, { status: 400 });
+      }
+    }
+
+    // Use appropriate delete strategy based on registry
+    switch (config.deleteRule) {
+      case 'soft-delete':
+        await handleSoftDelete(table, config, parsedId);
+        return NextResponse.json({ success: true, message: 'Record soft deleted successfully' }, { status: 200 });
+
+      case 'hard-delete': {
+        // Direct hard delete
+        const primaryKey = config.primaryKey as string;
+        const { error } = await supabase.from(table).delete().eq(primaryKey, parsedId);
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, message: 'Record deleted successfully' }, { status: 200 });
+      }
+
+      case 'set-null':
+        // TODO: Implement set-null strategy (set foreign keys to null)
+        return NextResponse.json({ error: 'set-null delete strategy not yet implemented' }, { status: 501 });
+
+      case 'cascade':
+        // TODO: Implement cascade strategy (delete related records)
+        return NextResponse.json({ error: 'cascade delete strategy not yet implemented' }, { status: 501 });
+
+      default:
+        return NextResponse.json({ error: `Unknown delete rule: ${config.deleteRule}` }, { status: 500 });
+    }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
