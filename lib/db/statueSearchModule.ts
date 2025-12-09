@@ -1,6 +1,3 @@
-import type { PrismaClient } from '@prisma/client';
-
-import { prisma as defaultPrisma } from './prisma';
 import type { StatueSearchFilters, StatueSearchRow } from './statueSearchQueryBuilder';
 import { executeStatueSearch } from './statueSearchQueryBuilder';
 
@@ -49,13 +46,10 @@ const parseFiltersJson = (filtersJson: string): StatueSearchFilters => {
  * Consumes a JSON string describing the {@link StatueSearchFilters}, runs the query, and returns a
  * JSON string with the search results plus a status code describing the outcome.
  */
-export const searchStatuesFromJson = async (
-  filtersJson: string,
-  client: PrismaClient = defaultPrisma
-): Promise<string> => {
+export const searchStatuesFromJson = async (filtersJson: string): Promise<string> => {
   try {
     const filters = parseFiltersJson(filtersJson);
-    const results = await executeStatueSearch(filters, client);
+    const results = await executeStatueSearch(filters);
 
     const statusKey: StatueSearchStatusKey = results.length === 0 ? 'EMPTY_RESULT' : 'NORMAL';
     const statusMeta = getStatusMeta(statusKey);
