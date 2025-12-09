@@ -144,11 +144,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           const data = await response.json();
           setAiMetadataAvailable(data.aiMetadataAvailable);
           setRateLimitStatus(data.rateLimitStatus);
-
-          // If AI is not available, switch to manual mode
-          if (!data.aiMetadataAvailable && metadataMode === 'ai') {
-            setMetadataMode('manual');
-          }
+          // Don't auto-switch - let user see the warning on AI tab and manually switch
         }
       } catch (err) {
         console.error('Failed to check rate limit status:', err);
@@ -157,7 +153,6 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
     };
 
     checkRateLimit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   const generatePreview = async (file: File): Promise<LocalPreview> => {
@@ -328,9 +323,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
           if (response.status === 429 && result.rateLimitStatus) {
             setRateLimitStatus(result.rateLimitStatus);
             setAiMetadataAvailable(false);
-            if (metadataMode === 'ai') {
-              setMetadataMode('manual');
-            }
+            // Don't auto-switch - let user see the warning on AI tab and manually switch
           }
           throw new Error(result.error || 'Upload failed');
         }
@@ -350,11 +343,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       if (uploadResponseResult?.rateLimitStatus) {
         setRateLimitStatus(uploadResponseResult.rateLimitStatus);
         setAiMetadataAvailable(!uploadResponseResult.rateLimitStatus.isLimited);
-
-        // If AI became unavailable, switch to manual mode
-        if (uploadResponseResult.rateLimitStatus.isLimited && metadataMode === 'ai') {
-          setMetadataMode('manual');
-        }
+        // Don't auto-switch - let user see the warning on AI tab and manually switch
       }
 
       // If we have an image ID, send the descriptions to the metadata processing endpoint
