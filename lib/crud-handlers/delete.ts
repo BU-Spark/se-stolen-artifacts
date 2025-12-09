@@ -1,7 +1,48 @@
 import { createClient } from '@supabase/supabase-js';
-import type { TableConfig } from '../registry';
+
+import { TABLE_REGISTRY, type CrudRequest, type TableConfig } from '../registry';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export type DeleteRequest = CrudRequest & {
+  action: 'delete';
+  id: string | number | Record<string, unknown>;
+};
+
+/**
+ * Dispatches a delete request using the table's configured delete rule.
+ */
+export async function handleDelete(
+  request: DeleteRequest
+): Promise<{ strategy: 'soft-delete' | 'hard-delete'; table: string }> {
+  const { table, id } = request;
+
+  if (id === undefined || id === null) {
+    throw new Error('Delete action requires a primary key identifier');
+  }
+
+  const config = TABLE_REGISTRY[table];
+  if (!config) {
+    throw new Error(`Table "${table}" is not registered`);
+  }
+
+  if (!config.allowedActions.includes('delete')) {
+    throw new Error(`Delete action is not allowed for table "${table}"`);
+  }
+
+  switch (config.deleteRule) {
+    case 'soft-delete':
+      await handleSoftDelete(table, config, id);
+      return { strategy: 'soft-delete', table };
+
+    case 'hard-delete':
+      await hardDeleteRecord(table, config, id);
+      return { strategy: 'hard-delete', table };
+
+    default:
+      throw new Error(`Delete rule "${config.deleteRule}" is not supported for table "${table}"`);
+  }
+}
 
 /**
  * Map of tables that reference each table (for soft delete cascade)
@@ -25,6 +66,57 @@ const FK_REFERENCES: Record<
     // But we need to unlink from statue
   ],
 };
+
+/**
+ * Hard deletes a record by applying the primary key filters and issuing a delete.
+ *
+ * - Updated lib/crud-handlers/delete.ts to add handleDelete/hardDeleteRecord, enforcing allowed actions from TABLE_REGISTRY,
+ *   supporting composite keys, and returning whether a soft or hard strategy ran.
+ * - Wired the new handler into app/api/admin/crud/route.ts, validating that delete calls include an id before dispatching.
+ * - Use POST /api/admin/crud with {"table":"statue_attributes","action":"delete","id":{"statue_id":123,"attribute_id":5}} (or a
+ *   single id for non-composite keys) to trigger a hard delete on tables whose deleteRule is hard-delete.
+ */
+async function hardDeleteRecord(
+  table: string,
+  config: TableConfig,
+  id: string | number | Record<string, unknown>
+): Promise<void> {
+  let query = supabase.from(table).delete();
+
+  if (Array.isArray(config.primaryKey)) {
+    if (typeof id !== 'object' || id === null) {
+      throw new Error(`Hard delete for table "${table}" requires a composite key object`);
+    }
+
+    const idObj = id as Record<string, unknown>;
+
+    for (const key of config.primaryKey) {
+      const value = idObj[key];
+
+      if (value === undefined || value === null) {
+        throw new Error(`Missing primary key value "${key}" for hard delete on "${table}"`);
+      }
+
+      if (typeof value !== 'string' && typeof value !== 'number') {
+        throw new Error(`Invalid primary key type for "${key}" on "${table}"; expected string or number`);
+      }
+
+      query = query.eq(key, value);
+    }
+  } else {
+    if (typeof id !== 'string' && typeof id !== 'number') {
+      throw new Error(`Invalid identifier type for hard delete on "${table}"; expected string or number`);
+    }
+
+    query = query.eq(config.primaryKey, id);
+  }
+
+  const { error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to hard delete from "${table}": ${error.message}`);
+  }
+}
 
 /**
  * Handles soft delete for a table
