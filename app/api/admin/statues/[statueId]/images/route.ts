@@ -16,7 +16,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sta
     const { data: images, error: imagesError } = await supabase
       .from('images')
       .select('internal_reference_number, image_url, image_gcs')
-      .eq('statue_id', statueId);
+      .eq('statue_id', statueId)
+      .eq('is_deleted', false);
 
     if (imagesError) {
       return NextResponse.json({ error: imagesError.message }, { status: 500 });
