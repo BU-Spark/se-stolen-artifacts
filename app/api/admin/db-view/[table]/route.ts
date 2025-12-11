@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { handleSoftDelete } from '@/lib/crud-handlers/delete';
 import { TABLE_REGISTRY } from '@/lib/registry';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+import { supabase } from '@/lib/db/supabase';
 
 // Allowed tables for admin access (security)
 const ALLOWED_TABLES = [

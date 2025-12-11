@@ -1,8 +1,6 @@
 // lib/db/insertArtifactMetadata.ts
-import { createClient } from '@supabase/supabase-js';
 import type { ArtifactSearchMetadata } from '@/app/types';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+import { supabase } from '@/lib/db/supabase';
 
 export async function insertArtifactMetadata(
   imageId: string,
