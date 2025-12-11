@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
 import { executeStatueSearch, type StatueSearchFilters, type StatueSearchRow } from '@/lib/db/statueSearchQueryBuilder';
 import {
@@ -7,12 +6,10 @@ import {
   STATUE_SEARCH_STATUS_NUMERIC_CODES,
   type StatueSearchResponsePayload,
 } from '@/lib/db/statueSearchModule';
+import { supabase } from '@/lib/db/supabase';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const STORAGE_BUCKET = 'spark';
-
-const supabaseClient = SUPABASE_URL && SERVICE_ROLE_KEY ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY) : null;
 
 const getStatusMeta = (resultsCount: number) =>
   resultsCount > 0
@@ -41,12 +38,8 @@ const signImageUrl = async (gcsPath?: string | null, fallback?: string | null): 
     return fallback ?? null;
   }
 
-  if (!supabaseClient) {
-    return fallback ?? buildPublicUrl(normalizedPath);
-  }
-
   try {
-    const { data, error } = await supabaseClient.storage.from(STORAGE_BUCKET).createSignedUrl(normalizedPath, 60 * 60); // 1 hour
+    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(normalizedPath, 60 * 60); // 1 hour
 
     if (error || !data?.signedUrl) {
       return fallback ?? buildPublicUrl(normalizedPath);

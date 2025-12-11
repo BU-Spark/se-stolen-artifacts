@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+import { supabase } from '@/lib/db/supabase';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ statueId: string }> }) {
   try {
@@ -16,7 +14,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sta
     const { data: images, error: imagesError } = await supabase
       .from('images')
       .select('internal_reference_number, image_url, image_gcs')
-      .eq('statue_id', statueId);
+      .eq('statue_id', statueId)
+      .eq('is_deleted', false);
 
     if (imagesError) {
       return NextResponse.json({ error: imagesError.message }, { status: 500 });
@@ -26,23 +25,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sta
       return NextResponse.json({ images: [] }, { status: 200 });
     }
 
-    // Get approval statuses for these images
-    const imageIds = images.map((img) => img.internal_reference_number);
-    const { data: approvals, error: approvalsError } = await supabase
-      .from('approval')
-      .select('image_id, status')
-      .in('image_id', imageIds);
-
-    if (approvalsError) {
-      return NextResponse.json({ error: approvalsError.message }, { status: 500 });
-    }
-
-    // Filter to only approved images and create signed URLs
-    const approvedImageIds = new Set(
-      approvals?.filter((a) => a.status === 'admin_approved').map((a) => a.image_id) || []
-    );
-
-    const approvedImages = images.filter((img) => approvedImageIds.has(img.internal_reference_number));
+    // The images table only contains assets that have already been approved and
+    // associated with statues, so we can surface everything returned above.
+    const approvedImages = images;
 
     // Generate signed URLs for approved images
     const imagesWithUrls = await Promise.all(

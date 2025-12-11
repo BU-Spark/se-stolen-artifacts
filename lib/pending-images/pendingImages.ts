@@ -1,7 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import type { PendingImageMetadata } from '@/app/admin/admin-review/components/PendingImageCard/PendingImageCard.types';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+import { supabase } from '@/lib/db/supabase';
 const storageBucket =
   process.env.SUPABASE_BUCKET_PENDING_IMAGES ??
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PENDING_IMAGES ??
