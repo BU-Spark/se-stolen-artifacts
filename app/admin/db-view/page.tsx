@@ -733,7 +733,7 @@ export default function AdminDbViewPage() {
 
                       return (
                         <Fragment key={String(rowKey)}>
-                          <TableRow key={String(rowKey)} hover>
+                          <TableRow hover>
                             {isStatueRow && (
                               <TableCell>
                                 <IconButton
