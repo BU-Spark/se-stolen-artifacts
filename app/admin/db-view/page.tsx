@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, Fragment } from 'react';
 import Link from 'next/link';
 import {
   Box,
@@ -757,8 +757,8 @@ export default function AdminDbViewPage() {
                       const isLoadingImages = statueId ? loadingImages[statueId] : false;
 
                       return (
-                        <>
-                          <TableRow key={String(rowKey)} hover>
+                        <Fragment key={String(rowKey)}>
+                          <TableRow hover>
                             {isStatueRow && (
                               <TableCell>
                                 <IconButton
@@ -1125,7 +1125,7 @@ export default function AdminDbViewPage() {
                               )}
                             </>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })
                   )}
