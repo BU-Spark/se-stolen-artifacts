@@ -18,7 +18,7 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import CustomTag from '@/app/search/components/CustomTag';
 import { BASIC_FIELDS, ADVANCED_PARAMS } from '@/app/search/constants';
 import { getInitialBasicState, normalizeLimbList } from '@/app/search/utils';
-import type { AdvancedSearchFilters, MainSearchFilters, StatueSearchFilters } from '@/lib/db/statueSearchQueryBuilder';
+import type { AdvancedSearchFilters, MainSearchFilters, StatueSearchFilters } from '@/lib/db/statueSearch.types';
 
 type AdvancedParamDef = {
   id: string;

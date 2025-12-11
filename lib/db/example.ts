@@ -1,5 +1,5 @@
 import { executeStatueSearch } from './statueSearchQueryBuilder';
-import type { StatueSearchFilters } from './statueSearchQueryBuilder';
+import type { StatueSearchFilters } from './statueSearch.types';
 
 async function demo() {
   // Build filters as needed; empty object returns all (non-deleted) statues

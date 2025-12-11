@@ -1,11 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import {
-  type StatueSearchResponsePayload,
-  searchStatuesFromJson,
-  STATUE_SEARCH_STATUS_CODES,
-} from '../lib/db/statueSearchModule.ts';
+import { searchStatuesFromJson } from '../lib/db/statueSearchModule.ts';
+import { STATUE_SEARCH_STATUS_CODES, type StatueSearchResponsePayload } from '../lib/search/statueSearchStatus.ts';
 
 const run = async (): Promise<void> => {
   /**

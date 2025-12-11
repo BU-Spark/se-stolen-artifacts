@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 
-import { executeStatueSearch, type StatueSearchFilters, type StatueSearchRow } from '@/lib/db/statueSearchQueryBuilder';
+import { executeStatueSearch } from '@/lib/db/statueSearchQueryBuilder';
+import type { StatueSearchFilters, StatueSearchRow } from '@/lib/db/statueSearch.types';
 import {
   STATUE_SEARCH_STATUS_CODES,
   STATUE_SEARCH_STATUS_NUMERIC_CODES,
   type StatueSearchResponsePayload,
-} from '@/lib/db/statueSearchModule';
+} from '@/lib/search/statueSearchStatus';
 import { supabase } from '@/lib/db/supabase';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;

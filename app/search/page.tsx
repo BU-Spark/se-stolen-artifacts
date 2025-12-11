@@ -5,8 +5,8 @@ import { Box, Stack } from '@mui/material';
 
 import SearchForm from '@/app/search/components/SearchForm';
 import StatueFolderList from '@/app/search/components/StatueFolderList';
-import type { StatueSearchFilters, StatueSearchRow } from '@/lib/db/statueSearchQueryBuilder';
-import { STATUE_SEARCH_STATUS_CODES, type StatueSearchResponsePayload } from '@/lib/db/statueSearchModule';
+import type { StatueSearchFilters, StatueSearchRow } from '@/lib/db/statueSearch.types';
+import { STATUE_SEARCH_STATUS_CODES, type StatueSearchResponsePayload } from '@/lib/search/statueSearchStatus';
 
 export default function SearchPage() {
   const [results, setResults] = useState<StatueSearchRow[]>([]);
