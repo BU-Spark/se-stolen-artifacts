@@ -15,10 +15,12 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.3",
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
+    "@mui/material-nextjs": "^7.3.6",
     "@prisma/client": "^6.19.0",
     "@supabase-js/source": "github:supabase/supabase-js",
     "@supabase/supabase-js": "^2.76.1",

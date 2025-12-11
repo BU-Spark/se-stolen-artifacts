@@ -7,8 +7,18 @@ const PENDING_STORAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_BUCKET_PENDING_IMAGES ??
   'pending_images';
 
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
+
 export async function handleUploadImage({ file }: { file: File }) {
   if (!file) throw new Error('No file uploaded');
+
+  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !ALLOWED_EXTENSIONS.has(ext)) {
+      throw new Error('Unsupported file type. Only JPG, JPEG, PNG, or WEBP images are allowed.');
+    }
+  }
 
   if (file.size > maxSize) {
     throw new Error('File too large. Maximum size is 10MB.');
