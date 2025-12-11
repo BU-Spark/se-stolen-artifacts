@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import type { ProcessMetadataRequest, ProcessMetadataResponse, ArtifactSearchMetadata } from '@/app/types';
 import { callLLM } from '@/lib/llm/callMetadataLLM';
 import { parseLLMResponse } from '@/lib/llm/parseLLMResponse';
-import { insertArtifactMetadata } from '@/lib/llm/insertArtifactMetadata';
+import { insertArtifactMetadata } from '@/lib/db/insertArtifactMetadata';
 import { getRateLimitStatus } from '@/lib/rate-limit/uploadRateLimit';
 
 export async function POST(request: NextRequest) {
@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
         ...aiMetadata,
         shortDescription,
         longDescription: body.longDescription,
+        miscInformation: miscInformationTrimmed ?? aiMetadata.miscInformation,
         aiGenerated: true, // Mark as AI-generated on success
       };
     } else {

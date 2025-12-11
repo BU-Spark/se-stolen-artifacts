@@ -21,6 +21,8 @@ export async function insertArtifactMetadata(
     aiGenerated,
   } = metadata;
 
+  const createdAt = new Date().toISOString();
+
   console.log('Inserting metadata for image:', imageId);
   console.log('Internal Reference Number:', internalReferenceNumber); // Log the internal reference number
   console.log('GCS Path:', gcsPath);
@@ -30,8 +32,9 @@ export async function insertArtifactMetadata(
   console.log('Long description:', longDescription);
   console.log('Misc information:', miscInformation);
   console.log('AI generated:', aiGenerated);
+  console.log('Created at timestamp:', createdAt); // Not actually inserted; just to show that its there -- gets inserted in RPC with NOW()
 
-  const { data, error } = await supabase.rpc('insert_llm_artifact_metadata_withgcs', {
+  const { data, error } = await supabase.rpc('insert_llm_artifact_metadata_with_timestamp', {
     image_id_input: imageId,
     gcs_path_input: gcsPath,
     internal_reference_number_input: internalReferenceNumber, // Pass the internal reference number to the RPC
