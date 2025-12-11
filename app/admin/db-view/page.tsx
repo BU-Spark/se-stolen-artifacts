@@ -136,6 +136,8 @@ export default function AdminDbViewPage() {
   const [expandedStatues, setExpandedStatues] = useState<Set<number>>(new Set());
   const [statueImages, setStatueImages] = useState<Record<number, RowData[]>>({});
   const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
+  const [associatedImageCount, setAssociatedImageCount] = useState<number | null>(null);
+  const [loadingImageCount, setLoadingImageCount] = useState(false);
   const editDialogContentRef = useRef<HTMLDivElement>(null);
   const addDialogContentRef = useRef<HTMLDivElement>(null);
 
@@ -234,9 +236,29 @@ export default function AdminDbViewPage() {
     setAddDialogOpen(true);
   };
 
-  const handleDeleteClick = (row: RowData) => {
+  const handleDeleteClick = async (row: RowData) => {
     setRowToDelete(row);
+    setAssociatedImageCount(null);
     setDeleteDialogOpen(true);
+
+    // If deleting a statue, fetch the count of associated images
+    if (selectedTable === 'statues' && row.statue_id) {
+      setLoadingImageCount(true);
+      try {
+        const response = await fetch(`/api/admin/db-view/images`);
+        const result = await response.json();
+        if (response.ok && result.data) {
+          // Count images that belong to this statue and are not deleted
+          const count = result.data.filter((img: RowData) => img.statue_id === row.statue_id && !img.is_deleted).length;
+          setAssociatedImageCount(count);
+        }
+      } catch (error) {
+        console.error('Failed to fetch image count:', error);
+        // Don't block deletion if count fetch fails
+      } finally {
+        setLoadingImageCount(false);
+      }
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -369,12 +391,14 @@ export default function AdminDbViewPage() {
 
       setDeleteDialogOpen(false);
       setRowToDelete(null);
+      setAssociatedImageCount(null);
       await fetchData();
     } catch (deleteError: unknown) {
       const message = deleteError instanceof Error ? deleteError.message : 'Failed to delete record';
       setError(message);
       setDeleteDialogOpen(false);
       setRowToDelete(null);
+      setAssociatedImageCount(null);
       // Scroll to top of page to show error message
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -383,6 +407,7 @@ export default function AdminDbViewPage() {
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setRowToDelete(null);
+    setAssociatedImageCount(null);
   };
 
   const handleSave = async (isEdit: boolean) => {
@@ -1249,28 +1274,55 @@ export default function AdminDbViewPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel} maxWidth="sm" fullWidth>
-        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogTitle>
+          {selectedTable === 'statues' && associatedImageCount !== null && associatedImageCount > 0
+            ? 'Delete Warning'
+            : 'Confirm Delete'}
+        </DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete{' '}
-            {rowToDelete && (
-              <strong>
-                {selectedTable === 'statues'
-                  ? `statue ${rowToDelete.statue_id}`
-                  : selectedTable === 'images'
-                    ? `image ${rowToDelete.internal_reference_number}`
-                    : `record ${rowToDelete[getPrimaryKey()]}`}
-              </strong>
+          <Stack spacing={2}>
+            {/* Catastrophic warning for statues with associated images */}
+            {selectedTable === 'statues' && associatedImageCount !== null && associatedImageCount > 0 && (
+              <Alert severity="error" icon={false}>
+                <Typography variant="body2">
+                  Deleting this statue will also delete {associatedImageCount} associated image
+                  {associatedImageCount !== 1 ? 's' : ''} and all related records. This action cannot be undone.
+                </Typography>
+              </Alert>
             )}
-            ?
-          </Typography>
+
+            {/* Loading state for image count */}
+            {selectedTable === 'statues' && loadingImageCount && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                <Typography variant="body2" color="text.secondary">
+                  Checking for associated images...
+                </Typography>
+              </Box>
+            )}
+
+            {/* Standard confirmation message */}
+            <Typography>
+              Are you sure you want to delete{' '}
+              {rowToDelete && (
+                <strong>
+                  {selectedTable === 'statues'
+                    ? `statue ${rowToDelete.statue_id}`
+                    : selectedTable === 'images'
+                      ? `image ${rowToDelete.internal_reference_number}`
+                      : `record ${rowToDelete[getPrimaryKey()]}`}
+                </strong>
+              )}
+              ?
+            </Typography>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} color="inherit">
-            No
+            Cancel
           </Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Yes
+            Yes, Delete
           </Button>
         </DialogActions>
       </Dialog>

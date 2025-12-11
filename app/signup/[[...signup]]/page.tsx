@@ -168,11 +168,6 @@ export default function SignUpPage() {
                   autoFocus
                   placeholder="Enter 6-digit code"
                   size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      boxShadow: 'none',
-                    },
-                  }}
                 />
 
                 <Button
@@ -300,9 +295,6 @@ export default function SignUpPage() {
                   autoFocus
                   size="small"
                   sx={{
-                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      boxShadow: 'none',
-                    },
                     '& .MuiInputLabel-root:not(.MuiInputLabel-shrink) .optional-text': {
                       fontSize: '0.65rem',
                     },
@@ -331,9 +323,6 @@ export default function SignUpPage() {
                   autoComplete="family-name"
                   size="small"
                   sx={{
-                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      boxShadow: 'none',
-                    },
                     '& .MuiInputLabel-root:not(.MuiInputLabel-shrink) .optional-text': {
                       fontSize: '0.65rem',
                     },
@@ -354,11 +343,6 @@ export default function SignUpPage() {
                 disabled={loading}
                 autoComplete="email"
                 size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    boxShadow: 'none',
-                  },
-                }}
               />
 
               <TextField
@@ -372,11 +356,6 @@ export default function SignUpPage() {
                 autoComplete="new-password"
                 helperText="Must be at least 8 characters"
                 size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    boxShadow: 'none',
-                  },
-                }}
               />
 
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
