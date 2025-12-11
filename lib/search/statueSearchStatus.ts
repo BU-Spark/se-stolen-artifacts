@@ -4,14 +4,14 @@ export const STATUE_SEARCH_STATUS_CODES = {
   NORMAL: 'normal',
   EMPTY_RESULT: 'empty_result',
   CONNECTION_ERROR: 'connection_error',
-  EXCEED_Limit: 'exceed_limit',
+  EXCEED_LIMIT: 'exceed_limit',
 } as const;
 
 export const STATUE_SEARCH_STATUS_NUMERIC_CODES = {
   NORMAL: 0,
   EMPTY_RESULT: 1,
   CONNECTION_ERROR: 2,
-  EXCEED_Limit: 3,
+  EXCEED_LIMIT: 3,
 } as const;
 
 export type StatueSearchStatusKey = keyof typeof STATUE_SEARCH_STATUS_CODES;
