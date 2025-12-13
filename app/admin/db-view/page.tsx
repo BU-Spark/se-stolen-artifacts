@@ -96,7 +96,7 @@ const FOREIGN_KEY_MAPPINGS: Record<
   images: {
     statue_id: { referencedTable: 'statues', displayField: 'description', idField: 'statue_id' },
     photograph_location: { referencedTable: 'locations', displayField: 'location_name', idField: 'id' },
-    photographer: { referencedData: 'photographers', displayField: 'photographer_name', idField: 'id' },
+    photographer: { referencedTable: 'photographers', displayField: 'photographer_name', idField: 'id' },
   },
   auction_events: {
     statue_id: { referencedTable: 'statues', displayField: 'description', idField: 'statue_id' },
@@ -232,37 +232,10 @@ export default function AdminDbViewPage() {
 
   const handleAdd = async () => {
     // Pre-populate with auto-generated primary key
-    const primaryKey = getPrimaryKey();
-    const nextId = await getNextAvailableId();
-    setFormData({ [primaryKey]: nextId });
+    // Do not prefill PK for auto-incrementing tables; let DB assign it
+    setFormData({});
     setDialogError(null);
     setAddDialogOpen(true);
-  };
-
-  const getNextAvailableId = async (): Promise<number> => {
-    // Simply increment from max ID for fastest retrieval
-    try {
-      const response = await fetch(`/api/admin/db-view/${selectedTable}?include_deleted=true`);
-      const result = await response.json();
-      const allData = result.data || [];
-
-      if (allData.length === 0) return 1;
-
-      const primaryKey = getPrimaryKey();
-      const existingIds = allData
-        .map((row: RowData) => Number(row[primaryKey]))
-        .filter((id: number) => !isNaN(id) && id > 0);
-
-      if (existingIds.length === 0) return 1;
-      return Math.max(...existingIds) + 1;
-    } catch (error) {
-      console.error('Failed to fetch next available ID:', error);
-      // Fallback to local data if API fails
-      if (data.length === 0) return 1;
-      const primaryKey = getPrimaryKey();
-      const existingIds = data.map((row) => Number(row[primaryKey])).filter((id) => !isNaN(id) && id > 0);
-      return existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
-    }
   };
 
   const handleDeleteClick = async (row: RowData) => {
@@ -663,9 +636,7 @@ export default function AdminDbViewPage() {
     const isPrimaryKey = col === primaryKey;
 
     // Hide primary key field when adding (it's auto-generated)
-    if (isPrimaryKey && !isEdit) {
-      return null;
-    }
+    if (isPrimaryKey && !isEdit) return null;
 
     const fkMappings = FOREIGN_KEY_MAPPINGS[selectedTable];
     const fkMapping = fkMappings?.[col];
