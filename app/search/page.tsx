@@ -35,7 +35,7 @@ export default function SearchPage() {
         throw new Error(payload.error ?? 'Unable to search statues.');
       }
 
-      if (payload.status === STATUE_SEARCH_STATUS_CODES.EXCEED_Limit) {
+      if (payload.status === STATUE_SEARCH_STATUS_CODES.EXCEED_LIMIT) {
         setResults(payload.results ?? []);
         setError('Too many results matched these filters. Please refine your search.');
         return;
