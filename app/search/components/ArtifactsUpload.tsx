@@ -164,6 +164,7 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       sizeBytes: file.size,
     };
 
+    // Check image
     if (kind === 'image') {
       const previewUrl = URL.createObjectURL(file);
       console.log('Generated preview URL:', previewUrl);
