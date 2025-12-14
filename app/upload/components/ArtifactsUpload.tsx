@@ -170,27 +170,6 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       return { ...basePreview, previewUrl };
     }
 
-    if (kind === 'csv' || kind === 'json') {
-      try {
-        const text = await file.text();
-        const lines = text.split('\n').slice(0, 10); // First 10 lines
-        let textPreview = lines.join('\n');
-
-        if (kind === 'json') {
-          try {
-            const parsed = JSON.parse(text);
-            textPreview = JSON.stringify(parsed, null, 2).split('\n').slice(0, 10).join('\n');
-          } catch {
-            return { ...basePreview, textPreview: 'Invalid JSON format' };
-          }
-        }
-
-        return { ...basePreview, textPreview };
-      } catch {
-        return { ...basePreview, textPreview: 'Unable to read file contents' };
-      }
-    }
-
     return basePreview;
   };
 
