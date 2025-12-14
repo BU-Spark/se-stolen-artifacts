@@ -94,24 +94,24 @@ const FOREIGN_KEY_MAPPINGS: Record<
     statues_name: { referencedTable: 'names', displayField: 'statues_name', idField: 'id' },
   },
   images: {
-    statue_id: { referencedTable: 'statues', displayField: 'statue_id', idField: 'statue_id' },
+    statue_id: { referencedTable: 'statues', displayField: 'description', idField: 'statue_id' },
     photograph_location: { referencedTable: 'locations', displayField: 'location_name', idField: 'id' },
     photographer: { referencedTable: 'photographers', displayField: 'photographer_name', idField: 'id' },
   },
   auction_events: {
-    statue_id: { referencedTable: 'statues', displayField: 'statue_id', idField: 'statue_id' },
+    statue_id: { referencedTable: 'statues', displayField: 'description', idField: 'statue_id' },
     auction_house_id: { referencedTable: 'auction_institutions', displayField: 'name', idField: 'id' },
   },
   statue_current_loc: {
-    statue_id: { referencedTable: 'statues', displayField: 'statue_id', idField: 'statue_id' },
+    statue_id: { referencedTable: 'statues', displayField: 'description', idField: 'statue_id' },
     location_id: { referencedTable: 'locations', displayField: 'location_name', idField: 'id' },
   },
   statue_subject: {
-    statue_id: { referencedTable: 'statues', displayField: 'statue_id', idField: 'statue_id' },
+    statue_id: { referencedTable: 'statues', displayField: 'description', idField: 'statue_id' },
     subject_id: { referencedTable: 'subjects', displayField: 'subject_name', idField: 'id' },
   },
   statue_attributes: {
-    statue_id: { referencedTable: 'statues', displayField: 'statue_id', idField: 'statue_id' },
+    statue_id: { referencedTable: 'statues', displayField: 'description', idField: 'statue_id' },
     attribute_id: { referencedTable: 'attributes', displayField: 'attribute_name', idField: 'id' },
   },
 };
@@ -230,7 +230,9 @@ export default function AdminDbViewPage() {
     setEditDialogOpen(true);
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
+    // Pre-populate with auto-generated primary key
+    // Do not prefill PK for auto-incrementing tables; let DB assign it
     setFormData({});
     setDialogError(null);
     setAddDialogOpen(true);
@@ -413,8 +415,6 @@ export default function AdminDbViewPage() {
   const handleSave = async (isEdit: boolean) => {
     try {
       setDialogError(null);
-      const url = `/api/admin/db-view/${selectedTable}`;
-      const method = isEdit ? 'PUT' : 'POST';
 
       // Prepare data with proper type conversions for foreign keys
       const fkMappings = FOREIGN_KEY_MAPPINGS[selectedTable] || {};
@@ -430,10 +430,20 @@ export default function AdminDbViewPage() {
         }
       });
 
+      const url = isEdit ? `/api/admin/db-view/${selectedTable}` : '/api/admin/crud';
+      const method = isEdit ? 'PUT' : 'POST';
+      const body = isEdit
+        ? JSON.stringify(preparedData)
+        : JSON.stringify({
+            table: selectedTable,
+            action: 'create',
+            data: preparedData,
+          });
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preparedData),
+        body,
       });
 
       const result = await response.json();
@@ -454,13 +464,52 @@ export default function AdminDbViewPage() {
   };
 
   const getColumns = (): string[] => {
-    if (data.length === 0) return [];
-    const cols = Object.keys(data[0]);
-    // Filter out is_deleted column for statues table (keep it in DB, just hide in UI)
-    if (selectedTable === 'statues') {
-      return cols.filter((col) => col !== 'is_deleted');
+    if (data.length > 0) {
+      const cols = Object.keys(data[0]);
+      // Filter out is_deleted column for statues table (keep it in DB, just hide in UI)
+      if (selectedTable === 'statues') {
+        return cols.filter((col) => col !== 'is_deleted');
+      }
+      return cols;
     }
-    return cols;
+
+    // Fallback schema when table is empty
+    const schemaMap: Record<string, string[]> = {
+      statues: [
+        'statue_id',
+        'description',
+        'provenance_history',
+        'first_known_appearance_year',
+        'first_known_appearance_outside_cambodia_year',
+        'arm_number',
+        'original_location_id',
+        'material',
+        'statues_name',
+      ],
+      images: [
+        'internal_reference_number',
+        'statue_id',
+        'image_url',
+        'image_gcs',
+        'image_source',
+        'photograph_location',
+        'photographer',
+        'observations_comments',
+      ],
+      locations: ['id', 'location_name', 'country'],
+      materials: ['id', 'material_name'],
+      names: ['id', 'statues_name'],
+      subjects: ['id', 'subject_name'],
+      attributes: ['id', 'attribute_name'],
+      photographers: ['id', 'photographer_name'],
+      auction_institutions: ['id', 'name', 'address', 'contact_info'],
+      auction_events: ['id', 'statue_id', 'auction_house_id', 'auction_name', 'auction_date', 'lot_number'],
+      statue_current_loc: ['id', 'statue_id', 'location_id', 'last_mentioned_date', 'link'],
+      statue_subject: ['statue_id', 'subject_id'],
+      statue_attributes: ['statue_id', 'attribute_id'],
+    };
+
+    return schemaMap[selectedTable] || [];
   };
 
   const columns = getColumns();
@@ -585,6 +634,10 @@ export default function AdminDbViewPage() {
   const renderFormField = (col: string, isEdit: boolean) => {
     const primaryKey = getPrimaryKey();
     const isPrimaryKey = col === primaryKey;
+
+    // Hide primary key field when adding (it's auto-generated)
+    if (isPrimaryKey && !isEdit) return null;
+
     const fkMappings = FOREIGN_KEY_MAPPINGS[selectedTable];
     const fkMapping = fkMappings?.[col];
 
@@ -615,14 +668,44 @@ export default function AdminDbViewPage() {
             {referencedData.map((row: RowData) => {
               const id = row[fkMapping.idField];
               const display = row[fkMapping.displayField] ?? id;
+              // For statue_id fields, show description with ID in parentheses
+              const isStatueIdField = col === 'statue_id' && fkMapping.referencedTable === 'statues';
+              const label =
+                isStatueIdField && display
+                  ? `${String(display).substring(0, 60)}${String(display).length > 60 ? '...' : ''} (ID: ${String(id)})`
+                  : `${String(display)} (ID: ${String(id)})`;
               return (
                 <MenuItem key={String(id)} value={String(id)}>
-                  {String(display)} (ID: {String(id)})
+                  {label}
                 </MenuItem>
               );
             })}
           </Select>
         </FormControl>
+      );
+    }
+
+    // Check if this is a date field (common patterns: *_date, last_mentioned_date, etc.)
+    const isDateField = col.toLowerCase().includes('date');
+
+    // Render date picker for date fields
+    if (isDateField) {
+      // Convert database date string to YYYY-MM-DD format for input
+      const dateValue = formData[col] ? new Date(formData[col] as string).toISOString().split('T')[0] : '';
+
+      return (
+        <TextField
+          key={col}
+          label={col}
+          type="date"
+          value={dateValue}
+          onChange={(e) => setFormData({ ...formData, [col]: e.target.value })}
+          disabled={isPrimaryKey}
+          fullWidth
+          InputLabelProps={{
+            shrink: true,
+          }}
+        />
       );
     }
 
@@ -637,7 +720,7 @@ export default function AdminDbViewPage() {
         fullWidth
         multiline={typeof formData[col] === 'string' && formData[col]?.length > 50}
         rows={typeof formData[col] === 'string' && formData[col]?.length > 50 ? 3 : 1}
-        placeholder={isPrimaryKey && !isEdit ? 'Auto-generated' : `Enter ${col}`}
+        placeholder={`Enter ${col}`}
       />
     );
   };
