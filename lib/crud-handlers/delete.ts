@@ -75,6 +75,18 @@ const FK_REFERENCES: Record<
  * - Wired the new handler into app/api/admin/crud/route.ts, validating that delete calls include an id before dispatching.
  * - Use POST /api/admin/crud with {"table":"statue_attributes","action":"delete","id":{"statue_id":123,"attribute_id":5}} (or a
  *   single id for non-composite keys) to trigger a hard delete on tables whose deleteRule is hard-delete.
+ *     fetch('/api/admin/crud', {
+ *     method: 'POST',
+ *     headers: { 'Content-Type': 'application/json' },
+ *     body: JSON.stringify({
+ *       table: 'statue_attributes',
+ *       action: 'delete',
+ *       id: { statue_id: 123, attribute_id: 5 },
+ *     }),
+ *   })
+ *     .then(r => r.json())
+ *     .then(console.log)
+ *     .catch(console.error);
  */
 async function hardDeleteRecord(
   table: string,
