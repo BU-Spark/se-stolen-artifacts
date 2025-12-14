@@ -28,8 +28,8 @@ import type {
 } from '@/app/types/metadata.types';
 
 // local components
-import DropZone from './DropZone';
-import DescriptionMetadataEntry from './DescriptionMetadataEntry';
+import DropZone from '@/app/upload/components/DropZone';
+import DescriptionMetadataEntry from '@/app/upload/components/DescriptionMetadataEntry';
 
 // local utils
 import { formatFileSize, validateFile, getFileKind } from '@/app/search/utils';
@@ -164,31 +164,11 @@ export default function ArtifactsUpload({ onUploadComplete }: ArtifactsUploadPro
       sizeBytes: file.size,
     };
 
+    // Check image
     if (kind === 'image') {
       const previewUrl = URL.createObjectURL(file);
       console.log('Generated preview URL:', previewUrl);
       return { ...basePreview, previewUrl };
-    }
-
-    if (kind === 'csv' || kind === 'json') {
-      try {
-        const text = await file.text();
-        const lines = text.split('\n').slice(0, 10); // First 10 lines
-        let textPreview = lines.join('\n');
-
-        if (kind === 'json') {
-          try {
-            const parsed = JSON.parse(text);
-            textPreview = JSON.stringify(parsed, null, 2).split('\n').slice(0, 10).join('\n');
-          } catch {
-            return { ...basePreview, textPreview: 'Invalid JSON format' };
-          }
-        }
-
-        return { ...basePreview, textPreview };
-      } catch {
-        return { ...basePreview, textPreview: 'Unable to read file contents' };
-      }
     }
 
     return basePreview;

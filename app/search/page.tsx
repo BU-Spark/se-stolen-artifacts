@@ -5,8 +5,8 @@ import { Box, Stack } from '@mui/material';
 
 import SearchForm from '@/app/search/components/SearchForm';
 import StatueFolderList from '@/app/search/components/StatueFolderList';
-import type { StatueSearchFilters, StatueSearchRow } from '@/lib/db/statueSearchQueryBuilder';
-import { STATUE_SEARCH_STATUS_CODES, type StatueSearchResponsePayload } from '@/lib/db/statueSearchModule';
+import type { StatueSearchFilters, StatueSearchRow } from '@/lib/db/statueSearch.types';
+import { STATUE_SEARCH_STATUS_CODES, type StatueSearchResponsePayload } from '@/lib/search/statueSearchStatus';
 
 export default function SearchPage() {
   const [results, setResults] = useState<StatueSearchRow[]>([]);
@@ -35,7 +35,7 @@ export default function SearchPage() {
         throw new Error(payload.error ?? 'Unable to search statues.');
       }
 
-      if (payload.status === STATUE_SEARCH_STATUS_CODES.EXCEED_Limit) {
+      if (payload.status === STATUE_SEARCH_STATUS_CODES.EXCEED_LIMIT) {
         setResults(payload.results ?? []);
         setError('Too many results matched these filters. Please refine your search.');
         return;

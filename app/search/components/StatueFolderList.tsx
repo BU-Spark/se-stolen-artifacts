@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 
-import type { StatueSearchRow } from '@/lib/db/statueSearchQueryBuilder';
+import type { StatueSearchRow } from '@/lib/db/statueSearch.types';
 
 type StatueFolderListProps = {
   statues: StatueSearchRow[];

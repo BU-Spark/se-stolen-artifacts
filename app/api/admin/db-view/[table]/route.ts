@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { handleSoftDelete } from '@/lib/crud-handlers/delete';
 import { TABLE_REGISTRY } from '@/lib/registry';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+import { supabase } from '@/lib/db/supabase';
 
 // Allowed tables for admin access (security)
 const ALLOWED_TABLES = [
@@ -30,6 +28,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: `Table "${table}" is not allowed` }, { status: 403 });
     }
 
+    // Check if include_deleted query param is set
+    const { searchParams } = new URL(request.url);
+    const includeDeleted = searchParams.get('include_deleted') === 'true';
+
     // Determine primary key for ordering
     const orderBy = table === 'statues' ? 'statue_id' : table === 'images' ? 'internal_reference_number' : 'id';
 
@@ -42,8 +44,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Build query
     let query = supabase.from(table).select('*');
 
-    // Filter out soft-deleted records if table supports soft delete
-    if (config.deleteRule === 'soft-delete') {
+    // Filter out soft-deleted records if table supports soft delete (unless include_deleted is true)
+    if (config.deleteRule === 'soft-delete' && !includeDeleted) {
       query = query.eq('is_deleted', false);
     }
 

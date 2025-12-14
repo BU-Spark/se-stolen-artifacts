@@ -31,13 +31,60 @@ export async function handleCreate(request: CreateRequest): Promise<InsertResult
   validateIdentifier(table);
   Object.keys(data).forEach(validateIdentifier);
 
-  const record = await insertRow(table, data);
-  if (!record) {
-    throw new Error(`Insert into "${table}" did not return a record`);
+  try {
+    const record = await insertRow(table, data);
+    if (!record) {
+      throw new Error(`Insert into "${table}" did not return a record`);
+    }
+    const primaryKey = extractPrimaryKey(record, tableConfig.primaryKey);
+    return { record, primaryKey };
+  } catch (error) {
+    // Type guard for error
+    const err = error instanceof Error ? error : new Error(String(error));
+    // Handle duplicate key error for auto-incrementing PK tables
+    const autoIncrementTables = [
+      'statues',
+      'images',
+      'locations',
+      'materials',
+      'names',
+      'subjects',
+      'attributes',
+      'photographers',
+      'auction_institutions',
+      'auction_events',
+      'statue_current_loc',
+    ];
+    const isDuplicateKey = err.message.includes('duplicate key value violates unique constraint');
+    if (isDuplicateKey && autoIncrementTables.includes(table)) {
+      // Remove PK and retry insert if PK was provided
+      const tableConfig = TABLE_REGISTRY[table];
+      const pk = tableConfig.primaryKey;
+      const dataWithoutPK = { ...data };
+      if (typeof pk === 'string' && pk in dataWithoutPK) {
+        delete dataWithoutPK[pk];
+        try {
+          const retryRecord = await insertRow(table, dataWithoutPK);
+          if (!retryRecord) {
+            throw new Error(`Insert into "${table}" did not return a record`);
+          }
+          const primaryKey = extractPrimaryKey(retryRecord, pk);
+          return { record: retryRecord, primaryKey };
+        } catch (retryError) {
+          const retryErr = retryError instanceof Error ? retryError : new Error(String(retryError));
+          throw new Error(
+            `Failed to insert into "${table}": Duplicate key for primary key. Please try again. (Retry also failed: ${retryErr.message})`
+          );
+        }
+      }
+      // If PK not present, just return duplicate key error
+      throw new Error(
+        `Failed to insert into "${table}": Duplicate key for primary key. Please try again without specifying the ID.`
+      );
+    }
+    // Other errors: rethrow
+    throw err;
   }
-
-  const primaryKey = extractPrimaryKey(record, tableConfig.primaryKey);
-  return { record, primaryKey };
 }
 
 async function insertRow(table: string, data: Record<string, unknown>) {

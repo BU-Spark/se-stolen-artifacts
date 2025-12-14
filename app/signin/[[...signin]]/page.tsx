@@ -167,11 +167,6 @@ export default function SignInPage() {
                 autoComplete="email"
                 autoFocus
                 size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    boxShadow: 'none',
-                  },
-                }}
               />
 
               <TextField
@@ -184,11 +179,6 @@ export default function SignInPage() {
                 disabled={loading}
                 autoComplete="current-password"
                 size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    boxShadow: 'none',
-                  },
-                }}
               />
 
               <Button

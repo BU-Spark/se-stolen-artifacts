@@ -6,15 +6,8 @@ export const formatFileSize = (bytes: number): string => {
 
 export const validateFile = (file: File): string | null => {
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp', '.csv', '.json'];
-  const ACCEPTED_MIME_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'text/csv',
-    'application/json',
-    'application/csv',
-  ];
+  const ACCEPTED_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
+  const ACCEPTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   if (file.size > MAX_FILE_SIZE) {
     return `File size exceeds 10MB limit. Your file is ${formatFileSize(file.size)}.`;
   }
@@ -27,10 +20,8 @@ export const validateFile = (file: File): string | null => {
   return null;
 };
 
-export const getFileKind = (file: File): 'image' | 'csv' | 'json' | 'unknown' => {
+export const getFileKind = (file: File): 'image' | 'unknown' => {
   if (file.type.startsWith('image/')) return 'image';
-  if (file.name.endsWith('.csv') || file.type === 'text/csv') return 'csv';
-  if (file.name.endsWith('.json') || file.type === 'application/json') return 'json';
   return 'unknown';
 };
 import { BASIC_FIELDS } from '@/app/search/constants';
