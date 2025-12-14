@@ -1,8 +1,7 @@
-import { createClient, type PostgrestError } from '@supabase/supabase-js';
+import { type PostgrestError } from '@supabase/supabase-js';
 
+import { supabase } from '@/lib/db/supabase';
 import { TABLE_REGISTRY, type CrudRequest, type TableConfig } from '../registry';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export type DeleteRequest = CrudRequest & {
   action: 'delete';
