@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type PostgrestError } from '@supabase/supabase-js';
 
 import { TABLE_REGISTRY, type CrudRequest, type TableConfig } from '../registry';
 
@@ -324,4 +324,104 @@ async function unlinkImageFromStatue(imageId: string | number | Record<string, u
   if (error) {
     throw new Error(`Failed to unlink image from statue: ${error.message}`);
   }
+}
+
+/**
+ * Fully removes a statue and every related record, bypassing soft-delete semantics.
+ * Also removes approvals/metadata linked to the statue's images to avoid FK violations.
+ */
+export async function hardDeleteStatueWithRelations(
+  statueId: number
+): Promise<{ statueId: number; deletedImageIds: string[] }> {
+  if (!Number.isInteger(statueId) || statueId <= 0) {
+    throw new Error('statueId must be a valid integer');
+  }
+
+  // Collect image IDs first so we can clear approval/metadata tables before deleting the rows.
+  const { data: images, error: imagesError } = await supabase
+    .from('images')
+    .select('internal_reference_number')
+    .eq('statue_id', statueId);
+
+  if (imagesError) {
+    throw new Error(`Failed to fetch images for statue ${statueId}: ${imagesError.message}`);
+  }
+
+  const imageIds =
+    images?.map((img) => img.internal_reference_number).filter((id): id is string => typeof id === 'string') ?? [];
+
+  if (imageIds.length > 0) {
+    await deleteByColumn('approval', 'image_id', imageIds);
+    await deleteByColumn('temp_artifact_metadata', 'image_id', imageIds, { ignoreMissingTable: true });
+    await deleteByColumn('artifact_metadata_upload_log', 'image_id', imageIds, { ignoreMissingTable: true });
+    await deleteByColumn('artifact_metadata_upload_log', 'internal_reference_number', imageIds, {
+      ignoreMissingTable: true,
+    });
+  }
+
+  const statueLinkedTables: Array<{ table: string; column: string }> = [
+    { table: 'statue_current_loc', column: 'statue_id' },
+    { table: 'statue_attributes', column: 'statue_id' },
+    { table: 'statue_subject', column: 'statue_id' },
+    { table: 'auction_events', column: 'statue_id' },
+    { table: 'images', column: 'statue_id' },
+  ];
+
+  for (const { table, column } of statueLinkedTables) {
+    await deleteByColumn(table, column, statueId);
+  }
+
+  await deleteByColumn('statues', 'statue_id', statueId);
+
+  return { statueId, deletedImageIds: imageIds };
+}
+
+type DeleteByColumnOptions = {
+  ignoreMissingTable?: boolean;
+};
+
+/**
+ * Deletes rows from a table by matching a column against a single value or list.
+ * When ignoreMissingTable is true, a missing relation error is swallowed so optional tables don't block deletion.
+ */
+async function deleteByColumn(
+  table: string,
+  column: string,
+  value: number | string | number[] | string[],
+  options: DeleteByColumnOptions = {}
+): Promise<void> {
+  const valuesArray = Array.isArray(value) ? value : [value];
+  if (valuesArray.length === 0) return;
+
+  const allNumbers = valuesArray.every((item) => typeof item === 'number');
+  const allStrings = valuesArray.every((item) => typeof item === 'string');
+
+  if (!allNumbers && !allStrings) {
+    throw new Error(`deleteByColumn received mixed value types for "${table}.${column}"`);
+  }
+
+  const filterValues = allNumbers ? (valuesArray as number[]) : (valuesArray as string[]);
+
+  const query = supabase.from(table).delete().in(column, filterValues);
+  const { error } = await query;
+
+  if (error) {
+    if (options.ignoreMissingTable && isMissingTableError(error)) {
+      console.warn(`Skipping optional delete on missing table "${table}"`);
+      return;
+    }
+
+    throw new Error(`Failed to delete from "${table}": ${error.message}`);
+  }
+}
+
+function isMissingTableError(error: PostgrestError): boolean {
+  const message = error.message?.toLowerCase() ?? '';
+  return (
+    error.code === '42P01' ||
+    error.code === '42703' ||
+    message.includes('does not exist') ||
+    message.includes('could not find the table') ||
+    message.includes('schema cache')
+  );
 }
