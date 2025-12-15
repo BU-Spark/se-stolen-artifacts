@@ -13,7 +13,7 @@ export type DeleteRequest = CrudRequest & {
  */
 export async function handleDelete(
   request: DeleteRequest
-): Promise<{ strategy: 'soft-delete' | 'hard-delete'; table: string }> {
+): Promise<{ strategy: 'soft-delete' | 'hard-delete' | 'set-null'; table: string }> {
   const { table, id } = request;
 
   if (id === undefined || id === null) {
@@ -37,6 +37,10 @@ export async function handleDelete(
     case 'hard-delete':
       await hardDeleteRecord(table, config, id);
       return { strategy: 'hard-delete', table };
+
+    case 'set-null':
+      await handleSetNullDelete(table, config, id);
+      return { strategy: 'set-null', table };
 
     default:
       throw new Error(`Delete rule "${config.deleteRule}" is not supported for table "${table}"`);
@@ -65,6 +69,51 @@ const FK_REFERENCES: Record<
     // But we need to unlink from statue
   ],
 };
+
+const SET_NULL_REFERENCES: Record<
+  string,
+  Array<{ table: string; column: string; action: 'set-null' | 'hard-delete' }>
+> = {
+  attributes: [{ table: 'statue_attributes', column: 'attribute_id', action: 'hard-delete' }],
+  materials: [{ table: 'statues', column: 'material', action: 'set-null' }],
+  names: [{ table: 'statues', column: 'statues_name', action: 'set-null' }],
+  subjects: [{ table: 'statue_subject', column: 'subject_id', action: 'hard-delete' }],
+  locations: [
+    { table: 'statues', column: 'original_location_id', action: 'set-null' },
+    { table: 'images', column: 'photograph_location', action: 'set-null' },
+    { table: 'statue_current_loc', column: 'location_id', action: 'hard-delete' },
+  ],
+  photographers: [{ table: 'images', column: 'photographer', action: 'set-null' }],
+  auction_institutions: [{ table: 'auction_events', column: 'auction_house_id', action: 'set-null' }],
+};
+
+export async function handleSetNullDelete(
+  table: string,
+  config: TableConfig,
+  id: string | number | Record<string, unknown>
+): Promise<void> {
+  if (Array.isArray(config.primaryKey)) {
+    throw new Error(`Set-null delete is not supported for composite keys on table "${table}"`);
+  }
+
+  const references = SET_NULL_REFERENCES[table] || [];
+  const rawId = id as string | number;
+  const normalizedId = normalizeIdentifier(rawId);
+
+  for (const ref of references) {
+    try {
+      if (ref.action === 'set-null') {
+        await setNullReferencingRecords(ref.table, ref.column, normalizedId);
+      } else {
+        await hardDeleteReferencingRecords(ref.table, ref.column, normalizedId);
+      }
+    } catch (error) {
+      console.warn(`Failed to update referencing records for ${table} -> ${ref.table}.${ref.column}:`, error);
+    }
+  }
+
+  await hardDeleteRecord(table, config, normalizedId);
+}
 
 /**
  * Hard deletes a record by applying the primary key filters and issuing a delete.
@@ -435,4 +484,18 @@ function isMissingTableError(error: PostgrestError): boolean {
     message.includes('could not find the table') ||
     message.includes('schema cache')
   );
+}
+
+function normalizeIdentifier(identifier: string | number): string | number {
+  if (typeof identifier === 'string') {
+    const trimmed = identifier.trim();
+    if (/^-?\d+$/.test(trimmed)) {
+      const parsed = Number.parseInt(trimmed, 10);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return trimmed;
+  }
+  return identifier;
 }
