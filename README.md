@@ -23,6 +23,9 @@ This application implements the upload, metadata capture (manual or LLM-assisted
 - **Auth:** Clerk (`@clerk/nextjs`) with middleware-based protection and optional bypass.
 - **Tooling:** Jest + React Testing Library, ESLint/Prettier, Husky + lint-staged.
 
+## Technical Architecture
+![Screenshot 2025-12-15 at 6 39 56 PM](https://github.com/user-attachments/assets/a8492ed0-1588-4790-bce0-1f48f115ca67)
+
 ## Prerequisites
 - Node 18+ and npm.
 - Supabase project with:
