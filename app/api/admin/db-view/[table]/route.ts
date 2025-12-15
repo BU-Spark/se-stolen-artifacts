@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleSoftDelete } from '@/lib/crud-handlers/delete';
+import { handleSoftDelete, handleSetNullDelete } from '@/lib/crud-handlers/delete';
 import { TABLE_REGISTRY } from '@/lib/registry';
 import { supabase } from '@/lib/db/supabase';
 
@@ -166,9 +166,20 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: 'Composite key deletion not supported via this endpoint' }, { status: 400 });
     } else {
       // Single primary key - parse as number if primary key is statue_id, otherwise string
-      parsedId = table === 'statues' ? Number.parseInt(id, 10) : id;
-      if (table === 'statues' && Number.isNaN(parsedId)) {
-        return NextResponse.json({ error: 'Invalid statue_id' }, { status: 400 });
+      if (config.primaryKey === 'statue_id') {
+        const numericId = Number.parseInt(id, 10);
+        if (Number.isNaN(numericId)) {
+          return NextResponse.json({ error: 'Invalid statue_id' }, { status: 400 });
+        }
+        parsedId = numericId;
+      } else if (config.primaryKey === 'id') {
+        const numericId = Number.parseInt(id, 10);
+        if (Number.isNaN(numericId)) {
+          return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+        }
+        parsedId = numericId;
+      } else {
+        parsedId = id;
       }
     }
 
@@ -189,8 +200,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       }
 
       case 'set-null':
-        // TODO: Implement set-null strategy (set foreign keys to null)
-        return NextResponse.json({ error: 'set-null delete strategy not yet implemented' }, { status: 501 });
+        await handleSetNullDelete(table, config, parsedId);
+        return NextResponse.json({ success: true, message: 'Record deleted successfully' }, { status: 200 });
 
       case 'cascade':
         // TODO: Implement cascade strategy (delete related records)
