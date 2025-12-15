@@ -1,133 +1,106 @@
-This is a template for Spark! DS 519 projects. It has pre-configured eslint.config.mjs - ([`ESLint`](https://eslint.org/)) and .prettierrc - ([`Prettier`](https://prettier.io/)) to reflect industry standard development guidelines.
+# Khmer Statuary Project – Artifact Upload & Search
 
-## Setting Up Your Developer Experience
+Modern Next.js app for collecting, enriching, reviewing, and searching Khmer statuary records. The UI is built with Material UI and Clerk authentication; Supabase powers Postgres, storage, and RPC functions; optional LLM enrichment comes from OpenRouter.
 
-To get the most out of ESLint and Prettier, It is recommended to make the changes to you IDE:
+## Background
+As part of her master’s thesis at Boston University, archaeology student Hallie Baker is building a machine learning system to identify looted Cambodian artifacts held in museum collections. Cambodia endured extensive cultural looting from the 1960s civil war through the early 2000s, often to satisfy Western museum and collector demand. The Cambodian government is now pursuing repatriations from institutions such as the Metropolitan Museum of Art.
 
-#### Add this code to your _.vscode/settings.json_
+Today, researchers manually search thousands of archival photos to match statues on display—a slow process that can delay red flags about legality and repatriation claims. Hallie’s project automates this work with a searchable image database (currently 600+ images and 200+ verified matches) and a CNN model, ultimately targeting a public site where users can upload an image and get potential matches. The thesis details the need for this infrastructure, the technical steps to build it, and planned expansion to Indian and Nepali artifacts. The project is open-source and aims to advance global heritage preservation.
 
-```json
-{
-  "editor.formatOnSave": true,
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
-}
-```
+This application implements the upload, metadata capture (manual or LLM-assisted), admin review, and search workflows that underpin Hallie’s database and future public-facing experience.
 
-#### Download these VSCode extensions:
+## Architecture At A Glance
+- **Next.js App Router (app/)** with client-heavy pages: landing (`/`), upload (`/upload`), search (`/search`), and admin review (`/admin/*`).
+- **Auth:** Clerk protects everything except the landing and auth routes; `NEXT_PUBLIC_BYPASS_CLERK=true` can disable auth for local debugging. Admin pages require a Clerk session claim `metadata.role === "admin"` (see `middleware.ts`).
+- **Uploads:** `/upload` sends images to Supabase Storage `pending_images` via `/api/upload`, logs the internal reference number, and enforces a global in-memory rate limit (`lib/rate-limit/uploadRateLimit.ts`).
+- **Metadata pipeline:** `/api/process-metadata` writes uploader-provided descriptions plus either manual metadata or LLM-parsed metadata (OpenRouter) into `temp_artifact_metadata` using the RPC `insert_llm_artifact_metadata_with_timestamp`.
+- **Admin review:** `/admin/admin-review` consumes `/api/admin/pending-images`; `/api/admin/approve` promotes a pending upload into normalized tables (`statues`, `images`, lookup tables), moves the asset from `pending_images` to `approved_images`, and preserves the internal reference number. `/api/admin/deny` discards bad uploads.
+- **Search:** `/api/statue-search` builds a Supabase query against statues, subjects, attributes, locations, auction history, and images; image URLs are signed from the `spark` bucket before returning to the UI. Download links stream from storage via `/api/download/[imageId]`.
 
-- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+## Tech Stack
+- **Frontend:** Next.js 15 (App Router) + React 19, TypeScript, Material UI 7 with Emotion (`app/theme.ts`, `AppThemeProvider`), `@mui/material-nextjs` for server-side styling, lucide/MUI icon sets.
+- **Backend/API:** Next.js API routes, Supabase Postgres + RPCs (`supabase/migrations`), Supabase Storage buckets (`pending_images`, `approved_images`, `spark`), in-memory rate limiting, optional OpenRouter LLM metadata extraction.
+- **Auth:** Clerk (`@clerk/nextjs`) with middleware-based protection and optional bypass.
+- **Tooling:** Jest + React Testing Library, ESLint/Prettier, Husky + lint-staged.
 
-## Getting Started
+## Prerequisites
+- Node 18+ and npm.
+- Supabase project with:
+  - Postgres + RPCs from `supabase/migrations`
+  - Storage buckets: `pending_images`, `approved_images`, and `spark`
+  - Service role key (server-side) and public project URL
+- Clerk project for auth (or use `NEXT_PUBLIC_BYPASS_CLERK=true` locally).
+- OpenRouter API key (only required for AI metadata mode).
+- Supabase CLI (optional) for applying migrations locally or to a linked project.
 
-This template uses Next.js. If you havent used Next before or need more information, take a look here:
+## Environment & Secrets
+Create `.env.local` from `.env.example` and fill the values. Never commit real keys.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Required for core flows:
+- `NEXT_PUBLIC_SUPABASE_URL` – Supabase project URL (public).
+- `SUPABASE_SERVICE_ROLE_KEY` – Supabase service role (server-only).
+- `SUPABASE_BUCKET_PENDING_IMAGES`, `SUPABASE_BUCKET_APPROVED_IMAGES` – Storage bucket names (defaults: `pending_images`, `approved_images`). `NEXT_PUBLIC_SUPABASE_BUCKET_PENDING_IMAGES`/`...APPROVED...` can also be used.
+- `UPLOAD_RATE_LIMIT_MAX`, `UPLOAD_RATE_LIMIT_WINDOW_MS` – Global upload cap and window (minutes) for AI use.
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` – Clerk auth keys; set `NEXT_PUBLIC_BYPASS_CLERK=true` to disable auth for local testing.
+- `OPENROUTER_API_KEY` (and optional `OPENROUTER_MODEL`) – Enables AI metadata extraction.
+- `NEXT_PUBLIC_ADMIN_ID` (optional legacy check; admin access currently tied to Clerk session metadata in `middleware.ts`).
+- `NODE_ENV` – `development` for local runs.
 
-To run the development server:
+> `.env.local` already exists in the repo root for local secrets; `.env.example` documents every variable.
 
-```bash
-npm run dev
-```
+## Run the Project
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+2. **Configure environment**
+   ```bash
+   cp .env.example .env.local
+   # Fill in Supabase, Clerk, and OpenRouter keys in .env.local
+   ```
+   - Set `NEXT_PUBLIC_BYPASS_CLERK=true` if you want to skip auth during local testing.
+3. **Provision Supabase**
+   - Ensure buckets `pending_images`, `approved_images`, and `spark` exist in Storage.
+   - Apply migrations to your project (requires Supabase CLI login/link):
+     ```bash
+     npx supabase login
+     npx supabase link --project-ref <your-project-ref>
+     npx supabase db push
+     ```
+     (See `supabase/MigrationGuide.MD` for the full workflow.)
+4. **Start the dev server**
+   ```bash
+   npm run dev
+   ```
+   - App runs at http://localhost:3000.
+   - Sign in via Clerk, or rely on `NEXT_PUBLIC_BYPASS_CLERK=true` for local no-auth.
+5. **Run tests (optional)**
+   ```bash
+   npm test          # all tests
+   npm run test:watch
+   npm run test:coverage
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the result. Do not use Microsoft Edge 🤮
+## Key API Routes & Backend Behavior
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Data & Storage Notes
+- Supabase Postgres tables used in search/admin flows include `statues`, `images`, `statue_subject`, `statue_attributes`, `materials`, `subjects`, `locations`, `auction_events`, and views such as `image_attribute_overrides`.
+- Image lifecycle:
+  1. Uploaded to `pending_images` with an internal reference number.
+  2. Metadata captured in `temp_artifact_metadata` (AI or manual).
+  3. Admin approval moves the asset to `approved_images`, creates/updates the `statues` row, and links the image (plus optional lookup records).
+  4. Search signs URLs from the public `spark` bucket for display.
 
-## Testing Your Application
+## Tooling & Scripts
+- `npm run lint` – ESLint with Prettier.
+- `npm run build` / `npm start` – Production build and start.
+- Husky + lint-staged run linting/formatting and tests on commit/push.
 
-This template comes pre-configured with a robust testing setup to help you ensure code quality and maintainability. We use [Jest](https://jestjs.io/) as the testing framework and [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) for testing React components.
+## Bugs & Errors
 
-<details>
-  <summary><strong>Key Testing Features & Configuration</strong></summary>
-
-#### Integrated Tools
-
-- **Jest:** A delightful JavaScript Testing Framework with a focus on simplicity. It works out of the box for most Next.js projects.
-- **React Testing Library (RTL):** Provides light-weight utility functions on top of `react-dom` and `react-dom/test-utils`, in a way that encourages better testing practices. Its primary guiding principle is: _"The more your tests resemble the way your software is used, the more confidence they can give you."_
-- **`@testing-library/jest-dom`:** Custom Jest matchers to extend Jest with useful assertions for DOM states (e.g., `toBeInTheDocument()`, `toHaveClass()`).
-
-#### Configuration Files
-
-- **`jest.config.ts`:** The main configuration file for Jest. It defines how Jest discovers and runs your tests, what environment to use (e.g., `jsdom` for browser-like environment), and any transformations needed (e.g., using `ts-node` for TypeScript).
-- **`jest.setup.ts`:** This file is run before each test suite. It's used for global test setup, such as importing `@testing-library/jest-dom` to make its matchers available in all tests, or for setting up global mocks (like the `window.matchMedia` mock included in this template).
-
-#### Test File Location
-
-- Tests are co-located with the components or modules they are testing. For example, tests for `MyComponent.tsx` would typically be in a file named `MyComponent.test.tsx` within the same directory. This makes it easy to find and manage tests alongside the code they cover. Our `jest.config.ts` is set up to discover these `*.test.tsx` (and `*.test.ts`) files.
-
-</details>
-
-<details>
-  <summary><strong>Running Tests</strong></summary>
-
-You can run your tests using the following npm scripts:
-
-- **`npm test`**: Runs all tests once. This is also the command used by the automated pre-commit and pre-push hooks.
-  ```bash
-  npm test
-  ```
-- **`npm run test:watch`**: Runs tests in watch mode. Jest will re-run tests related to changed files, which is very useful during development.
-  ```bash
-  npm run test:watch
-  ```
-- **`npm run test:coverage`**: Runs all tests and generates a code coverage report. This helps you see what percentage of your codebase is covered by tests. The report will be generated in a `coverage/` directory.
-  ```bash
-  npm run test:coverage
-  ```
-  </details>
-
-<details>
-  <summary><strong>Automated Testing with Husky</strong></summary>
-
-To maintain code quality and prevent regressions, this template uses [Husky](https://typicode.github.io/husky/) to manage Git hooks. The following hooks are configured:
-
-- **`pre-commit`**: Before any commit is finalized, this hook runs:
-
-  1.  `npx lint-staged`: Lints and formats staged files (`*.{js,jsx,ts,tsx}`) using ESLint and Prettier.
-  2.  `npm test`: Runs the entire test suite.
-      If either linting/formatting fails or any test fails, the commit will be aborted, allowing you to fix the issues before committing.
-
-- **`pre-push`**: Before any push to a remote repository, this hook runs:
-  1.  `npm test`: Runs the entire test suite.
-      If any test fails, the push will be aborted.
-
-This ensures that your codebase remains well-formatted, lint-free, and that all tests are passing before changes are shared or integrated.
-
-</details>
-
-<details>
-  <summary><strong>Testing Philosophy</strong></summary>
-
-- **Focus on User Behavior:** Write tests that verify the functionality of your components from a user's perspective. React Testing Library encourages this by providing utilities to query and interact with the DOM in a way similar to how a user would.
-- **Unit & Integration Tests:** Aim for a healthy mix of unit tests (testing individual functions or components in isolation) and integration tests (testing how multiple components work together).
-- **Confidence, Not Coverage Alone:** While code coverage is a useful metric, the primary goal of testing is to give you confidence that your application works as expected. Prioritize tests that cover critical user flows and complex logic.
-- **Readable and Maintainable Tests:** Write clear, concise, and well-structured tests. Like your application code, test code should also be maintainable.
-</details>
-
-## Managing Environment Variables
-
-Properly managing environment variables is crucial for security and for configuring your application differently across various environments (development, testing, production). Next.js has built-in support for environment variables.
-
-- **Key File: `.env.local`**: Use this for your local development. It **must** be added to `.gitignore` to protect sensitive information like API keys.
-- **Client-Side Variables**: To expose a variable to the browser, prefix it with `NEXT_PUBLIC_` (e.g., `NEXT_PUBLIC_ANALYTICS_ID`). These are accessible via `process.env.NEXT_PUBLIC_YOUR_VARIABLE`. **Never store secrets in `NEXT_PUBLIC_` variables.**
-- **Server-Side Variables**: Variables without the `NEXT_PUBLIC_` prefix (e.g., `DATABASE_URL`) are only available server-side via `process.env.YOUR_VARIABLE`.
-- **Best Practice: `.env.example`**: Create an `.env.example` file in your project root. This file should list all environment variables your application needs, with placeholder values. It **should be committed to version control** as a template for other developers.
-
-For more comprehensive details, refer to the [official Next.js documentation on environment variables](https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables).
-
-## Adding Additional Tech
-
-Most projects will require the use of other technologies. Below are a few guides and recommedations for integrating commonly used software into your Next.js project.
-
-- [Next.js Setup w/ Prisma](https://www.dhiwise.com/post/the-ultimate-guide-to-next-js-prisma-setup)
-- [Emotion & Next.js](https://www.dhiwise.com/post/implementing-nextjs-emotions-in-your-project) - Emotion is the default CSS-in JS library for all new Spark! projects. Use Emotion instead of styled-components, as styled-components is not as easily compatible with Server Side Rendering, or Typed CSS variables. Emotion is also more readily compatible with a wide array of component libraries.
-- [Clerk Setup w/ Next.js](https://clerk.com/docs/quickstarts/nextjs) - Clerk will be the default user authentication software for all new Spark! projects. Please reach out to Omar for creating and retrieving API keys for your project. Do NOT use firebase/auth even if your project uses Firestore.
-- ### Component Libraries
-  All new projects will be required to use a [design system](https://www.figma.com/blog/design-systems-101-what-is-a-design-system/) You will receive designs from your DS488 design team which will utilize a design kit. Use the corresponding component library to implement those designs on the front end of your project.
+## Deployment
+- **Build & start**: `npm run build` then `npm start` (Next.js production server).
+- **Environment**: Provide all env vars from `.env.example` in your host (Vercel/Render/etc.). Keep `NEXT_PUBLIC_BYPASS_CLERK=false` and set `NODE_ENV=production` for real deployments.
+- **Supabase**: Apply migrations to the production project (`npx supabase db push` after `npx supabase link ...`). Ensure Storage buckets `pending_images`, `approved_images`, and `spark` exist and are correctly named.
+- **Auth**: Configure Clerk for your production domain and supply `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY`.
+- **AI**: Add `OPENROUTER_API_KEY` (and optional `OPENROUTER_MODEL`) if you want AI metadata extraction in production; omit to force manual entry only.
