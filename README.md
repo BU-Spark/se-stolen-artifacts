@@ -113,6 +113,8 @@ Required for core flows:
 - Husky + lint-staged run linting/formatting and tests on commit/push.
 
 ## Bugs & Errors
+- Currently working on a bug where deleting for certain tables in the admin DB view (primarily lookup tables like `subjects`, `attributes`, `locations`, etc.) does not allow the user to delete and says that the "set-null strategy has not been implemented." We are working to get this implemented soon.
+- There is a mysterious build time error that has not been allowing our CI/CD pipeline to pass which we still have not figured out.
 
 ## Deployment
 - **Build & start**: `npm run build` then `npm start` (Next.js production server).
