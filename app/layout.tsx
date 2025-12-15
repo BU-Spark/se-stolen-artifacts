@@ -5,7 +5,8 @@ import Navbar from './components/Navbar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ClerkProvider } from '@clerk/nextjs';
 import { AppThemeProvider } from './providers';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+// import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+// Removing temp to check if it solves build time error
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -29,18 +30,16 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable}`}>
       <body>
-        <AppRouterCacheProvider>
-          <AppThemeProvider>
-            <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-              <ErrorBoundary>
-                <Navbar />
-                <div className="main-content-container" style={{ paddingTop: 56 }}>
-                  {children}
-                </div>
-              </ErrorBoundary>
-            </ClerkProvider>
-          </AppThemeProvider>
-        </AppRouterCacheProvider>
+        <AppThemeProvider>
+          <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+            <ErrorBoundary>
+              <Navbar />
+              <div className="main-content-container" style={{ paddingTop: 56 }}>
+                {children}
+              </div>
+            </ErrorBoundary>
+          </ClerkProvider>
+        </AppThemeProvider>
       </body>
     </html>
   );
