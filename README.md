@@ -82,6 +82,22 @@ Required for core flows:
    ```
 
 ## Key API Routes & Backend Behavior
+- `POST /api/upload` – Validate, rate-limit, and upload images to the `pending_images` bucket; returns internal reference number, `gcsPath`, and public URL.
+- `POST /api/process-metadata` – Store manual or AI-parsed metadata (OpenRouter optional) into `temp_artifact_metadata` via RPC.
+- `GET /api/rate-limit-status` – Report current global upload/AI availability for the UI.
+- `POST /api/statue-search` – Query Supabase statues/subjects/attributes and return signed image URLs from `spark`.
+- `GET /api/download/[imageId]` – Download an approved image by internal reference number.
+- `POST /api/admin/approve` – Promote a pending upload into statues/images, move asset pending→approved, and attach lookup records.
+- `POST /api/admin/crud` – Generic CRUD dispatcher for registry-listed tables (see `lib/registry.ts`).
+- `GET|POST|PUT|DELETE /api/admin/db-view/[table]` – Admin table view/editor with soft-delete awareness for allowed tables.
+- `POST /api/admin/deny` – Mark a pending upload as rejected in `temp_artifact_metadata`.
+- `GET /api/admin/image-url/[imageId]` – Generate a signed URL for an approved image in the `spark` bucket.
+- `GET /api/admin/pending-images` – List pending uploads awaiting review/approval.
+- `POST /api/admin/reset-rate-limit` – Reset the global upload/AI rate limiter.
+- `GET /api/admin/statues` – List statues with image counts (non-deleted only).
+- `DELETE /api/admin/statues/[statueId]/hard-delete` – Hard-delete a statue record (irreversible).
+- `GET /api/admin/statues/[statueId]/images` – List signed URLs for images attached to a statue.
+- `POST /api/admin/statues/create` – Create an empty statue folder (row) to attach images.
 
 ## Data & Storage Notes
 - Supabase Postgres tables used in search/admin flows include `statues`, `images`, `statue_subject`, `statue_attributes`, `materials`, `subjects`, `locations`, `auction_events`, and views such as `image_attribute_overrides`.
