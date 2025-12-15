@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { handleCreate, type CreateRequest } from '@/lib/crud-handlers/create';
+import { handleDelete, type DeleteRequest } from '@/lib/crud-handlers/delete';
 import { handleUpdate, type UpdateRequest } from '@/lib/crud-handlers/update';
 import { CrudRequest, TABLE_REGISTRY } from '@/lib/registry';
 
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
         { error: `Action "${body.action}" is not permitted for table "${body.table}"` },
         { status: 403 }
       );
+    }
+
+    if (body.action === 'delete' && (body.id === undefined || body.id === null)) {
+      return NextResponse.json({ error: 'Delete action requires an id' }, { status: 400 });
     }
 
     const result = await dispatchAction(body as CrudRequest);
@@ -52,11 +57,11 @@ async function dispatchAction(payload: CrudRequest) {
       return handleCreate(payload as CreateRequest);
     case 'update':
       return handleUpdate(payload as UpdateRequest);
+    case 'delete':
+      return handleDelete(payload as DeleteRequest);
     // TODO: uncomment when completed
     // case "read":
     //     return handleRead(payload as CreateRequest);
-    // case "delete":
-    //     return handleDelete(payload as CreateRequest);
     default:
       throw new Error(`Unsupported action: ${payload.action as string}`);
   }
