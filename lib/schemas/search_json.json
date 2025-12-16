@@ -1,0 +1,29 @@
+{
+  "main": {
+    "subject": "",
+    "dealer": "",
+    "suspectedCurrentLocation": "",
+    "titleOfObject": "",
+    "photographLocation": "",
+    "yearFirstKnownAppearance": {
+      "start": 1900,
+      "end": 2025
+    },
+    "yearFirstKnownAppearanceOutsideCambodia": {
+      "start": 1900,
+      "end": 2025
+    },
+    "repatriated": true
+  },
+  "advanced": {
+    "image_source": "",
+    "material": "",
+    "base_present": true,
+    "inscription": true,
+    "multiple_heads": true,
+    "fragmentary": true,
+    "number_of_arms": 4,
+    "limbs_present": [],
+    "parts_fragmented": []
+  }
+}

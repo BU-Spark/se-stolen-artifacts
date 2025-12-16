@@ -1,15 +1,16 @@
 :root {
   /* Global Theme Variables (Light Mode is default) */
-  --page-bg: #f0f4f8;
-  --page-bg-gradient-start: #e6f4ff;
-  --page-bg-gradient-end: #89b2fa;
-  --text-color: #2c3e50;
-  --primary-accent: #0060c7;
-  --secondary-accent: #28a745;
-  --card-bg: #bdd5ff;
-  --card-border: #78a0c8;
+  --page-bg: #726953;
+  --page-bg-gradient-start: #726953;
+  --page-bg-gradient-end: #82A6B1;
+  --text-color: #5B3000;
+  --secondary-text-color: #76877D;
+  --primary-accent: #5B3000;
+  --secondary-accent: #66462C;
+  --card-bg: #82A6B11f;
+  --card-border: #76877D;
   --link-color: var(--primary-accent);
-  --code-bg: #e9ecef;
+  --code-bg: #82A6B140;
 }
 
 html {
@@ -59,9 +60,12 @@ html.dark body {
   margin-right: auto;
   padding-left: 1rem;
   padding-right: 1rem;
-  flex-grow: 1; /* Ensure main content can grow */
-  display: flex; /* Added to allow children to flex if needed */
-  flex-direction: column; /* Added for default stacking */
+  flex-grow: 1;
+  /* Ensure main content can grow */
+  display: flex;
+  /* Added to allow children to flex if needed */
+  flex-direction: column;
+  /* Added for default stacking */
 }
 
 @media (min-width: 640px) {
@@ -84,6 +88,44 @@ html.dark body {
   margin: 0;
 }
 
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Hide number input spinners */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -95,14 +137,16 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-grow: 1; /* Ensure it can take up space if it's the main content */
+  flex-grow: 1;
+  /* Ensure it can take up space if it's the main content */
   padding: 2rem;
   text-align: center;
   background-color: var(--card-bg);
   color: var(--text-color);
   border: 1px solid var(--card-border);
   border-radius: 8px;
-  margin: 2rem; /* Add some margin if it's inside another container */
+  margin: 2rem;
+  /* Add some margin if it's inside another container */
 }
 
 html.dark .error-boundary {
@@ -128,7 +172,8 @@ html.dark .error-boundary h2 {
   border: 1px solid var(--card-border);
   border-radius: 4px;
   max-width: 600px;
-  overflow-x: auto; /* For long error messages */
+  overflow-x: auto;
+  /* For long error messages */
 }
 
 html.dark .error-boundary details {
@@ -143,8 +188,10 @@ html.dark .error-boundary details {
 }
 
 .error-boundary pre {
-  white-space: pre-wrap; /* Wrap long lines */
-  word-break: break-all; /* Break long words/strings */
+  white-space: pre-wrap;
+  /* Wrap long lines */
+  word-break: break-all;
+  /* Break long words/strings */
   font-size: 0.875rem;
   text-align: left;
 }

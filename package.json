@@ -14,7 +14,21 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.33.3",
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.6",
+    "@mui/material-nextjs": "^7.3.6",
+    "@prisma/client": "^6.19.0",
+    "@supabase-js/source": "github:supabase/supabase-js",
+    "@supabase/supabase-js": "^2.76.1",
+    "@tailwindcss/postcss": "^4.1.16",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "lucide-react": "^0.544.0",
+    "mui": "^0.0.1",
     "next": "^15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -43,6 +57,9 @@
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^15.4.3",
     "prettier": "3.4.2",
+    "prisma": "^6.19.0",
+    "supabase": "^2.53.6",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5",
     "typescript-eslint": "^8.22.0"
