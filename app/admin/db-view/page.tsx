@@ -126,6 +126,7 @@ export default function AdminDbViewPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [formData, setFormData] = useState<RowData>({});
+  const [editingTable, setEditingTable] = useState<string>('statues');
   const [foreignKeyData, setForeignKeyData] = useState<Record<string, RowData[]>>({});
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -163,37 +164,42 @@ export default function AdminDbViewPage() {
     }
   }, [selectedTable]);
 
-  const fetchForeignKeyData = useCallback(async () => {
-    if (!selectedTable) return;
+  const fetchForeignKeyData = useCallback(
+    async (table?: string) => {
+      const tableToUse = table || selectedTable;
+      if (!tableToUse) return;
 
-    const fkMappings = FOREIGN_KEY_MAPPINGS[selectedTable];
-    if (!fkMappings) return;
+      const fkMappings = FOREIGN_KEY_MAPPINGS[tableToUse];
+      if (!fkMappings) return;
 
-    const tablesToFetch = new Set<string>();
-    Object.values(fkMappings).forEach((mapping) => {
-      tablesToFetch.add(mapping.referencedTable);
-    });
+      const tablesToFetch = new Set<string>();
+      Object.values(fkMappings).forEach((mapping) => {
+        tablesToFetch.add(mapping.referencedTable);
+      });
 
-    const fetchPromises = Array.from(tablesToFetch).map(async (table) => {
-      try {
-        const response = await fetch(`/api/admin/db-view/${table}`);
-        const result = await response.json();
-        if (response.ok) {
-          return { table, data: result.data || [] };
+      const fetchPromises = Array.from(tablesToFetch).map(async (refTable) => {
+        try {
+          const response = await fetch(`/api/admin/db-view/${refTable}`);
+          const result = await response.json();
+          if (response.ok) {
+            return { table: refTable, data: result.data || [] };
+          }
+          return { table: refTable, data: [] };
+        } catch {
+          return { table: refTable, data: [] };
         }
-        return { table, data: [] };
-      } catch {
-        return { table, data: [] };
-      }
-    });
+      });
 
-    const results = await Promise.all(fetchPromises);
-    const fkData: Record<string, RowData[]> = {};
-    results.forEach(({ table, data }) => {
-      fkData[table] = data;
-    });
-    setForeignKeyData(fkData);
-  }, [selectedTable]);
+      const results = await Promise.all(fetchPromises);
+      const fkData: Record<string, RowData[]> = {};
+      results.forEach(({ table: refTable, data }) => {
+        fkData[refTable] = data;
+      });
+      // Merge with existing foreign key data instead of replacing
+      setForeignKeyData((prev) => ({ ...prev, ...fkData }));
+    },
+    [selectedTable]
+  );
 
   useEffect(() => {
     if (isLoaded) {
@@ -214,6 +220,13 @@ export default function AdminDbViewPage() {
     }
   }, [dialogError, editDialogOpen, addDialogOpen]);
 
+  // Fetch foreign key data for editing table when edit dialog opens
+  useEffect(() => {
+    if (editDialogOpen && editingTable !== selectedTable) {
+      fetchForeignKeyData(editingTable);
+    }
+  }, [editDialogOpen, editingTable, selectedTable, fetchForeignKeyData]);
+
   const handleTableChange = (newTable: string) => {
     setSelectedTable(newTable);
     setData([]);
@@ -224,7 +237,23 @@ export default function AdminDbViewPage() {
     setLoadingImages({}); // Clear loading states for new table
   };
 
+  // Helper function to detect table type from row data
+  const detectTableType = (row: RowData): string => {
+    // Images table has internal_reference_number as primary key
+    if (row.internal_reference_number !== undefined) {
+      return 'images';
+    }
+    // Statues table has statue_id as primary key
+    if (row.statue_id !== undefined && row.internal_reference_number === undefined) {
+      return 'statues';
+    }
+    // Default to selectedTable if we can't detect
+    return selectedTable;
+  };
+
   const handleEdit = (row: RowData) => {
+    const tableType = detectTableType(row);
+    setEditingTable(tableType);
     setFormData({ ...row });
     setDialogError(null);
     setEditDialogOpen(true);
@@ -416,8 +445,11 @@ export default function AdminDbViewPage() {
     try {
       setDialogError(null);
 
+      // Use editingTable for edits, selectedTable for adds
+      const tableToUse = isEdit ? editingTable : selectedTable;
+
       // Prepare data with proper type conversions for foreign keys
-      const fkMappings = FOREIGN_KEY_MAPPINGS[selectedTable] || {};
+      const fkMappings = FOREIGN_KEY_MAPPINGS[tableToUse] || {};
       const preparedData = { ...formData };
 
       // Convert foreign key string values to numbers (or null)
@@ -430,7 +462,7 @@ export default function AdminDbViewPage() {
         }
       });
 
-      const url = isEdit ? `/api/admin/db-view/${selectedTable}` : '/api/admin/crud';
+      const url = isEdit ? `/api/admin/db-view/${tableToUse}` : '/api/admin/crud';
       const method = isEdit ? 'PUT' : 'POST';
       const body = isEdit
         ? JSON.stringify(preparedData)
@@ -456,24 +488,53 @@ export default function AdminDbViewPage() {
       setAddDialogOpen(false);
       setFormData({});
       setDialogError(null);
+
+      // Refresh data - if editing an image from statues view, refresh both
       await fetchData();
+      // If editing an image while in statues view, also refresh the images for expanded statues
+      if (isEdit && tableToUse === 'images' && selectedTable === 'statues' && expandedStatues.size > 0) {
+        const refreshPromises = Array.from(expandedStatues).map(async (statueId) => {
+          try {
+            const response = await fetch(`/api/admin/db-view/images`);
+            const result = await response.json();
+            if (response.ok && result.data) {
+              const imagesForStatue = result.data.filter((img: RowData) => img.statue_id === statueId);
+              setStatueImages((prev) => ({ ...prev, [statueId]: imagesForStatue }));
+            }
+          } catch (error) {
+            console.error('Failed to refresh images for statue:', error);
+          }
+        });
+        await Promise.all(refreshPromises);
+      }
     } catch (saveError: unknown) {
       const message = saveError instanceof Error ? saveError.message : 'Failed to save record';
       setDialogError(message);
     }
   };
 
-  const getColumns = (): string[] => {
-    if (data.length > 0) {
+  const getColumns = (table?: string): string[] => {
+    // Use provided table or fall back to selectedTable
+    const tableToUse = table || selectedTable;
+
+    // For editing, if we have formData with keys, use those (they represent the actual row structure)
+    if (table && formData && Object.keys(formData).length > 0) {
+      const cols = Object.keys(formData);
+      // Filter out is_deleted column
+      return cols.filter((col) => col !== 'is_deleted');
+    }
+
+    // For the selected table, use data if available
+    if (tableToUse === selectedTable && data.length > 0) {
       const cols = Object.keys(data[0]);
       // Filter out is_deleted column for statues table (keep it in DB, just hide in UI)
-      if (selectedTable === 'statues') {
+      if (tableToUse === 'statues') {
         return cols.filter((col) => col !== 'is_deleted');
       }
       return cols;
     }
 
-    // Fallback schema when table is empty
+    // Fallback schema when table is empty or we're getting columns for a different table
     const schemaMap: Record<string, string[]> = {
       statues: [
         'statue_id',
@@ -509,12 +570,13 @@ export default function AdminDbViewPage() {
       statue_attributes: ['statue_id', 'attribute_id'],
     };
 
-    return schemaMap[selectedTable] || [];
+    return schemaMap[tableToUse] || [];
   };
 
   const columns = getColumns();
-  const getPrimaryKey = () => {
-    return selectedTable === 'statues' ? 'statue_id' : selectedTable === 'images' ? 'internal_reference_number' : 'id';
+  const getPrimaryKey = (table?: string) => {
+    const tableToUse = table || selectedTable;
+    return tableToUse === 'statues' ? 'statue_id' : tableToUse === 'images' ? 'internal_reference_number' : 'id';
   };
 
   // Filter data based on statue_id filter for images table
@@ -631,14 +693,16 @@ export default function AdminDbViewPage() {
     }
   };
 
-  const renderFormField = (col: string, isEdit: boolean) => {
-    const primaryKey = getPrimaryKey();
+  const renderFormField = (col: string, isEdit: boolean, table?: string) => {
+    // Use provided table or fall back to selectedTable for adds, editingTable for edits
+    const tableToUse = table || (isEdit ? editingTable : selectedTable);
+    const primaryKey = getPrimaryKey(tableToUse);
     const isPrimaryKey = col === primaryKey;
 
     // Hide primary key field when adding (it's auto-generated)
     if (isPrimaryKey && !isEdit) return null;
 
-    const fkMappings = FOREIGN_KEY_MAPPINGS[selectedTable];
+    const fkMappings = FOREIGN_KEY_MAPPINGS[tableToUse];
     const fkMapping = fkMappings?.[col];
 
     // If this is a foreign key field, render a Select dropdown
@@ -1237,7 +1301,7 @@ export default function AdminDbViewPage() {
                 {dialogError}
               </Alert>
             )}
-            {columns.map((col) => renderFormField(col, true))}
+            {getColumns(editingTable).map((col) => renderFormField(col, true, editingTable))}
           </Stack>
         </DialogContent>
         <DialogActions>
